@@ -58,10 +58,12 @@ export function Header() {
               </Button>
             ))}
           </div>
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="outline" className="hidden">
             Sign In
           </Button>
-          <Button size="sm">Get Started</Button>
+          <Button size="sm" className="hidden">
+            Get Started
+          </Button>
         </div>
         <MobileNav />
       </nav>
