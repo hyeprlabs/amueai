@@ -1,2 +1,0 @@
-# amueai
-AmueAI
