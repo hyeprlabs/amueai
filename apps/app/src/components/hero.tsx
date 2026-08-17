@@ -43,7 +43,7 @@ export function HeroSection() {
 
         <h1
           className={cn(
-            "max-w-2xl text-balance text-center text-3xl text-foreground md:text-5xl lg:text-6xl",
+            "max-w-2xl text-balance text-center text-3xl text-foreground md:text-5xl lg:text-6xl font-pixel-square",
             "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-100 duration-500 ease-out",
           )}
         >
