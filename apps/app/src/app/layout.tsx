@@ -7,6 +7,7 @@ import "./globals.css";
 // Providers
 import { ThemeProvider } from "@/components/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -27,7 +28,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem
           disableTransitionOnChange
         >
-          <ClerkProvider>{children}</ClerkProvider>
+          <ClerkProvider>
+            {children}
+            <Toaster />
+          </ClerkProvider>
         </ThemeProvider>
       </body>
     </html>

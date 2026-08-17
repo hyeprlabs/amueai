@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { ArrowRightIcon, PhoneCallIcon } from "lucide-react";
+import { WhitelistForm } from "@/components/whitelist-form";
+import { ArrowRightIcon } from "lucide-react";
 
 export function HeroSection() {
   return (
@@ -59,13 +59,8 @@ export function HeroSection() {
           We help brands scale faster through design, <br /> development and strategic execution.
         </p>
 
-        <div className="fade-in slide-in-from-bottom-10 flex w-fit animate-in items-center justify-center gap-3 fill-mode-backwards pt-2 delay-300 duration-500 ease-out">
-          <Button variant="outline">
-            <PhoneCallIcon data-icon="inline-start" /> Book a Call
-          </Button>
-          <Button>
-            Get started <ArrowRightIcon data-icon="inline-end" />
-          </Button>
+        <div className="fade-in slide-in-from-bottom-10 flex w-fit animate-in items-center justify-center fill-mode-backwards pt-2 delay-300 duration-500 ease-out">
+          <WhitelistForm />
         </div>
       </div>
       <div className="relative">
