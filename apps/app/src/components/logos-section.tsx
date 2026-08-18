@@ -4,7 +4,7 @@ import { FullWidthDivider } from "@/components/full-width-divider";
 
 export function LogosSection() {
   return (
-    <section className="mb-12">
+    <section className="mb-12 lg:mb-24">
       <h2 className="py-6 text-center font-medium text-lg text-muted-foreground tracking-tight md:text-xl">
         Trusted by <span className="text-foreground">experts</span>
       </h2>
