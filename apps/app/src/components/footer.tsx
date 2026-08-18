@@ -60,8 +60,8 @@ export function Footer() {
       </div>
       <FullWidthDivider />
       <div className="flex items-center justify-center gap-2 py-4">
-        <p className="text-center font-light text-muted-foreground text-sm">
-          &copy; {new Date().getFullYear()} efferd, All rights reserved
+        <p className="text-center font-light text-muted-foreground text-sm font-mono">
+          &copy; {new Date().getFullYear()} AmueAI, All rights reserved
         </p>
       </div>
     </footer>
