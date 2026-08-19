@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { RotateCwIcon } from "lucide-react";
 
 import { FullWidthDivider } from "@/components/full-width-divider";
+import { Background } from "@/components/ui/bg";
 import { Button } from "@/components/ui/button";
 
 export default function Error({
@@ -20,6 +21,8 @@ export default function Error({
 
   return (
     <div className="relative w-full overflow-hidden px-4 md:h-screen">
+      <Background />
+
       <div className="relative mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center border-x *:px-6">
         <div className="flex flex-col space-y-6">
           <div className="space-y-1">

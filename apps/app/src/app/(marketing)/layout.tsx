@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/header"; // @efferd/header-2
 import { Footer } from "@/components/footer";
-import { Hero as HeroBackground } from "@/components/ui/bg";
+import { Background } from "@/components/ui/bg";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden px-4 supports-[overflow:clip]:overflow-clip">
-      <HeroBackground />
-      <HeroBackground className="top-auto bottom-0 rotate-180" />
+      <Background />
+      <Background className="top-auto bottom-0 rotate-180" />
 
       <Header />
       <main

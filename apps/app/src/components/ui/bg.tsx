@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export const Hero = ({ className }: { className?: string }) => (
+export const Background = ({ className }: { className?: string }) => (
   <div
     aria-hidden="true"
     className={cn(
