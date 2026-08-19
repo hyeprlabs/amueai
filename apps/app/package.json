@@ -15,6 +15,7 @@
     "@base-ui/react": "^1.7.0",
     "@clerk/nextjs": "^7.7.6",
     "@hookform/resolvers": "^5.9.1",
+    "@number-flow/react": "^0.6.2",
     "@payloadcms/db-postgres": "^3.88.0",
     "@payloadcms/next": "^3.88.0",
     "@payloadcms/richtext-lexical": "^3.88.0",
