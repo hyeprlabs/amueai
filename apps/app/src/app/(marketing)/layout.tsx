@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Header } from "@/components/header"; // @efferd/header-2
+import { Header } from "@/components/marketing/header"; // @efferd/header-2
 import { Footer } from "@/components/footer";
 import { Background } from "@/components/ui/bg";
 
