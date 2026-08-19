@@ -61,6 +61,12 @@
       "skillPath": "skills/features/clerk-webhooks/SKILL.md",
       "computedHash": "e3c348bdc6dee1f28bc56577cd4aac605d3dfc3c63fcb10fc51e6c04c1fe3fb0"
     },
+    "payload": {
+      "source": "payloadcms/payload",
+      "sourceType": "github",
+      "skillPath": "packages/payload/skills/payload/SKILL.md",
+      "computedHash": "8e3a80961bf7b611f29b4588b1f88d6973fa961295deedac93350797a5490dfa"
+    },
     "react-hook-form": {
       "source": "pproenca/dot-skills",
       "sourceType": "github",
