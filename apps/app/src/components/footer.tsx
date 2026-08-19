@@ -3,6 +3,7 @@ import { GithubIcon } from "@/components/icons/github-icon";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { Logo } from "@/components/logo";
+import { LegalDropdown } from "@/components/legal-dropdown";
 import { Button } from "@/components/ui/button";
 import { FullWidthDivider } from "@/components/full-width-divider";
 
@@ -36,6 +37,7 @@ export function Footer() {
               </Button>
             ))}
           </div>
+          <LegalDropdown />
         </div>
         <div className="col-span-3 w-full md:col-span-1">
           <span className="text-muted-foreground text-xs">Resources</span>
@@ -79,14 +81,6 @@ const company = [
   },
   {
     title: "Brand assets",
-    href: "#",
-  },
-  {
-    title: "Privacy Policy",
-    href: "#",
-  },
-  {
-    title: "Terms of Service",
     href: "#",
   },
 ];
