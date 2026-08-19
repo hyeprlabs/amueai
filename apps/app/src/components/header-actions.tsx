@@ -2,10 +2,21 @@
 
 import Link from "next/link";
 import { ClerkLoaded, Show, UserButton } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
 export function HeaderActions() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <ClerkLoaded>
       <div className="hidden items-center gap-2 md:flex">

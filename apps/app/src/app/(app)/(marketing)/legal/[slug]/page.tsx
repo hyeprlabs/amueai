@@ -2,9 +2,8 @@ import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import config from "@payload-config";
-import { cn } from "@/lib/utils";
-import { FullWidthDivider } from "@/components/full-width-divider";
 import { LegalDropdown } from "@/components/legal-dropdown";
+import { LegalContact } from "@/components/legal-contact";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -26,13 +25,16 @@ export default async function LegalPage({ params }: Params) {
   if (!page) notFound();
 
   return (
-    <article className="my-12 lg:my-24">
-      <div className="flex flex-col items-start gap-4 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1>
-        <LegalDropdown />
-      </div>
+    <>
+      <article className="my-12 lg:my-24">
+        <div className="flex flex-col items-start gap-4 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1>
+          <LegalDropdown />
+        </div>
 
-      <RichText className="border-y p-4" data={page.content} />
-    </article>
+        <RichText className="border-y p-4" data={page.content} />
+      </article>
+      <LegalContact />
+    </>
   );
 }

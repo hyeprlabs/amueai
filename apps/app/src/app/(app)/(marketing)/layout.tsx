@@ -7,7 +7,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden px-4 supports-[overflow:clip]:overflow-clip">
       <Background />
-      <Background className="top-auto bottom-0 rotate-180" />
 
       <Header />
       <main
