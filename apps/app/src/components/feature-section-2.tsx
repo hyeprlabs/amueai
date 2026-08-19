@@ -68,10 +68,8 @@ function SetupVisual() {
       </div>
 
       <div className="relative mt-8 space-y-1.5 text-center">
-        <FeatureTitle>2 Minutes Setup</FeatureTitle>
-        <FeatureDescription>
-          Get your company&apos;s Account up and running in under 2 minutes.
-        </FeatureDescription>
+        <FeatureTitle>Train in Minutes</FeatureTitle>
+        <FeatureDescription>Train a custom AI agent on your data in minutes.</FeatureDescription>
       </div>
     </>
   );
@@ -86,9 +84,9 @@ function UserBasedSecurity() {
       </div>
 
       <div className="relative mt-8 space-y-1.5 text-center">
-        <FeatureTitle>User-Based Security</FeatureTitle>
+        <FeatureTitle>Secure & Permissioned</FeatureTitle>
         <FeatureDescription>
-          Grant specific permissions to users based on their roles and responsibilities.
+          Give teammates exactly the access they need — nothing more.
         </FeatureDescription>
       </div>
     </>
@@ -125,9 +123,9 @@ function DashboardVisual() {
           <SquareMousePointerIcon className="size-5 text-primary/80" />
         </div>
         <div className="space-y-2">
-          <FeatureTitle className="text-base">Sleek & Intuitive Design</FeatureTitle>
+          <FeatureTitle className="text-base">No-Code Agent Builder</FeatureTitle>
           <FeatureDescription>
-            Manage & scale your business effortlessly using our user-friendly interface.
+            Configure your agent&apos;s knowledge, tone, and actions — no coding required.
           </FeatureDescription>
         </div>
       </div>
@@ -164,14 +162,14 @@ function PresenceVisual() {
           <GlobeIcon className="size-5 text-primary/80" />
         </div>
         <div className="space-y-2">
-          <FeatureTitle className="text-base">Access Anytime, Anywhere</FeatureTitle>
+          <FeatureTitle className="text-base">Speaks 90+ Languages</FeatureTitle>
           <FeatureDescription>
-            Stay connected to your business no matter where you are, with our cloud-based access.
+            Deploy your AI agent everywhere and support customers in their native language.
           </FeatureDescription>
         </div>
       </div>
       <div className="relative">
-        <CobeGlobe className="-right-[30%] -bottom-[30%] sm:absolute" />
+        <CobeGlobe className="-right-[25%] -bottom-[35%] sm:absolute" />
       </div>
     </div>
   );

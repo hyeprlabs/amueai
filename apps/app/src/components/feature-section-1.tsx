@@ -4,10 +4,10 @@ import { GridPattern } from "@/components/ui/grid-pattern";
 import {
   ZapIcon,
   CpuIcon,
-  FingerprintIcon,
+  HeadsetIcon,
   PencilIcon,
   Settings2Icon,
-  SparklesIcon,
+  UserPlusIcon,
 } from "lucide-react";
 
 type FeatureType = {
@@ -21,10 +21,10 @@ export function FeatureSection1() {
     <div className="mb-12 lg:mb-24 mx-auto w-full max-w-5xl border-t">
       <div className="mx-auto max-w-3xl text-center my-6">
         <h2 className="text-balance font-medium text-2xl md:text-4xl lg:text-5xl">
-          Power. Speed. Control.
+          Train. Deploy. Convert.
         </h2>
         <p className="mt-4 text-balance text-muted-foreground text-sm md:text-base">
-          Everything you need to build fast, secure, scalable apps.
+          Everything you need to turn your website into a 24/7 support and sales agent.
         </p>
       </div>
 
@@ -67,33 +67,33 @@ export function FeatureCard({
 
 const features: FeatureType[] = [
   {
-    title: "Faaast",
+    title: "Instant Answers",
     icon: <ZapIcon />,
-    description: "It supports an entire helping developers and innovate.",
+    description: "Real-time, human-like responses powered by the latest AI models.",
   },
   {
-    title: "Powerful",
+    title: "Powerful AI Models",
     icon: <CpuIcon />,
-    description: "It supports an entire helping developers and businesses.",
+    description: "Power your agent with GPT-5, Claude, or the model that fits you best.",
   },
   {
-    title: "Security",
-    icon: <FingerprintIcon />,
-    description: "It supports an helping developers businesses.",
+    title: "Human Handoff",
+    icon: <HeadsetIcon />,
+    description: "Escalate tricky conversations to your team the moment it matters.",
   },
   {
-    title: "Customization",
+    title: "Custom Branding",
     icon: <PencilIcon />,
-    description: "It supports helping developers and businesses innovate.",
+    description: "Match your website's colors, logo, and tone in every conversation.",
   },
   {
-    title: "Control",
+    title: "Agent Actions",
     icon: <Settings2Icon />,
-    description: "It supports helping developers and businesses innovate.",
+    description: "Let your agent book calls, check orders, and complete real tasks.",
   },
   {
-    title: "Built for AI",
-    icon: <SparklesIcon />,
-    description: "It supports helping developers and businesses innovate.",
+    title: "Lead Capture",
+    icon: <UserPlusIcon />,
+    description: "Automatically collect and qualify leads right inside the chat.",
   },
 ];
