@@ -2,7 +2,7 @@
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { useScroll } from "@/hooks/use-scroll";
-import { Button } from "@/components/ui/button";
+import { HeaderActions } from "@/components/header-actions";
 import { DesktopNav } from "@/components/desktop-nav";
 import { MobileNav } from "@/components/mobile-nav";
 
@@ -33,12 +33,7 @@ export function Header() {
           </a>
           <DesktopNav />
         </div>
-        <div className="hidden items-center gap-2 md:flex">
-          <Button size="sm" variant="outline">
-            Sign In
-          </Button>
-          <Button size="sm">Get Started</Button>
-        </div>
+        <HeaderActions />
         <MobileNav />
       </nav>
     </header>
