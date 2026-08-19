@@ -3,22 +3,8 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { useScroll } from "@/hooks/use-scroll";
 import { Button } from "@/components/ui/button";
-import { MobileNav } from "@/components/marketing/mobile-nav";
-
-export const navLinks = [
-  {
-    label: "Features",
-    href: "#",
-  },
-  {
-    label: "Pricing",
-    href: "#",
-  },
-  {
-    label: "About",
-    href: "#",
-  },
-];
+import { DesktopNav } from "@/components/desktop-nav";
+import { MobileNav } from "@/components/mobile-nav";
 
 export function Header() {
   const scrolled = useScroll(10);
@@ -41,29 +27,17 @@ export function Header() {
           },
         )}
       >
-        <a className="rounded-md p-2 hover:bg-muted dark:hover:bg-muted/50" href="#">
-          <Logo className="h-4" />
-        </a>
+        <div className="flex items-center gap-5">
+          <a className="rounded-md p-2 hover:bg-muted dark:hover:bg-muted/50" href="#">
+            <Logo className="h-4" />
+          </a>
+          <DesktopNav />
+        </div>
         <div className="hidden items-center gap-2 md:flex">
-          <div>
-            {navLinks.map((link) => (
-              <Button
-                key={link.label}
-                size="sm"
-                variant="ghost"
-                render={<a href={link.href} />}
-                nativeButton={false}
-              >
-                {link.label}
-              </Button>
-            ))}
-          </div>
-          <Button size="sm" variant="outline" className="hidden">
+          <Button size="sm" variant="outline">
             Sign In
           </Button>
-          <Button size="sm" className="hidden">
-            Get Started
-          </Button>
+          <Button size="sm">Get Started</Button>
         </div>
         <MobileNav />
       </nav>
