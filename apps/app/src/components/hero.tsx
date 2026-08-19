@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
 import { WhitelistForm } from "@/components/whitelist-form";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 export function HeroSection() {
   return (
@@ -30,8 +31,8 @@ export function HeroSection() {
             "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-200 duration-500 ease-out",
           )}
         >
-          We help you launch AI agents trained on your content <br /> to answer questions, capture
-          leads, and support customers 24/7.
+          Train an AI agent on your content in minutes <br /> to answer questions, capture leads,
+          and support customers 24/7.
         </p>
 
         <div className="fade-in slide-in-from-bottom-10 flex w-fit animate-in flex-col items-center justify-center gap-2 fill-mode-backwards pt-2 delay-300 duration-500 ease-out">
@@ -40,6 +41,12 @@ export function HeroSection() {
         </div>
       </div>
       <div className="relative">
+        <BorderBeam
+          colorFrom="rgba(255,255,255,0.35)"
+          colorTo="rgba(255,255,255,0.35)"
+          duration={20}
+          size={120}
+        />
         <DecorIcon className="size-4" position="top-left" />
         <DecorIcon className="size-4" position="top-right" />
         <DecorIcon className="size-4" position="bottom-left" />
