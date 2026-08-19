@@ -6,6 +6,7 @@ import "./globals.css";
 
 // Providers
 import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/toast";
 
@@ -31,10 +32,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem
           disableTransitionOnChange
         >
-          <ClerkProvider>
-            {children}
-            <Toaster />
-          </ClerkProvider>
+          <TooltipProvider>
+            <ClerkProvider>
+              {children}
+              <Toaster />
+            </ClerkProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>
