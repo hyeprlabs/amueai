@@ -56,12 +56,16 @@ export function HeroSection() {
         <DecorIcon className="size-4" position="bottom-right" />
 
         <FullWidthDivider className="-top-px" />
+        {/*
+          Both variants stay lazy on purpose. The theme is only known in the
+          browser, so preloading either one would fetch a screenshot half the
+          visitors never see; lazy loading skips whichever variant CSS hides.
+        */}
         <div className="overflow-hidden *:pointer-events-none *:aspect-auto *:select-none">
           <Image
             alt={`The ${siteConfig.name} dashboard showing an AI agent answering customer questions`}
             className="dark:hidden"
             height={992}
-            priority
             sizes="(min-width: 1024px) 1024px, 100vw"
             src="/bg-light.png"
             width={1586}
@@ -70,7 +74,6 @@ export function HeroSection() {
             alt={`The ${siteConfig.name} dashboard showing an AI agent answering customer questions`}
             className="hidden dark:block"
             height={992}
-            priority
             sizes="(min-width: 1024px) 1024px, 100vw"
             src="/bg-dark.png"
             width={1586}

@@ -1,3 +1,5 @@
+import { siteConfig } from "@/config/site";
+
 /**
  * Plan catalogue shared by the pricing UI and the `Offer` structured data on
  * the pricing page, so what customers read and what crawlers index cannot drift.
@@ -34,7 +36,7 @@ export const plans: Plan[] = [
     ],
     btn: {
       text: "Start Your Free Trial",
-      href: "#",
+      href: "/sign-up",
     },
   },
   {
@@ -55,7 +57,7 @@ export const plans: Plan[] = [
     ],
     btn: {
       text: "Get started",
-      href: "#",
+      href: "/sign-up",
     },
   },
   {
@@ -76,7 +78,7 @@ export const plans: Plan[] = [
     ],
     btn: {
       text: "Contact team",
-      href: "#",
+      href: `mailto:${siteConfig.email}`,
     },
   },
 ];

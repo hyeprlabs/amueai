@@ -2,8 +2,6 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
-import { GithubIcon } from "@/components/icons/github-icon";
-import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { Logo } from "@/components/logo";
 import { LegalDropdown } from "@/components/legal-dropdown";
@@ -113,16 +111,6 @@ const resources = [
 ];
 
 const socialLinks = [
-  {
-    label: "GitHub",
-    icon: <GithubIcon />,
-    link: "#",
-  },
-  {
-    label: "Instagram",
-    icon: <InstagramIcon />,
-    link: "#",
-  },
   {
     label: "X",
     icon: <XIcon />,

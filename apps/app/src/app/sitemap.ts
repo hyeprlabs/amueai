@@ -34,12 +34,12 @@ async function getLegalRoutes(): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const lastModified = new Date();
-
+  // No `lastModified` for the marketing routes: the only value available at
+  // request time is "now", which crawlers rightly ignore. Legal pages carry a
+  // real timestamp from the CMS.
   return [
     ...marketingRoutes.map(({ pathname, changeFrequency, priority }) => ({
       url: absoluteUrl(pathname),
-      lastModified,
       changeFrequency,
       priority,
     })),
