@@ -5,7 +5,7 @@ import { DecorIcon } from "@/components/decor-icon";
 import { AppBreadcrumbs } from "@/components/dashboard/app-breadcrumbs";
 import { navLinks } from "@/components/dashboard/app-shared";
 import { CustomSidebarTrigger } from "@/components/dashboard/custom-sidebar-trigger";
-import { NavUser } from "@/components/dashboard/nav-user";
+import { UserDropdown } from "@/components/dashboard/user-dropdown";
 import { SendIcon, BellIcon } from "lucide-react";
 
 const activeItem = navLinks.find((item) => item.isActive);
@@ -35,7 +35,7 @@ export function AppHeader() {
           <BellIcon />
         </Button>
         <Separator className="h-4 data-[orientation=vertical]:self-center" orientation="vertical" />
-        <NavUser />
+        <UserDropdown />
       </div>
     </header>
   );

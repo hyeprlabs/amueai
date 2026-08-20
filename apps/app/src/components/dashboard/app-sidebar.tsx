@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { OrganizationSwitcher } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +21,9 @@ import { NavGroup } from "@/components/dashboard/nav-group";
 
 export function AppSidebar() {
   const { state } = useSidebar();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   return (
     <Sidebar
@@ -33,7 +37,8 @@ export function AppSidebar() {
       variant="sidebar"
     >
       <SidebarHeader className="h-14 justify-center border-b px-2">
-        {state === "expanded" && (
+        {state === "expanded" && !mounted && <Skeleton className="h-[28px] w-36 rounded-md" />}
+        {state === "expanded" && mounted && (
           <OrganizationSwitcher fallback={<Skeleton className="h-[28px] w-36 rounded-md" />} />
         )}
       </SidebarHeader>
