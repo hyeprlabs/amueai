@@ -1,16 +1,6 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-/**
- * `clerkMiddleware()` alone verifies nothing — it just makes auth state
- * available to the app. Every route that must require a signed-in user has to
- * opt in explicitly via `auth.protect()`, which is what actually blocks
- * unauthenticated requests.
- */
-const isProtectedRoute = createRouteMatcher(["/overview(.*)", "/analytics(.*)"]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect();
-});
+export default clerkMiddleware();
 
 export const config = {
   matcher: [

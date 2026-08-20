@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 
 import { AppShell } from "@/components/dashboard/app-shell";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
@@ -11,7 +12,9 @@ export const metadata: Metadata = createMetadata({
   noIndex: true,
 });
 
-export default function Page() {
+export default async function Page() {
+  await auth.protect();
+
   return (
     <AppShell>
       <DashboardSkeleton />
