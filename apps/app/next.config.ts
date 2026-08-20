@@ -1,10 +1,6 @@
 import { withPayload } from "@payloadcms/next/withPayload";
 import type { NextConfig } from "next";
 
-import { assertBuildEnv } from "./src/lib/assert-env";
-
-assertBuildEnv();
-
 const nextConfig: NextConfig = {
   // Nothing gains from advertising the framework in every response header.
   poweredByHeader: false,
