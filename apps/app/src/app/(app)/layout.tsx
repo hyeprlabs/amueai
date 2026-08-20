@@ -8,6 +8,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider } from "@clerk/nextjs";
+import { shadcn } from "@clerk/ui/themes";
 import { Toaster } from "@/components/ui/toast";
 
 // SEO
@@ -89,7 +90,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           disableTransitionOnChange
         >
           <TooltipProvider>
-            <ClerkProvider>
+            <ClerkProvider appearance={{ theme: shadcn }}>
               {children}
               <Toaster />
             </ClerkProvider>

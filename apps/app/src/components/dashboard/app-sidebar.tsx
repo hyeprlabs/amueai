@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { LogoIcon } from "@/components/logo";
+import { OrganizationSwitcher } from "@clerk/nextjs";
 import {
   Sidebar,
   SidebarContent,
@@ -10,16 +10,22 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { footerNavLinks, navGroups } from "@/components/dashboard/app-shared";
 import { LatestChange } from "@/components/dashboard/latest-change";
+import { ProductUsage } from "@/components/dashboard/product-usage";
 import { NavGroup } from "@/components/dashboard/nav-group";
 
 export function AppSidebar() {
+  const { state } = useSidebar();
+
   return (
     <Sidebar
       className={cn(
         "*:data-[slot=sidebar-inner]:bg-background",
+        "*:data-[slot=sidebar-inner]:overflow-hidden",
         "*:data-[slot=sidebar-inner]:dark:bg-[radial-gradient(60%_18%_at_10%_0%,--theme(--color-foreground/.08),transparent)]",
         "**:data-[slot=sidebar-menu-button]:[&>span]:text-foreground/75",
       )}
@@ -27,10 +33,9 @@ export function AppSidebar() {
       variant="sidebar"
     >
       <SidebarHeader className="h-14 justify-center border-b px-2">
-        <SidebarMenuButton render={<a href="#link" />}>
-          <LogoIcon />
-          <span className="font-medium text-foreground!">Efferd</span>
-        </SidebarMenuButton>
+        {state === "expanded" && (
+          <OrganizationSwitcher fallback={<Skeleton className="h-[28px] w-36 rounded-md" />} />
+        )}
       </SidebarHeader>
       <SidebarContent>
         {navGroups.map((group, index) => (
@@ -39,6 +44,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0">
         <LatestChange />
+        <ProductUsage />
         <SidebarMenu className="border-t p-2">
           {footerNavLinks.map((item) => (
             <SidebarMenuItem key={item.title}>
