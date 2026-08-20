@@ -95,10 +95,10 @@ function LogoCard({ logo, className, children, ...props }: LogoCardProps) {
     >
       <img
         alt={logo.alt}
-        className="pointer-events-none h-4 select-none md:h-5 dark:brightness-0 dark:invert"
-        height="auto"
+        className="pointer-events-none h-4 w-auto select-none md:h-5 dark:brightness-0 dark:invert"
+        decoding="async"
+        loading="lazy"
         src={logo.src}
-        width="auto"
       />
       {children}
     </div>

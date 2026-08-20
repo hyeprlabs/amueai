@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -26,7 +28,7 @@ export function NotFoundPage() {
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button render={<a href="/" />} nativeButton={false}>
+              <Button render={<Link href="/" />} nativeButton={false}>
                 <HomeIcon />
                 Go Home
               </Button>

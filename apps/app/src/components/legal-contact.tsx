@@ -39,7 +39,7 @@ export function LegalContact() {
   return (
     <div className="mx-auto max-w-4xl mb-12 lg:mb-24 border-t">
       <div className="flex max-w-md flex-col justify-center gap-2 p-4 lg:pb-12">
-        <h1 className="font-bold text-2xl md:text-3xl">Contact Us</h1>
+        <h2 className="font-bold text-2xl md:text-3xl">Contact Us</h2>
         <p className="text-base text-muted-foreground">
           We&apos;re here to help and answer any question you might have, We look forward to hearing
           from you.
@@ -68,7 +68,7 @@ export function LegalContact() {
               )}
             >
               {item.icon}
-              <h2 className="text-sm">{item.title}</h2>
+              <h3 className="text-sm">{item.title}</h3>
             </div>
             <p className="text-muted-foreground text-sm">{item.description}</p>
             <div className="mt-1 flex items-center gap-x-2">

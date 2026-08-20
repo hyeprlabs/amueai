@@ -1,5 +1,8 @@
 "use client";
+import Link from "next/link";
+
 import { cn } from "@/lib/utils";
+import { siteConfig } from "@/config/site";
 import { Logo } from "@/components/logo";
 import { useScroll } from "@/hooks/use-scroll";
 import { HeaderActions } from "@/components/header-actions";
@@ -28,9 +31,13 @@ export function Header() {
         )}
       >
         <div className="flex items-center gap-5">
-          <a className="rounded-md p-2 hover:bg-muted dark:hover:bg-muted/50" href="#">
+          <Link
+            aria-label={`${siteConfig.name} home`}
+            className="rounded-md p-2 hover:bg-muted dark:hover:bg-muted/50"
+            href="/"
+          >
             <Logo className="h-4" />
-          </a>
+          </Link>
           <DesktopNav />
         </div>
         <HeaderActions />

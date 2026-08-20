@@ -9,17 +9,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <Background />
 
       <Header />
-      <main
+      <div
         className={cn(
-          "relative mx-auto max-w-4xl grow",
+          "relative mx-auto flex w-full max-w-4xl grow flex-col",
           // X Borders
           "before:absolute before:-inset-y-14 before:-left-px before:w-px before:bg-border",
           "after:absolute after:-inset-y-14 after:-right-px after:w-px after:bg-border",
         )}
       >
-        {children}
+        {/* `main` and `footer` stay siblings so both keep their landmark roles. */}
+        <main className="grow">{children}</main>
         <Footer />
-      </main>
+      </div>
     </div>
   );
 }
