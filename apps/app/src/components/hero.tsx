@@ -1,4 +1,7 @@
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
+import { siteConfig } from "@/config/site";
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
 import { WhitelistForm } from "@/components/whitelist-form";
@@ -53,20 +56,27 @@ export function HeroSection() {
         <DecorIcon className="size-4" position="bottom-right" />
 
         <FullWidthDivider className="-top-px" />
+        {/*
+          Both variants stay lazy on purpose. The theme is only known in the
+          browser, so preloading either one would fetch a screenshot half the
+          visitors never see; lazy loading skips whichever variant CSS hides.
+        */}
         <div className="overflow-hidden *:pointer-events-none *:aspect-auto *:select-none">
-          <img
-            alt="light app screen"
+          <Image
+            alt={`The ${siteConfig.name} dashboard showing an AI agent answering customer questions`}
             className="dark:hidden"
-            height="auto"
+            height={992}
+            sizes="(min-width: 1024px) 1024px, 100vw"
             src="/bg-light.png"
-            width="auto"
+            width={1586}
           />
-          <img
-            alt="dark app screen"
+          <Image
+            alt={`The ${siteConfig.name} dashboard showing an AI agent answering customer questions`}
             className="hidden dark:block"
-            height="auto"
+            height={992}
+            sizes="(min-width: 1024px) 1024px, 100vw"
             src="/bg-dark.png"
-            width="auto"
+            width={1586}
           />
         </div>
         <FullWidthDivider className="-bottom-px" />

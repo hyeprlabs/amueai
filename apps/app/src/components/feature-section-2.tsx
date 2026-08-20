@@ -1,5 +1,7 @@
-import { cn } from "@/lib/utils";
+import Image from "next/image";
 import type React from "react";
+
+import { cn } from "@/lib/utils";
 import { CobeGlobe } from "@/components/cobe-globe";
 import { TrendingUpIcon, SquareMousePointerIcon, GlobeIcon } from "lucide-react";
 
@@ -133,17 +135,19 @@ function DashboardVisual() {
       <div className="mask-b-from-80% mask-r-from-80% relative aspect-video sm:aspect-auto ml-8">
         <div className="absolute -right-1 -bottom-1 aspect-video max-h-50 rounded-tl-md border bg-card p-1 sm:max-h-42 md:aspect-square md:max-h-50 lg:aspect-16/12">
           <div className="aspect-video h-full overflow-hidden rounded-tl-sm border *:pointer-events-none *:size-full *:shrink-0 *:select-none">
-            <img
-              alt="Dashboard preview"
+            <Image
+              alt="No-code agent builder showing an agent's knowledge, tone and actions"
               className="dark:hidden"
               height={360}
+              sizes="(min-width: 768px) 640px, 100vw"
               src="https://storage.efferd.com/screen/dashboard-light.webp"
               width={640}
             />
-            <img
-              alt="Dashboard preview"
+            <Image
+              alt="No-code agent builder showing an agent's knowledge, tone and actions"
               className="hidden dark:block"
               height={360}
+              sizes="(min-width: 768px) 640px, 100vw"
               src="https://storage.efferd.com/screen/dashboard-dark.webp"
               width={640}
             />

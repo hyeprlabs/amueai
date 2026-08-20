@@ -1,6 +1,7 @@
+import Link from "next/link";
+
 import { cn } from "@/lib/utils";
-import { GithubIcon } from "@/components/icons/github-icon";
-import { InstagramIcon } from "@/components/icons/instagram-icon";
+import { siteConfig } from "@/config/site";
 import { XIcon } from "@/components/icons/x-icon";
 import { Logo } from "@/components/logo";
 import { LegalDropdown } from "@/components/legal-dropdown";
@@ -18,19 +19,20 @@ export function Footer() {
       <FullWidthDivider position="top" />
       <div className="grid max-w-5xl grid-cols-6 gap-6 p-4">
         <div className="col-span-6 flex flex-col gap-4 pt-5 md:col-span-4">
-          <a className="w-max" href="#">
+          <Link aria-label={`${siteConfig.name} home`} className="w-max" href="/">
             <Logo className="h-5" />
-          </a>
+          </Link>
           <p className="max-w-sm text-balance text-muted-foreground text-sm">
-            Beautify your app with efferd.
+            {siteConfig.description}
           </p>
           <div className="flex gap-2">
             {socialLinks.map((item, index) => (
               <Button
+                aria-label={`${siteConfig.name} on ${item.label}`}
                 key={`social-${item.link}-${index}`}
                 size="icon"
                 variant="outline"
-                render={<a href={item.link} target="_blank" />}
+                render={<a href={item.link} rel="noopener noreferrer" target="_blank" />}
                 nativeButton={false}
               >
                 {item.icon}
@@ -110,15 +112,8 @@ const resources = [
 
 const socialLinks = [
   {
-    icon: <GithubIcon />,
-    link: "#",
-  },
-  {
-    icon: <InstagramIcon />,
-    link: "#",
-  },
-  {
+    label: "X",
     icon: <XIcon />,
-    link: "#",
+    link: siteConfig.links.x,
   },
 ];

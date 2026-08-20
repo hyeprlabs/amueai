@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ChevronDownIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ export function LegalDropdown() {
       />
       <DropdownMenuContent align="start" className="w-56" sideOffset={8}>
         {legalLinks.map((item) => (
-          <DropdownMenuItem key={item.href} render={<a href={item.href} />}>
+          <DropdownMenuItem key={item.href} render={<Link href={item.href} />}>
             {item.title}
           </DropdownMenuItem>
         ))}

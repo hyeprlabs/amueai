@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,8 +70,8 @@ export function Channels() {
                 Coming Soon
               </Badge>
             )}
-            <img
-              alt={item.name}
+            <Image
+              alt={`${item.name} channel`}
               className="pointer-events-none size-8 shrink-0 select-none rounded-md object-contain"
               height={32}
               src={item.src}
