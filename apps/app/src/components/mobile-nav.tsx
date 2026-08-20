@@ -1,5 +1,8 @@
-import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { ClerkLoaded, Show, UserButton } from "@clerk/nextjs";
 import React from "react";
+
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Portal, PortalBackdrop } from "@/components/portal";
 import { companyLinks, companyLinks2, featureLinks } from "@/components/nav-links";
@@ -67,12 +70,44 @@ export function MobileNav() {
                 />
               ))}
             </div>
-            <div className="mt-5 flex flex-col gap-2">
-              <Button className="w-full" variant="outline">
-                Sign In
-              </Button>
-              <Button className="w-full">Get Started</Button>
-            </div>
+            <ClerkLoaded>
+              <div className="mt-5 flex flex-col gap-2">
+                <Show when="signed-out">
+                  <Button
+                    className="w-full"
+                    nativeButton={false}
+                    onClick={() => setOpen(false)}
+                    render={<Link href="/sign-in" />}
+                    variant="outline"
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    className="w-full"
+                    nativeButton={false}
+                    onClick={() => setOpen(false)}
+                    render={<Link href="/sign-up" />}
+                  >
+                    Get Started
+                  </Button>
+                </Show>
+
+                <Show when="signed-in">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      className="w-full"
+                      nativeButton={false}
+                      onClick={() => setOpen(false)}
+                      render={<Link href="/overview" />}
+                      variant="outline"
+                    >
+                      Dashboard
+                    </Button>
+                    <UserButton />
+                  </div>
+                </Show>
+              </div>
+            </ClerkLoaded>
           </div>
         </Portal>
       )}

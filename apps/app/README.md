@@ -60,3 +60,17 @@ The sitemap lists the marketing routes plus every published legal page from
 Payload, and revalidates hourly. If Payload is unreachable — for example during
 a build without a database — it logs and falls back to the static routes rather
 than failing the build.
+
+## Authentication
+
+Clerk protects the dashboard routes from `src/proxy.ts`. `clerkMiddleware()` on
+its own only makes auth state available — it enforces nothing — so every
+private route is listed in `isProtectedRoute` and gated with `auth.protect()`.
+Adding a dashboard route means adding it to that matcher.
+
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` must be set **in the build environment**,
+not only at runtime. It is inlined into statically prerendered HTML; without it
+Clerk never emits its browser loader, so `ClerkLoaded` never resolves and every
+Clerk component renders nothing — while the middleware still redirects
+correctly, which makes the site look healthy. `next build` now fails fast rather
+than shipping that state.

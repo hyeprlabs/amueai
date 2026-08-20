@@ -50,6 +50,8 @@ export const siteConfig = {
   ],
   links: {
     x: "https://x.com/hyeprlabs",
+    github: "https://github.com/hyeprlabs",
+    instagram: "https://instagram.com/hyeprlabs",
   },
   /** Backdrop colours for `theme-color` and the web manifest, per colour scheme. */
   themeColor: {
