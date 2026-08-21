@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const settingsTabs = [
   { href: "/settings", label: "General" },
   { href: "/settings/organization", label: "Organization" },
+  { href: "/settings/billing", label: "Billing" },
 ] as const;
 
 export function SettingsTabs() {
   const pathname = usePathname() ?? "/settings";
-  const activeTab = pathname.startsWith("/settings/organization")
-    ? "/settings/organization"
-    : "/settings";
+  const activeTab =
+    settingsTabs.findLast(({ href }) => pathname === href || pathname.startsWith(`${href}/`))
+      ?.href ?? settingsTabs[0].href;
 
   return (
     <Tabs aria-label="Settings navigation" className="w-fit" value={activeTab}>
