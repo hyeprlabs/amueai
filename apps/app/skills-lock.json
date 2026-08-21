@@ -67,11 +67,35 @@
       "skillPath": "packages/payload/skills/payload/SKILL.md",
       "computedHash": "8e3a80961bf7b611f29b4588b1f88d6973fa961295deedac93350797a5490dfa"
     },
+    "polar-integration": {
+      "source": "polarsource/skills",
+      "sourceType": "github",
+      "skillPath": "skills/polar-integration/SKILL.md",
+      "computedHash": "fe8f63acfb963229ea806c07c0f22c7cd8ab61a944f3a00841d8022c18dd0190"
+    },
+    "polar-migration": {
+      "source": "polarsource/skills",
+      "sourceType": "github",
+      "skillPath": "skills/polar-migration/SKILL.md",
+      "computedHash": "b237ecd5865f59a722aac42bed5e1385d962e44eab910d994fba3078a2a62b29"
+    },
+    "polar-testing": {
+      "source": "polarsource/skills",
+      "sourceType": "github",
+      "skillPath": "skills/polar-testing/SKILL.md",
+      "computedHash": "0dfd63b62cff3fbd1091ebb0bfb853f2cf9a14f86888b6a31e557a59ac620ede"
+    },
     "react-hook-form": {
       "source": "pproenca/dot-skills",
       "sourceType": "github",
       "skillPath": "skills/.curated/react-hook-form/SKILL.md",
       "computedHash": "e9881245bb3f993f93c9fce336ca7a517ce39864aa46c95d04238fc5ebc4e4d1"
+    },
+    "setup-polar": {
+      "source": "polarsource/skills",
+      "sourceType": "github",
+      "skillPath": "skills/setup-polar/SKILL.md",
+      "computedHash": "01b8e785b33d34a70e3c17fcaa094dd4ea16f0834140b1b518685d570fbca655"
     },
     "shadcn": {
       "source": "shadcn-ui/ui",
