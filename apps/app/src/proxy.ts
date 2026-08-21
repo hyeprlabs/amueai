@@ -4,11 +4,13 @@ export default clerkMiddleware();
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
-    // Always run for Clerk-specific frontend API routes
+    // Skip Next.js internals, static files, and routes that verify themselves
+    // (webhooks: signature check; widget: Origin allowlist) — clerkMiddleware
+    // must never run on these. docs/billing-spec.md §1.1, §8
+    "/((?!_next|api/webhooks|api/widget|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // API routes, excluding webhooks and widget
+    "/(api(?!/webhooks|/widget)|trpc)(.*)",
+    // Clerk-specific frontend API routes
     "/__clerk/(.*)",
   ],
 };

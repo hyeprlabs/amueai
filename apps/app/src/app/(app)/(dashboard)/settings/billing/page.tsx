@@ -1,120 +1,237 @@
 import type { Metadata } from "next";
-import { Check, CreditCard, HelpCircle, LockKeyhole, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
+import { Show } from "@clerk/nextjs";
+import { Check, Info } from "lucide-react";
 
-import { BillingPlans } from "@/components/dashboard/billing-plans";
+import { PortalButton, TopupButton, UpgradeButton } from "@/components/dashboard/billing-actions";
+import { CreditMeter } from "@/components/dashboard/credit-meter";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PLANS, type Plan } from "@/lib/billing/plans";
+import { TOPUP_PACKS } from "@/lib/billing/topups";
 import { createMetadata } from "@/lib/seo";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = createMetadata({
   title: "Billing",
-  description: "Manage your plan and subscription.",
+  description: "Manage your organization's plan and credits.",
   pathname: "/settings/billing",
   noIndex: true,
 });
 
-export default function Page() {
+const euro = (cents: number) =>
+  new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+
+export default async function Page() {
+  const { orgId } = await auth.protect();
+
+  const { data: org } = orgId
+    ? await supabaseAdmin
+        .from("organizations")
+        .select("plan, status, plan_credits, topup_credits, period_end, cancel_at_period_end")
+        .eq("clerk_org_id", orgId)
+        .is("deleted_at", null)
+        .single()
+    : { data: null };
+
+  const plan = (org?.plan as Plan | undefined) ?? "free";
+  const planConfig = PLANS[plan];
+  const status = org?.status ?? "active";
+
   return (
-    <section className="max-w-5xl space-y-8">
+    <section className="max-w-4xl space-y-6">
       <header className="space-y-1">
         <h2 className="font-medium text-lg">Billing</h2>
         <p className="text-muted-foreground text-sm">
-          Choose the plan that fits your needs. Your subscription applies to this personal account.
+          Your plan and credits apply to this organization.
         </p>
       </header>
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card size="sm">
+
+      {status === "past_due" && (
+        <Card className="border-destructive/30 bg-destructive/5">
           <CardHeader>
-            <CreditCard className="mb-2 size-5 text-primary" />
-            <CardTitle>Simple billing</CardTitle>
-            <CardDescription>One clear price, billed on a predictable schedule.</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <RefreshCw className="mb-2 size-5 text-primary" />
-            <CardTitle>Change anytime</CardTitle>
+            <CardTitle className="text-destructive">Payment failed</CardTitle>
             <CardDescription>
-              Upgrade, downgrade, or cancel without contacting support.
+              We couldn&apos;t process your last payment. Your chatbots keep working — update your
+              payment method to avoid interruption.
             </CardDescription>
           </CardHeader>
         </Card>
-        <Card size="sm">
-          <CardHeader>
-            <LockKeyhole className="mb-2 size-5 text-primary" />
-            <CardTitle>Secure checkout</CardTitle>
-            <CardDescription>
-              Your payment details stay with our secure billing provider.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Plans</CardTitle>
-          <CardDescription>
-            Compare plans and manage your subscription securely through our billing provider.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BillingPlans />
-        </CardContent>
-      </Card>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Every plan includes</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>{planConfig.label}</CardTitle>
+              <Badge variant={plan === "free" ? "secondary" : "default"}>
+                {status === "past_due" ? "Past due" : "Current plan"}
+              </Badge>
+            </div>
             <CardDescription>
-              Start with the essentials and add more room as your work grows.
+              {plan === "free"
+                ? "Free forever — 100 credits every month."
+                : `${euro(planConfig.monthlyCents)} per month, billed to this organization.`}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              "A secure workspace for your account",
-              "Access to product updates and improvements",
-              "Reliable data handling and account controls",
-              "Help when you need it",
-            ].map((item) => (
-              <div className="flex items-start gap-2 text-sm" key={item}>
-                <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                <span>{item}</span>
+          <CardContent className="space-y-4">
+            {org?.period_end && (
+              <p className="text-muted-foreground text-sm">
+                {org.cancel_at_period_end ? "Access ends" : "Renews"} on{" "}
+                {new Date(org.period_end).toLocaleDateString("de-DE")}
+              </p>
+            )}
+
+            <Show
+              when={{ permission: "org:billing:manage" }}
+              fallback={<AskAnAdminNotice action="change the plan" />}
+            >
+              <div className="flex flex-wrap gap-2">
+                {plan === "free" && (
+                  <>
+                    <UpgradeButton interval="month" plan="pro">
+                      Upgrade to Pro
+                    </UpgradeButton>
+                    <UpgradeButton interval="month" plan="business" variant="outline">
+                      Upgrade to Business
+                    </UpgradeButton>
+                  </>
+                )}
+                {plan === "pro" && (
+                  <UpgradeButton interval="month" plan="business">
+                    Upgrade to Business
+                  </UpgradeButton>
+                )}
+                {plan !== "free" && <PortalButton />}
               </div>
-            ))}
+            </Show>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader>
-            <HelpCircle className="mb-2 size-5 text-primary" />
-            <CardTitle>Billing questions</CardTitle>
-            <CardDescription>Useful details before you choose a plan.</CardDescription>
+            <CardTitle>Credits</CardTitle>
+            <CardDescription>Usage for the current billing period.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div>
-              <p className="font-medium">When does a change take effect?</p>
-              <p className="text-muted-foreground">
-                Upgrades are available immediately. Downgrades usually apply at the end of the
-                current billing period.
-              </p>
-            </div>
-            <div>
-              <p className="font-medium">Can I cancel?</p>
-              <p className="text-muted-foreground">
-                Yes. Cancel from this page and keep access until your current period ends.
-              </p>
-            </div>
-            <div>
-              <p className="font-medium">Where are invoices?</p>
-              <p className="text-muted-foreground">
-                After checkout, your billing provider keeps your invoices and payment history
-                available.
-              </p>
-            </div>
+          <CardContent>
+            <CreditMeter
+              monthlyAllowance={planConfig.monthlyCredits}
+              planCredits={org?.plan_credits ?? 0}
+              topupCredits={org?.topup_credits ?? 0}
+            />
           </CardContent>
         </Card>
       </div>
-      <p className="text-center text-muted-foreground text-xs">
-        Prices are shown in the currency configured for your account. Taxes may be calculated at
-        checkout.
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Top up credits</CardTitle>
+          <CardDescription>
+            {plan === "free"
+              ? "Top-ups are available on Pro and Business plans."
+              : "Top-up credits never expire and are used after your monthly plan credits."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {plan === "free" ? (
+            <p className="text-muted-foreground text-sm">
+              Upgrade to Pro to buy additional credits.
+            </p>
+          ) : (
+            <Show
+              when={{ permission: "org:billing:manage" }}
+              fallback={<AskAnAdminNotice action="buy credits" />}
+            >
+              <div className="flex flex-wrap gap-2">
+                <TopupButton
+                  label={`${euro(TOPUP_PACKS.small.priceCents)} — ${TOPUP_PACKS.small.credits.toLocaleString("de-DE")} credits`}
+                  pack="small"
+                />
+                <TopupButton
+                  label={`${euro(TOPUP_PACKS.medium.priceCents)} — ${TOPUP_PACKS.medium.credits.toLocaleString("de-DE")} credits`}
+                  pack="medium"
+                />
+                <TopupButton
+                  label={`${euro(TOPUP_PACKS.large.priceCents)} — ${TOPUP_PACKS.large.credits.toLocaleString("de-DE")} credits`}
+                  pack="large"
+                />
+              </div>
+            </Show>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>What&apos;s included</CardTitle>
+          <CardDescription>Your {planConfig.label} plan allowances.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-2 sm:grid-cols-2">
+          {planConfig.features.map((feature) => (
+            <div className="flex items-start gap-2 text-sm" key={feature}>
+              <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+              <span>{featureLabel(feature)}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <p className="text-muted-foreground text-xs">
+        Prices are in EUR and exclude VAT, which is calculated at checkout. Invoices and payment
+        methods are managed by our billing provider.
       </p>
     </section>
   );
+}
+
+/** Members can see billing state — they just can't mutate it. §1.2 */
+function AskAnAdminNotice({ action }: { action: string }) {
+  return (
+    <div className="flex items-start gap-2 rounded-md border bg-muted/40 p-3 text-sm">
+      <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <p className="text-muted-foreground">
+        Ask an organization admin to {action}.{" "}
+        <Link className="text-primary underline underline-offset-4" href="/settings/organization">
+          View admins
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+function featureLabel(feature: string): string {
+  const [key, value] = feature.split(":");
+  switch (key) {
+    case "chatbots":
+      return `${value} chatbot${value === "1" ? "" : "s"}`;
+    case "sources":
+      return `${Number(value).toLocaleString("de-DE")} sources per chatbot`;
+    case "seats":
+      return `${value} team member${value === "1" ? "" : "s"}`;
+    case "models":
+      return value === "all" ? "All AI models" : "Mini model only";
+    case "branding":
+      return "Remove AmueAI branding";
+    case "api":
+      return "API access";
+    case "leads":
+      return "Lead capture";
+    case "topups":
+      return "Credit top-ups";
+    case "custom-domain":
+      return "Custom widget domain";
+    case "channels":
+      return `${value === "slack" ? "Slack" : "WhatsApp"} channel`;
+    case "roles":
+      return "Custom roles & permissions";
+    case "analytics":
+      return value === "export" ? "CSV export" : `Analytics retention: ${value}`;
+    default:
+      return feature;
+  }
 }

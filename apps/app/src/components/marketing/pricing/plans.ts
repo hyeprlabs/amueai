@@ -1,15 +1,20 @@
+import { ANNUAL_DISCOUNT, PLANS } from "@/lib/billing/plans";
 import { siteConfig } from "@/config/site";
 
 /**
  * Plan catalogue shared by the pricing UI and the `Offer` structured data on
  * the pricing page, so what customers read and what crawlers index cannot drift.
+ *
+ * Prices and credit amounts are DERIVED from lib/billing/plans.ts — the same
+ * map that drives entitlements and the annual-discount assertion — so the
+ * marketing page can never advertise a price the billing system doesn't charge.
  */
 export type Plan = {
   name: string;
   info: string;
   price: {
     monthly: number;
-    yearly: number; // yearly per month
+    yearly: number; // yearly, expressed per month
   };
   features: string[];
   btn: {
@@ -18,67 +23,67 @@ export type Plan = {
   };
 };
 
+/** Effective per-month price of the annual plan, in whole euros. */
+const yearlyPerMonth = (monthlyCents: number) =>
+  Math.round((monthlyCents * (1 - ANNUAL_DISCOUNT)) / 100);
+
 export const plans: Plan[] = [
   {
-    name: "Basic",
-    info: "For most individuals",
-    price: {
-      monthly: 7,
-      yearly: 6,
-    },
+    name: PLANS.free.label,
+    info: "Try AmueAI with no time limit",
+    price: { monthly: 0, yearly: 0 },
     features: [
-      "Up to 3 Blog posts",
-      "Up to 3 Transcriptions",
-      "Up to 3 Posts stored",
-      "Markdown support",
+      `${PLANS.free.monthlyCredits} message credits per month`,
+      "1 chatbot",
+      "10 sources",
+      "1 team member",
+      "Mini model",
+      "7-day analytics retention",
       "Community support",
-      "AI powered suggestions",
     ],
-    btn: {
-      text: "Start Your Free Trial",
-      href: "/sign-up",
-    },
+    btn: { text: "Start free", href: "/sign-up" },
   },
   {
-    name: "Pro",
-    info: "For small businesses",
+    name: PLANS.pro.label,
+    info: "For growing teams",
     price: {
-      monthly: 17,
-      yearly: 14,
+      monthly: PLANS.pro.monthlyCents / 100,
+      yearly: yearlyPerMonth(PLANS.pro.monthlyCents),
     },
     features: [
-      "Up to 500 Blog Posts",
-      "Up to 500 Transcriptions",
-      "Up to 500 Posts stored",
-      "Unlimited Markdown support",
-      "SEO optimization tools",
-      "Priority support",
-      "AI powered suggestions",
+      `${PLANS.pro.monthlyCredits.toLocaleString("de-DE")} message credits per month`,
+      "3 chatbots",
+      "500 sources per chatbot",
+      "5 team members",
+      "All AI models",
+      "Remove AmueAI branding",
+      "API access and lead capture",
+      "Credit top-ups",
+      "30-day analytics retention",
+      "Email support",
     ],
-    btn: {
-      text: "Get started",
-      href: "/sign-up",
-    },
+    btn: { text: "Get started", href: "/sign-up" },
   },
   {
-    name: "Business",
-    info: "For large organizations",
+    name: PLANS.business.label,
+    info: "For companies running AmueAI at scale",
     price: {
-      monthly: 49,
-      yearly: 40,
+      monthly: PLANS.business.monthlyCents / 100,
+      yearly: yearlyPerMonth(PLANS.business.monthlyCents),
     },
     features: [
-      "Unlimited Blog Posts",
-      "Unlimited Transcriptions",
-      "Unlimited Posts stored",
-      "Unlimited Markdown support",
-      "SEO optimization tools",
-      "Priority support",
-      "AI powered suggestions",
+      `${PLANS.business.monthlyCredits.toLocaleString("de-DE")} message credits per month`,
+      "10 chatbots",
+      "2,000 sources per chatbot",
+      "20 team members",
+      "Custom widget domain",
+      "Slack and WhatsApp channels",
+      "Custom roles and permissions",
+      "12-month analytics retention with CSV export",
+      "Priority support and onboarding call",
     ],
-    btn: {
-      text: "Contact team",
-      href: `mailto:${siteConfig.email}`,
-    },
+    btn: { text: "Get started", href: "/sign-up" },
   },
 ];
+
+export const contactEmail = siteConfig.email;
