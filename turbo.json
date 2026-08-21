@@ -5,7 +5,27 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"],
+      "env": [
+        "CLERK_SECRET_KEY",
+        "CLERK_WEBHOOK_SECRET",
+        "DATABASE_URL",
+        "PAYLOAD_SECRET",
+        "PAYLOAD_PREVIEW_SECRET",
+        "CRON_SECRET",
+        "SUPABASE_SECRET_KEY",
+        "POLAR_WEBHOOK_SECRET",
+        "POLAR_SERVER",
+        "POLAR_ACCESS_TOKEN",
+        "POLAR_PRODUCT_PRO_MONTHLY",
+        "POLAR_PRODUCT_PRO_YEARLY",
+        "POLAR_PRODUCT_BUSINESS_MONTHLY",
+        "POLAR_PRODUCT_BUSINESS_YEARLY",
+        "POLAR_PRODUCT_TOPUP_SMALL",
+        "POLAR_PRODUCT_TOPUP_MEDIUM",
+        "POLAR_PRODUCT_TOPUP_LARGE",
+        "RESEND_API_KEY"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]

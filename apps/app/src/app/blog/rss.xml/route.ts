@@ -14,8 +14,24 @@ function escapeXml(value: string): string {
     .replace(/'/g, "&apos;");
 }
 
+/**
+ * Payload is unreachable during builds that run without a database (e.g. the
+ * static-generation pass on Vercel). Falling back to an empty feed keeps the
+ * build from failing outright — ISR fills it in for real once the deploy is
+ * live, same as the sitemap.
+ */
+async function getFeedPosts() {
+  try {
+    const { docs } = await getPosts({ limit: 50 });
+    return docs;
+  } catch (error) {
+    console.error("[rss] Skipping posts, Payload could not be reached:", error);
+    return [];
+  }
+}
+
 export async function GET() {
-  const { docs: posts } = await getPosts({ limit: 50 });
+  const posts = await getFeedPosts();
 
   const items = posts
     .map((post) => {
