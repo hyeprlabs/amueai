@@ -13,8 +13,14 @@ import { createClient } from "@supabase/supabase-js";
  * Never import this file from a Client Component. `server-only` throws a
  * build error if that happens.
  */
-export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SECRET_KEY!,
-  { auth: { persistSession: false, autoRefreshToken: false } },
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+
+// Non-null assertions would hand `undefined` to createClient, which fails much
+// later with an opaque fetch error against the URL "undefined".
+if (!supabaseUrl) throw new Error("NEXT_PUBLIC_SUPABASE_URL is not set.");
+if (!supabaseSecretKey) throw new Error("SUPABASE_SECRET_KEY is not set.");
+
+export const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});

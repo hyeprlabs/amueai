@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 
 import { BillingProcessing } from "@/components/dashboard/billing-processing";
+import { buttonVariants } from "@/components/ui/button";
 import { createMetadata } from "@/lib/seo";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -26,18 +28,43 @@ export const metadata: Metadata = createMetadata({
  */
 export default async function BillingProcessingPage() {
   const { orgId } = await auth.protect();
+  if (!orgId) return <BillingUnavailable />;
 
-  const { data: org } = await supabaseAdmin
+  const { data: org, error } = await supabaseAdmin
     .from("organizations")
     .select("plan, plan_credits, topup_credits")
     .eq("clerk_org_id", orgId)
     .is("deleted_at", null)
-    .single();
+    .maybeSingle();
+
+  // The baseline this page hands to BillingProcessing is the thing the poll
+  // compares against. A failed read that defaults to free/0 makes an already
+  // completed upgrade look like a change, so the page would declare success
+  // without a webhook ever landing. Refuse to guess.
+  if (error || !org) {
+    console.error("billing processing: failed to read organization", { orgId, error });
+    return <BillingUnavailable />;
+  }
 
   return (
     <BillingProcessing
-      initialBalance={(org?.plan_credits ?? 0) + (org?.topup_credits ?? 0)}
-      initialPlan={org?.plan ?? "free"}
+      initialBalance={(org.plan_credits ?? 0) + (org.topup_credits ?? 0)}
+      initialPlan={org.plan}
     />
+  );
+}
+
+function BillingUnavailable() {
+  return (
+    <section className="flex min-h-[60svh] max-w-md flex-col items-center justify-center gap-4 text-center">
+      <h1 className="font-medium text-lg">We couldn&apos;t load your billing details</h1>
+      <p className="text-muted-foreground text-sm">
+        If you just completed checkout, your payment is safe — we simply can&apos;t confirm it right
+        now. Try again in a moment.
+      </p>
+      <Link className={buttonVariants({ variant: "outline" })} href="/settings/billing">
+        Go to billing
+      </Link>
+    </section>
   );
 }

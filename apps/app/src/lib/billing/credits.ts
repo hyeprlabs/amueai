@@ -43,10 +43,17 @@ export async function withCredits<T>(
     .select("plan_credits, topup_credits")
     .eq("clerk_org_id", orgId)
     .is("deleted_at", null) // a deleted org's chatbots must stop answering, balance aside
-    .single();
-  if (readError) console.error("withCredits: failed to read balance", { orgId, readError });
+    .maybeSingle();
+  // A dependency failure is not "no credits": swallowing it here would charge
+  // nothing, serve the fallback message, and look identical to an exhausted
+  // balance. Fail loudly instead so the caller can 5xx and the delivery retry.
+  if (readError) {
+    console.error("withCredits: failed to read balance", { orgId, readError });
+    throw readError;
+  }
+  if (!org) throw new BillingError("NO_ORG");
 
-  const balance = (org?.plan_credits ?? 0) + (org?.topup_credits ?? 0);
+  const balance = (org.plan_credits ?? 0) + (org.topup_credits ?? 0);
   if (balance <= 0) throw new BillingError("INSUFFICIENT_CREDITS");
 
   const { result, actualCredits } = await fn();

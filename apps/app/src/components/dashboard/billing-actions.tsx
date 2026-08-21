@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { ExternalLink, Loader2 } from "lucide-react";
 
 import {
+  type ActionResult,
   openCustomerPortal,
   startSubscriptionCheckout,
   startTopupCheckout,
@@ -15,12 +16,13 @@ import { toast } from "@/components/ui/toast";
 // Client Component, even via a type-only import that happens to be erased.
 import type { TopupPackId } from "@/lib/billing/topups";
 
-type ActionResult = { url: string } | { error: string };
-
 function useBillingAction() {
   const [pending, startTransition] = useTransition();
 
-  const run = (action: () => Promise<ActionResult>) => {
+  const run = (
+    action: () => Promise<ActionResult>,
+    failureTitle = "Couldn't continue to checkout",
+  ) => {
     startTransition(async () => {
       const result = await action();
       if ("url" in result) {
@@ -28,7 +30,7 @@ function useBillingAction() {
         return;
       }
       toast.add({
-        title: "Couldn't continue to checkout",
+        title: failureTitle,
         description: errorCopy(result.error),
         type: "error",
       });
@@ -95,7 +97,11 @@ export function PortalButton() {
   const { pending, run } = useBillingAction();
 
   return (
-    <Button disabled={pending} onClick={() => run(openCustomerPortal)} variant="outline">
+    <Button
+      disabled={pending}
+      onClick={() => run(openCustomerPortal, "Couldn't open customer portal")}
+      variant="outline"
+    >
       {pending ? <Loader2 className="size-4 animate-spin" /> : <ExternalLink className="size-4" />}
       Manage subscription &amp; invoices
     </Button>

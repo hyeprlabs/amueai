@@ -77,11 +77,46 @@ export function assertAnnualDiscount(plans: PlanPricing, discount: number): void
 
 assertAnnualDiscount(PLANS, ANNUAL_DISCOUNT);
 
-export function limitOf(plan: Plan, resource: "chatbots" | "sources" | "seats"): number {
-  const match = PLANS[plan].features.find((f) => f.startsWith(`${resource}:`));
-  if (!match) return 0;
-  const value = match.split(":")[1];
-  return Number.parseInt(value, 10);
+export type LimitedResource = "chatbots" | "sources" | "seats";
+
+/**
+ * Numeric plan limits, typed. Enforcement reads these rather than re-parsing
+ * the display strings in `features` — a feature renamed for copy reasons
+ * shouldn't be able to silently turn a seat limit into NaN.
+ */
+export const PLAN_LIMITS: Record<Plan, Record<LimitedResource, number>> = {
+  free: { chatbots: 1, sources: 10, seats: 1 },
+  pro: { chatbots: 3, sources: 500, seats: 5 },
+  business: { chatbots: 10, sources: 2000, seats: 20 },
+};
+
+/**
+ * The feature strings still drive the UI copy, so the two must agree. Asserted
+ * at module load: a limit changed in one place and not the other fails the
+ * build rather than shipping a page that advertises a limit we don't enforce.
+ */
+function assertLimitsMatchFeatures(): void {
+  for (const [name, limits] of Object.entries(PLAN_LIMITS) as [
+    Plan,
+    Record<LimitedResource, number>,
+  ][]) {
+    for (const [resource, limit] of Object.entries(limits) as [LimitedResource, number][]) {
+      const match = (PLANS[name].features as readonly string[]).find((f) =>
+        f.startsWith(`${resource}:`),
+      );
+      if (match !== `${resource}:${limit}`) {
+        throw new Error(
+          `${name}: PLAN_LIMITS.${resource} = ${limit} but features has "${match ?? "nothing"}"`,
+        );
+      }
+    }
+  }
+}
+
+assertLimitsMatchFeatures();
+
+export function limitOf(plan: Plan, resource: LimitedResource): number {
+  return PLAN_LIMITS[plan][resource];
 }
 
 export function hasFeature(plan: Plan, feature: Feature | (string & {})): boolean {

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { runStubChat } from "@/lib/billing/chat-stub";
+import { MAX_MESSAGE_LENGTH, runStubChat, type StubChatbot } from "@/lib/billing/chat-stub";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /**
@@ -21,21 +21,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bot
   const { botId } = await params;
   const origin = req.headers.get("origin");
 
-  const { data: bot } = await supabaseAdmin
-    .from("chatbots")
-    .select("id, org_id, allowed_origins, fallback_message, model")
-    .eq("id", botId)
-    .single();
-
-  if (!bot) {
-    return new Response("Not found", { status: 404 });
-  }
-  if (!isOriginAllowed(origin, bot.allowed_origins)) {
-    return new Response("Origin not allowed", { status: 403 });
-  }
+  const authorized = await authorizeWidgetRequest(botId, origin);
+  if ("response" in authorized) return authorized.response;
+  const { bot } = authorized;
 
   const body = await req.json().catch(() => ({}));
-  const message = typeof body.message === "string" ? body.message : "";
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+  if (!message || message.length > MAX_MESSAGE_LENGTH) {
+    return new Response("Invalid message", { status: 400, headers: corsHeaders(origin!) });
+  }
 
   const { reply } = await runStubChat(bot, message);
 
@@ -50,18 +44,44 @@ export async function OPTIONS(
   const { botId } = await params;
   const origin = req.headers.get("origin");
 
+  const bot = await authorizeWidgetRequest(botId, origin);
+  if ("response" in bot) return bot.response;
+
+  return new Response(null, {
+    status: 204,
+    headers: {
+      ...corsHeaders(origin!),
+      // Lets browsers skip the preflight for a day. Safe because the allowlist
+      // is per-chatbot config, not per-request state.
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
+
+/**
+ * The lookup-and-allowlist decision both handlers must make identically. If
+ * POST and OPTIONS could ever disagree, the browser would preflight
+ * successfully and then get a 403 on the real request (or worse, the reverse).
+ * Returns the chatbot row, or the rejection Response to send as-is.
+ */
+async function authorizeWidgetRequest(
+  botId: string,
+  origin: string | null,
+): Promise<{ bot: WidgetChatbot } | { response: Response }> {
   const { data: bot } = await supabaseAdmin
     .from("chatbots")
-    .select("allowed_origins")
+    .select("id, org_id, allowed_origins, fallback_message, model")
     .eq("id", botId)
     .single();
 
-  if (!bot || !isOriginAllowed(origin, bot.allowed_origins)) {
-    return new Response("Origin not allowed", { status: 403 });
+  if (!bot) return { response: new Response("Not found", { status: 404 }) };
+  if (!isOriginAllowed(origin, bot.allowed_origins)) {
+    return { response: new Response("Origin not allowed", { status: 403 }) };
   }
-
-  return new Response(null, { status: 204, headers: corsHeaders(origin!) });
+  return { bot };
 }
+
+type WidgetChatbot = StubChatbot & { allowed_origins: string[] | null };
 
 function corsHeaders(origin: string): HeadersInit {
   return {

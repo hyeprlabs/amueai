@@ -8,8 +8,9 @@ import { PortalButton, TopupButton, UpgradeButton } from "@/components/dashboard
 import { CreditMeter } from "@/components/dashboard/credit-meter";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PLANS, type Plan } from "@/lib/billing/plans";
-import { TOPUP_PACKS } from "@/lib/billing/topups";
+import { featureLabel } from "@/lib/billing/feature-labels";
+import { ANNUAL_DISCOUNT, PLANS, type Plan } from "@/lib/billing/plans";
+import { TOPUP_PACKS, type TopupPackId } from "@/lib/billing/topups";
 import { createMetadata } from "@/lib/seo";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -19,6 +20,9 @@ export const metadata: Metadata = createMetadata({
   pathname: "/settings/billing",
   noIndex: true,
 });
+
+/** Paid plans a customer can move to, cheapest first. */
+const UPGRADE_TARGETS = ["pro", "business"] as const;
 
 const euro = (cents: number) =>
   new Intl.NumberFormat("de-DE", {
@@ -30,15 +34,25 @@ const euro = (cents: number) =>
 export default async function Page() {
   const { orgId } = await auth.protect();
 
-  const { data: org } = orgId
-    ? await supabaseAdmin
-        .from("organizations")
-        .select("plan, status, plan_credits, topup_credits, period_end, cancel_at_period_end")
-        .eq("clerk_org_id", orgId)
-        .is("deleted_at", null)
-        .single()
-    : { data: null };
+  // No active organization, or a failed read, must NOT render as "you're on
+  // the Free plan" — a paying customer would be shown upgrade buttons for a
+  // plan they already have, and a member could act on state we never read.
+  if (!orgId) return <BillingUnavailable reason="no-org" />;
 
+  const { data: org, error } = await supabaseAdmin
+    .from("organizations")
+    .select("plan, status, plan_credits, topup_credits, period_end, cancel_at_period_end")
+    .eq("clerk_org_id", orgId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) {
+    console.error("billing page: failed to read organization", { orgId, error });
+    return <BillingUnavailable reason="error" />;
+  }
+
+  // A genuinely missing row is the expected pre-webhook state, and free is the
+  // correct answer for it.
   const plan = (org?.plan as Plan | undefined) ?? "free";
   const planConfig = PLANS[plan];
   const status = org?.status ?? "active";
@@ -91,21 +105,22 @@ export default async function Page() {
               when={{ permission: "org:billing:manage" }}
               fallback={<AskAnAdminNotice action="change the plan" />}
             >
-              <div className="flex flex-wrap gap-2">
-                {plan === "free" && (
-                  <>
-                    <UpgradeButton interval="month" plan="pro">
-                      Upgrade to Pro
+              <div className="space-y-3">
+                {UPGRADE_TARGETS.filter((target) => target !== plan).map((target) => (
+                  <div className="flex flex-wrap items-center gap-2" key={target}>
+                    <UpgradeButton interval="month" plan={target}>
+                      {PLANS[target].label} — {euro(PLANS[target].monthlyCents)}/month
                     </UpgradeButton>
-                    <UpgradeButton interval="month" plan="business" variant="outline">
-                      Upgrade to Business
+                    <UpgradeButton interval="year" plan={target} variant="outline">
+                      {PLANS[target].label} annual — {euro(PLANS[target].annualCents)}/year
                     </UpgradeButton>
-                  </>
-                )}
-                {plan === "pro" && (
-                  <UpgradeButton interval="month" plan="business">
-                    Upgrade to Business
-                  </UpgradeButton>
+                  </div>
+                ))}
+                {plan !== "business" && (
+                  <p className="text-muted-foreground text-xs">
+                    Annual billing saves {Math.round(ANNUAL_DISCOUNT * 100)}%. Credits are identical
+                    on both intervals.
+                  </p>
                 )}
                 {plan !== "free" && <PortalButton />}
               </div>
@@ -148,18 +163,15 @@ export default async function Page() {
               fallback={<AskAnAdminNotice action="buy credits" />}
             >
               <div className="flex flex-wrap gap-2">
-                <TopupButton
-                  label={`${euro(TOPUP_PACKS.small.priceCents)} — ${TOPUP_PACKS.small.credits.toLocaleString("de-DE")} credits`}
-                  pack="small"
-                />
-                <TopupButton
-                  label={`${euro(TOPUP_PACKS.medium.priceCents)} — ${TOPUP_PACKS.medium.credits.toLocaleString("de-DE")} credits`}
-                  pack="medium"
-                />
-                <TopupButton
-                  label={`${euro(TOPUP_PACKS.large.priceCents)} — ${TOPUP_PACKS.large.credits.toLocaleString("de-DE")} credits`}
-                  pack="large"
-                />
+                {(
+                  Object.entries(TOPUP_PACKS) as [TopupPackId, (typeof TOPUP_PACKS)[TopupPackId]][]
+                ).map(([id, pack]) => (
+                  <TopupButton
+                    key={id}
+                    label={`${euro(pack.priceCents)} — ${pack.credits.toLocaleString("de-DE")} credits`}
+                    pack={id}
+                  />
+                ))}
               </div>
             </Show>
           )}
@@ -204,34 +216,28 @@ function AskAnAdminNotice({ action }: { action: string }) {
   );
 }
 
-function featureLabel(feature: string): string {
-  const [key, value] = feature.split(":");
-  switch (key) {
-    case "chatbots":
-      return `${value} chatbot${value === "1" ? "" : "s"}`;
-    case "sources":
-      return `${Number(value).toLocaleString("de-DE")} sources per chatbot`;
-    case "seats":
-      return `${value} team member${value === "1" ? "" : "s"}`;
-    case "models":
-      return value === "all" ? "All AI models" : "Mini model only";
-    case "branding":
-      return "Remove AmueAI branding";
-    case "api":
-      return "API access";
-    case "leads":
-      return "Lead capture";
-    case "topups":
-      return "Credit top-ups";
-    case "custom-domain":
-      return "Custom widget domain";
-    case "channels":
-      return `${value === "slack" ? "Slack" : "WhatsApp"} channel`;
-    case "roles":
-      return "Custom roles & permissions";
-    case "analytics":
-      return value === "export" ? "CSV export" : `Analytics retention: ${value}`;
-    default:
-      return feature;
-  }
+/**
+ * Shown instead of the plan cards when we can't establish what the org
+ * actually has. Rendering the Free card here would be a confident lie.
+ */
+function BillingUnavailable({ reason }: { reason: "no-org" | "error" }) {
+  return (
+    <section className="max-w-4xl space-y-6">
+      <header className="space-y-1">
+        <h2 className="font-medium text-lg">Billing</h2>
+      </header>
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardHeader>
+          <CardTitle>
+            {reason === "no-org" ? "No organization selected" : "Couldn't load billing"}
+          </CardTitle>
+          <CardDescription>
+            {reason === "no-org"
+              ? "Plans and credits belong to an organization. Select or create one to manage billing."
+              : "We couldn't read your plan and credits just now. Nothing has changed — please try again in a moment."}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    </section>
+  );
 }

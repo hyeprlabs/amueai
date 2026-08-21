@@ -46,16 +46,29 @@ export async function maybeSendCreditAlert(orgId: string): Promise<void> {
     const level = creditAlertLevel(planCredits, topupCredits, monthlyAllowance);
     if (level === 0) return;
 
+    // Pre-flight BEFORE claiming. The claim is one-shot per threshold per
+    // period, so consuming it and then discovering we can't deliver burns the
+    // only alert this org was going to get. Checking first leaves the claim
+    // unspent, so the next request that crosses the threshold tries again.
+    if (!resend) {
+      console.warn("RESEND_API_KEY not set — cannot send credit alert", { orgId, level });
+      return;
+    }
+    const recipients = await billingAdminEmails(orgId);
+    if (recipients.length === 0) return;
+
     // Atomic claim: concurrent requests crossing the threshold together
     // produce exactly one email.
-    const { data: claimed } = await supabaseAdmin.rpc("claim_credit_alert", {
+    const { data: claimed, error: claimError } = await supabaseAdmin.rpc("claim_credit_alert", {
       p_org_id: orgId,
       p_level: level,
     });
+    if (claimError) throw claimError;
     if (!claimed) return;
 
     await sendCreditEmail({
       orgId,
+      recipients,
       orgName: org.name,
       level,
       balance,
@@ -68,18 +81,14 @@ export async function maybeSendCreditAlert(orgId: string): Promise<void> {
 
 async function sendCreditEmail(params: {
   orgId: string;
+  recipients: string[];
   orgName: string;
   level: number;
   balance: number;
   monthlyAllowance: number;
 }) {
-  const recipients = await billingAdminEmails(params.orgId);
-  if (recipients.length === 0) return;
-
-  if (!resend) {
-    console.warn("RESEND_API_KEY not set — skipping credit alert email", params);
-    return;
-  }
+  const { recipients } = params;
+  if (!resend) throw new Error("RESEND_API_KEY not set");
 
   const billingUrl = `${siteConfig.url}/settings/billing`;
   const isOut = params.level === 100;
@@ -87,21 +96,37 @@ async function sendCreditEmail(params: {
   // input by the time it reaches an HTML email body.
   const orgName = escapeHtml(params.orgName);
 
-  await resend.emails.send({
-    from: `${siteConfig.name} <${siteConfig.email}>`,
-    to: recipients,
-    subject: isOut
-      ? `${params.orgName} has run out of ${siteConfig.name} credits`
-      : `${params.orgName} has used 80% of its ${siteConfig.name} credits`,
-    html: isOut
-      ? `<p>Your organization <strong>${orgName}</strong> has used all of its monthly credits.</p>
+  // Resend RESOLVES with { error } rather than rejecting — an unchecked await
+  // here reports every bounced or rejected send as a successful alert.
+  const { error } = await resend.emails.send(
+    {
+      from: `${siteConfig.name} <${siteConfig.email}>`,
+      to: recipients,
+      subject: isOut
+        ? `${params.orgName} has run out of ${siteConfig.name} credits`
+        : `${params.orgName} has used 80% of its ${siteConfig.name} credits`,
+      html: isOut
+        ? `<p>Your organization <strong>${orgName}</strong> has used all of its monthly credits.</p>
          <p>Your chatbots are showing their fallback message instead of answering until you top up or your credits renew.</p>
          <p><a href="${billingUrl}">Top up credits</a></p>`
-      : `<p>Your organization <strong>${orgName}</strong> has used 80% of its monthly credits.</p>
+        : `<p>Your organization <strong>${orgName}</strong> has used 80% of its monthly credits.</p>
          <p><strong>${params.balance.toLocaleString("de-DE")}</strong> of ${params.monthlyAllowance.toLocaleString("de-DE")} credits remaining.</p>
          <p>If that's more usage than you expected, it's worth checking your chatbots' traffic.</p>
          <p><a href="${billingUrl}">View billing</a></p>`,
-  });
+    },
+    {
+      // Stable across retries of the same threshold in the same period, so a
+      // retried send can never produce a second email.
+      idempotencyKey: `credit-alert:${params.orgId}:${params.level}:${currentPeriod()}`,
+    },
+  );
+  if (error) throw new Error(`Resend failed to send credit alert: ${JSON.stringify(error)}`);
+}
+
+/** YYYY-MM — matches grant_monthly_credits()'s period, which resets alert levels. */
+function currentPeriod(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function escapeHtml(value: string): string {

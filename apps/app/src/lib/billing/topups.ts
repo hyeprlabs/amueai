@@ -17,5 +17,7 @@ export const TOPUP_PACKS = {
 export type TopupPackId = keyof typeof TOPUP_PACKS;
 
 export function isTopupPackId(value: unknown): value is TopupPackId {
-  return typeof value === "string" && value in TOPUP_PACKS;
+  // Own-property check, not `in`: `"constructor" in TOPUP_PACKS` is true via
+  // the prototype chain, which would let a bogus pack id past this gate.
+  return typeof value === "string" && Object.hasOwn(TOPUP_PACKS, value);
 }

@@ -8,8 +8,12 @@ import { Button } from "@/components/ui/button";
 
 const POLL_INTERVAL_MS = 1500;
 const FALLBACK_AFTER_MS = 30_000;
+const FALLBACK_REQUEST_TIMEOUT_MS = 10_000;
 
-type Phase = "polling" | "confirmed" | "slow";
+// "confirmed" was never a rendered state — reaching it immediately navigates
+// away to /settings/billing, so the only states this component draws are the
+// spinner and the slow-path message.
+type Phase = "polling" | "slow";
 type FallbackResult = { polarHasSubscription: boolean } | null;
 
 /**
@@ -46,7 +50,6 @@ export function BillingProcessing({
 
           if (data.plan !== initialPlan || data.balance !== initialBalance) {
             if (!cancelled) {
-              setPhase("confirmed");
               router.replace("/settings/billing");
               router.refresh();
             }
@@ -61,9 +64,19 @@ export function BillingProcessing({
         // Our DB still shows the old state — ask Polar directly. This never
         // writes anything; the webhook is still the only writer. It only
         // changes what we tell the user while they wait for it to arrive.
-        const result = await fetch("/api/billing/status", { method: "POST" })
+        // Without a deadline this request can hang for as long as the browser
+        // allows, leaving the user on the spinner indefinitely — the exact
+        // outcome the 30s fallback exists to prevent.
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), FALLBACK_REQUEST_TIMEOUT_MS);
+        const result = await fetch("/api/billing/status", {
+          method: "POST",
+          signal: controller.signal,
+        })
           .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null);
+          .catch(() => null) // abort included: we still move on to "slow"
+          .finally(() => clearTimeout(timeout));
+
         if (!cancelled) {
           setFallback(result);
           setPhase("slow");

@@ -1,3 +1,4 @@
+import { featureLabels } from "@/lib/billing/feature-labels";
 import { ANNUAL_DISCOUNT, PLANS } from "@/lib/billing/plans";
 import { siteConfig } from "@/config/site";
 
@@ -23,9 +24,16 @@ export type Plan = {
   };
 };
 
-/** Effective per-month price of the annual plan, in whole euros. */
-const yearlyPerMonth = (monthlyCents: number) =>
-  Math.round((monthlyCents * (1 - ANNUAL_DISCOUNT)) / 100);
+/**
+ * Effective per-month price of the annual plan, in whole euros. Derived from
+ * the actual annualCents that Polar will charge whenever it is configured, so
+ * the advertised figure is the real one; the discount formula is only a
+ * fallback for a plan with no annual price yet.
+ */
+const yearlyPerMonth = (plan: { monthlyCents: number; annualCents?: number }) =>
+  plan.annualCents === undefined
+    ? Math.round((plan.monthlyCents * (1 - ANNUAL_DISCOUNT)) / 100)
+    : Math.round(plan.annualCents / 12 / 100);
 
 export const plans: Plan[] = [
   {
@@ -34,11 +42,7 @@ export const plans: Plan[] = [
     price: { monthly: 0, yearly: 0 },
     features: [
       `${PLANS.free.monthlyCredits} message credits per month`,
-      "1 chatbot",
-      "10 sources",
-      "1 team member",
-      "Mini model",
-      "7-day analytics retention",
+      ...featureLabels("free"),
       "Community support",
     ],
     btn: { text: "Start free", href: "/sign-up" },
@@ -48,18 +52,11 @@ export const plans: Plan[] = [
     info: "For growing teams",
     price: {
       monthly: PLANS.pro.monthlyCents / 100,
-      yearly: yearlyPerMonth(PLANS.pro.monthlyCents),
+      yearly: yearlyPerMonth(PLANS.pro),
     },
     features: [
       `${PLANS.pro.monthlyCredits.toLocaleString("de-DE")} message credits per month`,
-      "3 chatbots",
-      "500 sources per chatbot",
-      "5 team members",
-      "All AI models",
-      "Remove AmueAI branding",
-      "API access and lead capture",
-      "Credit top-ups",
-      "30-day analytics retention",
+      ...featureLabels("pro"),
       "Email support",
     ],
     btn: { text: "Get started", href: "/sign-up" },
@@ -69,17 +66,11 @@ export const plans: Plan[] = [
     info: "For companies running AmueAI at scale",
     price: {
       monthly: PLANS.business.monthlyCents / 100,
-      yearly: yearlyPerMonth(PLANS.business.monthlyCents),
+      yearly: yearlyPerMonth(PLANS.business),
     },
     features: [
       `${PLANS.business.monthlyCredits.toLocaleString("de-DE")} message credits per month`,
-      "10 chatbots",
-      "2,000 sources per chatbot",
-      "20 team members",
-      "Custom widget domain",
-      "Slack and WhatsApp channels",
-      "Custom roles and permissions",
-      "12-month analytics retention with CSV export",
+      ...featureLabels("business"),
       "Priority support and onboarding call",
     ],
     btn: { text: "Get started", href: "/sign-up" },

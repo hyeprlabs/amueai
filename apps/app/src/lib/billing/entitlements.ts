@@ -32,6 +32,10 @@ export async function getEntitlements(): Promise<Entitlements> {
   // free below; anything else (network, DB) shouldn't fail silently.
   if (error && error.code !== "PGRST116") {
     console.error("getEntitlements: failed to read organization", { orgId, error });
+    // Defaulting to `free` on a network/DB failure would silently downgrade a
+    // paying org and lock them out of features they've paid for. Only the
+    // expected no-row case (PGRST116) falls through to the free default.
+    throw error;
   }
 
   return {

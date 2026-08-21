@@ -18,32 +18,38 @@ export async function POST(req: NextRequest) {
   }
 
   const svixId = req.headers.get("svix-id");
-  if (svixId) {
-    const { error } = await supabaseAdmin
-      .from("webhook_events")
-      .insert({ id: svixId, provider: "clerk", type: evt.type, payload: evt });
-    if (error?.code === "23505") {
-      return new Response("OK", { status: 200 }); // duplicate delivery, already handled
-    }
-  }
+  if (!svixId) return new Response("Missing svix-id", { status: 400 });
+
+  // Claim rather than insert-then-handle. The old insert consumed the id
+  // before the handler ran, so a handler that threw left a row that made every
+  // Svix retry look like an already-handled duplicate — the event was dropped
+  // forever with nothing to show for it. claim_webhook_event returns true on
+  // first delivery AND on retry of a previously FAILED event, and false only
+  // once a delivery has actually succeeded. Matches the Polar route.
+  // docs/billing-spec.md §5.2
+  const { data: claimed, error: claimError } = await supabaseAdmin.rpc("claim_webhook_event", {
+    p_id: svixId,
+    p_provider: "clerk",
+    p_type: evt.type,
+    p_payload: evt,
+  });
+  if (claimError) throw claimError;
+  if (!claimed) return new Response("OK", { status: 200 }); // already processed successfully
 
   try {
     await handleClerkEvent(evt);
-    if (svixId) {
-      await supabaseAdmin
-        .from("webhook_events")
-        .update({ processed_at: new Date().toISOString() })
-        .eq("id", svixId);
-    }
+    await supabaseAdmin
+      .from("webhook_events")
+      .update({ processed_at: new Date().toISOString(), error: null })
+      .eq("id", svixId);
   } catch (err) {
     console.error(`Clerk webhook handler failed for ${evt.type}:`, err);
-    if (svixId) {
-      await supabaseAdmin
-        .from("webhook_events")
-        .update({ error: String(err) })
-        .eq("id", svixId);
-    }
-    return new Response("Handler failed", { status: 500 }); // Clerk/Svix will retry
+    await supabaseAdmin
+      .from("webhook_events")
+      .update({ error: String(err) })
+      .eq("id", svixId);
+    // Non-2xx → Svix retries, and the claim above lets the retry through.
+    return new Response("Handler failed", { status: 500 });
   }
 
   return new Response("OK", { status: 200 });
@@ -113,13 +119,22 @@ async function onMembershipCreated(data: {
     .single();
   if (!org) return;
 
+  // limitOf() indexes PLANS[plan] — an unrecognised value (a hand-edited row,
+  // a plan renamed in code but not in the DB) would throw, or worse resolve to
+  // a limit of 0 and evict a member who is entitled to their seat. Do not
+  // enforce a limit we can't actually determine.
+  if (!isPlan(org.plan)) {
+    console.error("seat enforcement skipped: unknown plan", { orgId, plan: org.plan });
+    return;
+  }
+
   const clerk = await clerkClient();
   const { totalCount } = await clerk.organizations.getOrganizationMembershipList({
     organizationId: orgId,
     limit: 1,
   });
 
-  const seatLimit = limitOf(org.plan as Plan, "seats");
+  const seatLimit = limitOf(org.plan, "seats");
   if (totalCount <= seatLimit) return;
 
   // Over the seat limit: revoke the membership from THIS event. Never pick a
@@ -152,10 +167,18 @@ async function onMembershipDeleted(data: {
     // Spec (§1.3) says "flag the org" but doesn't define storage for the flag.
     // No column exists for this yet — log for now so it isn't silently lost;
     // revisit if/when this needs to surface in the dashboard.
-    console.warn(
-      `Organization ${data.organization.id}: billing email owner (${removedEmail}) removed from org.`,
-    );
+    // Deliberately does NOT log the address itself — this line lands in a
+    // general-purpose log sink, and the billing email is customer PII that
+    // nothing here needs in order to act on the flag.
+    console.warn("Billing email owner removed from org", {
+      orgId: data.organization.id,
+      userId: data.public_user_data.user_id,
+    });
   }
+}
+
+function isPlan(value: unknown): value is Plan {
+  return typeof value === "string" && Object.hasOwn(PLANS, value);
 }
 
 function currentPeriod(): string {

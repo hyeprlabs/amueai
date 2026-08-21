@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { ResourceNotFound } from "@polar-sh/sdk/models/errors/resourcenotfound.js";
 
 import { polar } from "@/lib/billing/polar";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -15,13 +16,23 @@ export async function GET() {
     return NextResponse.json({ error: "NO_ORG" }, { status: 401 });
   }
 
-  const { data: org } = await supabaseAdmin
+  const { data: org, error } = await supabaseAdmin
     .from("organizations")
     .select("plan, status, plan_credits, topup_credits, period_end, cancel_at_period_end")
     .eq("clerk_org_id", orgId)
     .is("deleted_at", null)
-    .single();
+    .maybeSingle();
 
+  // A DB failure is not "this org is on the free plan". Reporting free here
+  // makes the /billing/processing poll believe it has read a real state, so a
+  // paid upgrade looks like it silently didn't happen.
+  if (error) {
+    console.error("billing status: failed to read organization", { orgId, error });
+    return NextResponse.json({ error: "STATUS_UNAVAILABLE" }, { status: 503 });
+  }
+
+  // Genuinely no row yet (the organization.created webhook hasn't landed) is
+  // the one case the free default is correct for.
   return NextResponse.json({
     plan: org?.plan ?? "free",
     status: org?.status ?? "active",
@@ -50,8 +61,14 @@ export async function POST() {
     return NextResponse.json({
       polarHasSubscription: state.activeSubscriptions.length > 0,
     });
-  } catch {
-    // No Polar customer yet is a normal state for a free org, not an error.
-    return NextResponse.json({ polarHasSubscription: false });
+  } catch (err) {
+    // No Polar customer yet is a normal state for a free org, not an error —
+    // but ONLY that documented case. A timeout or 500 from Polar reported as
+    // "no subscription" tells a customer who just paid that we found nothing.
+    if (err instanceof ResourceNotFound) {
+      return NextResponse.json({ polarHasSubscription: false });
+    }
+    console.error("billing status: Polar customer lookup failed", { orgId, err });
+    return NextResponse.json({ error: "STATUS_UNAVAILABLE" }, { status: 503 });
   }
 }

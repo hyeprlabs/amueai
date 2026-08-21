@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { withCredits } from "@/lib/billing/credits";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /**
@@ -111,6 +112,19 @@ describe("spend_credits", () => {
       .eq("clerk_org_id", orgId);
 
     const balances = await readBalances();
-    expect(balances.plan_credits + balances.topup_credits).toBeLessThan(0); // still blocked
+    expect(balances.plan_credits + balances.topup_credits).toBeLessThan(0);
+
+    // A negative sum only shows the ledger is still down; it doesn't prove the
+    // gate acts on it. Drive the real gate and assert it refuses — and that it
+    // refuses BEFORE running the callback, since the whole point of gating on
+    // read is not paying for a model call we can't charge for.
+    let modelCalled = false;
+    await expect(
+      withCredits(orgId, async () => {
+        modelCalled = true;
+        return { result: "should not happen", actualCredits: 1 };
+      }),
+    ).rejects.toMatchObject({ code: "INSUFFICIENT_CREDITS" });
+    expect(modelCalled).toBe(false);
   });
 });

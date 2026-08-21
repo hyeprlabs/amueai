@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { runStubChat } from "@/lib/billing/chat-stub";
+import { MAX_MESSAGE_LENGTH, runStubChat } from "@/lib/billing/chat-stub";
 import { requireModelAccess } from "@/lib/billing/enforce";
 import { BillingError } from "@/lib/billing/errors";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -29,7 +29,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bot
   }
 
   const body = await req.json().catch(() => ({}));
-  const message = typeof body.message === "string" ? body.message : "";
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+  if (!message || message.length > MAX_MESSAGE_LENGTH) {
+    return NextResponse.json({ error: "Invalid message" }, { status: 400 });
+  }
 
   // §7 — Free plans are mini-only. Server-side gate; the picker's lock icon
   // is cosmetic.

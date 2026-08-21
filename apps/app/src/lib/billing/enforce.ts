@@ -17,12 +17,19 @@ import { hasFeature } from "./plans";
  */
 
 /**
+ * The models a `models:mini` plan may use. An allowlist rather than a literal
+ * comparison so adding a second mini model is one edit here, and so the value
+ * can be referenced instead of retyped at each call site.
+ */
+export const MINI_MODELS: ReadonlySet<string> = new Set(["gpt-4o-mini"]);
+
+/**
  * Model picker gate — §7 "Select a model: Free is mini-only".
  * Free plans may only use the mini model; every other plan has models:all.
  */
 export async function requireModelAccess(model: string): Promise<void> {
   const { plan } = await getEntitlements();
   if (hasFeature(plan, "models:all")) return;
-  if (model === "gpt-4o-mini") return;
+  if (MINI_MODELS.has(model)) return;
   throw new BillingError("FEATURE_LOCKED", { feature: "models:all", model });
 }

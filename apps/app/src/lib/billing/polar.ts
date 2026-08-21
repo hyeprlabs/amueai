@@ -9,10 +9,18 @@ import { TOPUP_PACKS, type TopupPackId } from "./topups";
  * Polar client. POLAR_ACCESS_TOKEN is server-only and must never reach a
  * client bundle — the `server-only` import above enforces that at build time.
  */
-export const polar = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN,
-  server: (process.env.POLAR_SERVER as "sandbox" | "production") ?? "sandbox",
-});
+const accessToken = process.env.POLAR_ACCESS_TOKEN;
+if (!accessToken) {
+  throw new Error("POLAR_ACCESS_TOKEN is not set — the Polar client cannot be created.");
+}
+
+// Defaults to sandbox: an unset value must never silently mean production.
+const server = process.env.POLAR_SERVER ?? "sandbox";
+if (server !== "sandbox" && server !== "production") {
+  throw new Error(`POLAR_SERVER must be "sandbox" or "production", got "${server}".`);
+}
+
+export const polar = new Polar({ accessToken, server });
 
 /**
  * Every Polar product ID comes from env — IDs differ between sandbox and
