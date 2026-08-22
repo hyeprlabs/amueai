@@ -3,6 +3,7 @@ import Link from "next/link";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
+import { ArrowLeftIcon } from "lucide-react";
 import {
   ArticleJsonLd,
   BreadcrumbJsonLd,
@@ -15,6 +16,7 @@ import { AuthorByline } from "@/components/blog/author-byline";
 import { BlogFaq } from "@/components/blog/blog-faq";
 import { PostGrid } from "@/components/blog/post-grid";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { getPostBySlug, getRelatedPosts } from "@/lib/blog";
 import { resolveMedia } from "@/lib/media";
@@ -116,6 +118,13 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
       )}
 
       <article className="my-12 lg:my-24">
+        <div className="border-t p-4">
+          <Button className="w-fit" render={<Link href="/blog" />} size="sm" variant="outline">
+            <ArrowLeftIcon data-icon="inline-start" />
+            Back
+          </Button>
+        </div>
+
         <div className="flex flex-col gap-4 border-t p-4">
           {categories.length > 0 && (
             <div className="flex flex-wrap gap-1.5">

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
   return (
     <AccordionPrimitive.Root
-      className={cn("divide-y rounded-lg border", className)}
+      className={cn("rounded-lg border", className)}
       data-slot="accordion"
       {...props}
     />
@@ -18,7 +18,7 @@ function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
 function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {
   return (
     <AccordionPrimitive.Item
-      className={cn("border-b-0", className)}
+      className={cn("border-b last:border-b-0", className)}
       data-slot="accordion-item"
       {...props}
     />
