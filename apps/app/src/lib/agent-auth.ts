@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 
 /**
- * Verifies the `Authorization: Bearer <token>` header against `BLOG_AGENT_TOKEN`.
- * Used by the /api/agent/* routes an external writing agent calls.
+ * Verifies the request against `BLOG_AGENT_TOKEN`, accepted either as an
+ * `Authorization: Bearer <token>` header or a `?token=` query param. The
+ * query param exists for GET routes triggered by callers that can't set
+ * custom headers (e.g. a URL-only fetch tool) — used by
+ * `/api/agent/blog/process-queue`.
  */
 export function verifyAgentToken(request: Request): NextResponse | null {
   const expected = process.env.BLOG_AGENT_TOKEN;
@@ -14,7 +17,9 @@ export function verifyAgentToken(request: Request): NextResponse | null {
   }
 
   const authorization = request.headers.get("authorization");
-  const token = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
+  const headerToken = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
+  const queryToken = new URL(request.url).searchParams.get("token") ?? undefined;
+  const token = headerToken ?? queryToken;
 
   if (!token || token !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
