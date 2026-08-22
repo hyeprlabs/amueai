@@ -1,6 +1,9 @@
-import { PlusIcon } from "lucide-react";
-
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export type BlogFaqItem = {
   id?: string | null;
@@ -29,22 +32,14 @@ export function BlogFaq({
         {description && <p className="text-muted-foreground text-sm">{description}</p>}
       </div>
 
-      <div className="divide-y border-t">
+      <Accordion className="rounded-none border-x-0 border-y">
         {items.map((item, index) => (
-          <Collapsible className="group/faq p-4" key={item.id ?? index}>
-            <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 text-left font-medium text-sm sm:text-base">
-              {item.question}
-              <PlusIcon
-                aria-hidden
-                className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/faq:rotate-45"
-              />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-3 text-muted-foreground text-sm leading-relaxed">
-              {item.answer}
-            </CollapsibleContent>
-          </Collapsible>
+          <AccordionItem className="px-4" key={item.id ?? index} value={item.id ?? index}>
+            <AccordionTrigger>{item.question}</AccordionTrigger>
+            <AccordionContent>{item.answer}</AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </section>
   );
 }
