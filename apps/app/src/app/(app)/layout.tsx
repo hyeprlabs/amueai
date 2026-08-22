@@ -10,7 +10,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
 import { Toaster } from "@/components/ui/toast";
-import { PreviewBanner } from "@/components/preview-banner";
 
 // SEO
 import { siteConfig, siteTitle } from "@/config/site";
@@ -92,7 +91,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           <TooltipProvider>
             <ClerkProvider appearance={{ theme: shadcn }}>
-              <PreviewBanner />
               {children}
               <Toaster />
             </ClerkProvider>

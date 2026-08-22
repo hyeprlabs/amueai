@@ -128,47 +128,6 @@ export function softwareApplicationSchema(offers: OfferInput[]): StructuredData 
   };
 }
 
-type ArticleOptions = {
-  title: string;
-  description: string;
-  pathname: string;
-  image?: string;
-  datePublished?: string;
-  dateModified?: string;
-  authorName: string;
-  authorPathname?: string;
-};
-
-export function articleSchema({
-  title,
-  description,
-  pathname,
-  image,
-  datePublished,
-  dateModified,
-  authorName,
-  authorPathname,
-}: ArticleOptions): StructuredData {
-  return {
-    "@type": "BlogPosting",
-    "@id": `${absoluteUrl(pathname)}#article`,
-    headline: title,
-    description,
-    url: absoluteUrl(pathname),
-    inLanguage: siteConfig.language,
-    isPartOf: { "@id": websiteId },
-    publisher: { "@id": organizationId },
-    ...(image && { image: absoluteUrl(image) }),
-    ...(datePublished && { datePublished }),
-    ...(dateModified && { dateModified }),
-    author: {
-      "@type": "Person",
-      name: authorName,
-      ...(authorPathname && { url: absoluteUrl(authorPathname) }),
-    },
-  };
-}
-
 /** A JSON-LD document holding several linked schema.org nodes. */
 export type StructuredDataGraph = {
   "@context": "https://schema.org";
