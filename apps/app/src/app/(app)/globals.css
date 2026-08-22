@@ -129,7 +129,7 @@
 
 @layer components {
   .richtext {
-    @apply max-w-none text-[15px] text-foreground/90 leading-7 sm:text-base;
+    @apply max-w-none text-[15px] text-foreground/90 leading-6 sm:text-base;
 
     & > * + * {
       @apply mt-5;
