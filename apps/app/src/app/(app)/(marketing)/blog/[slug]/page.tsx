@@ -3,7 +3,7 @@ import Link from "next/link";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, FolderIcon } from "lucide-react";
 import {
   ArticleJsonLd,
   BreadcrumbJsonLd,
@@ -12,10 +12,9 @@ import {
   OrganizationJsonLd,
 } from "next-seo";
 
-import { AuthorByline } from "@/components/blog/author-byline";
+import { AuthorInfo } from "@/components/blog/author-info";
 import { BlogFaq } from "@/components/blog/blog-faq";
 import { PostGrid } from "@/components/blog/post-grid";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { getPostBySlug, getRelatedPosts } from "@/lib/blog";
@@ -118,31 +117,33 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
       )}
 
       <article className="my-12 lg:my-24">
-        <div className="border-t p-4">
+        <div className="flex items-center justify-between gap-2 border-t p-4">
           <Button className="w-fit" render={<Link href="/blog" />} size="sm" variant="outline">
             <ArrowLeftIcon data-icon="inline-start" />
             Back
           </Button>
-        </div>
-
-        <div className="flex flex-col gap-4 border-t p-4">
           {categories.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap justify-end gap-2">
               {categories.map((category) => (
-                <Badge
-                  className="rounded-md"
+                <Button
+                  className="w-fit"
                   key={category.id}
                   render={<Link href={`/blog?category=${category.slug}`} />}
+                  size="sm"
                   variant="outline"
                 >
+                  <FolderIcon data-icon="inline-start" />
                   {category.title}
-                </Badge>
+                </Button>
               ))}
             </div>
           )}
+        </div>
+
+        <div className="flex flex-col gap-4 border-t p-4">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">{post.title}</h1>
           {author && (
-            <AuthorByline
+            <AuthorInfo
               author={author}
               publishedAt={post.publishedAt}
               readingTime={post.readingTime}
