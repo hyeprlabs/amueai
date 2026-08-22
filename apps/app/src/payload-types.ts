@@ -242,6 +242,24 @@ export interface Blog {
    */
   readingTime?: number | null;
   relatedPosts?: (number | Blog)[] | null;
+  /**
+   * Optional FAQ section rendered below the post content.
+   */
+  faq?: {
+    /**
+     * Show a FAQ section on this post.
+     */
+    enabled?: boolean | null;
+    title?: string | null;
+    description?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -527,6 +545,20 @@ export interface BlogSelect<T extends boolean = true> {
   content?: T;
   readingTime?: T;
   relatedPosts?: T;
+  faq?:
+    | T
+    | {
+        enabled?: T;
+        title?: T;
+        description?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {

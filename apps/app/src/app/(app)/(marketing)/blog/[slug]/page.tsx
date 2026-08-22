@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 
 import { AuthorByline } from "@/components/blog/author-byline";
+import { BlogFaq } from "@/components/blog/blog-faq";
 import { PostGrid } from "@/components/blog/post-grid";
-import { CategoryDropdown } from "@/components/category-dropdown";
 import { JsonLd } from "@/components/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";
-import { getCategories, getPostBySlug, getRelatedPosts } from "@/lib/blog";
+import { getPostBySlug, getRelatedPosts } from "@/lib/blog";
 import { resolveMedia } from "@/lib/media";
 import { createMetadata, truncateForDescription } from "@/lib/seo";
 import {
@@ -22,6 +21,7 @@ import {
   webPageSchema,
   websiteSchema,
 } from "@/lib/structured-data";
+import { cn } from "@/lib/utils";
 import type { Author, Category } from "@/payload-types";
 
 async function loadPost(slug: string) {
@@ -66,10 +66,8 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
   const image = resolveMedia(post.featuredImage, "og");
   const summary = truncateForDescription(post.meta?.description || post.excerpt);
   const pathname = `/blog/${post.slug}`;
-  const [relatedPosts, allCategories] = await Promise.all([
-    draft ? Promise.resolve([]) : getRelatedPosts(post),
-    getCategories(),
-  ]);
+  const relatedPosts = draft ? [] : await getRelatedPosts(post);
+  const faqItems = post.faq?.enabled ? (post.faq.items ?? []) : [];
 
   return (
     <>
@@ -102,13 +100,6 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
       />
 
       <article className="my-12 lg:my-24">
-        <div className="flex flex-col items-start gap-4 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">{post.title}</h1>
-          {allCategories.length > 0 && (
-            <CategoryDropdown activeSlug={categories[0]?.slug} categories={allCategories} />
-          )}
-        </div>
-
         <div className="flex flex-col gap-4 border-t p-4">
           {categories.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -123,6 +114,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
               ))}
             </div>
           )}
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">{post.title}</h1>
           {author && (
             <AuthorByline
               author={author}
@@ -132,25 +124,22 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
           )}
         </div>
 
-        {image && (
-          <div className="relative aspect-video w-full overflow-hidden border-y bg-muted">
-            <Image
-              alt={image.alt}
-              className="object-cover"
-              fill
-              priority
-              sizes="100vw"
-              src={image.src}
-            />
-          </div>
-        )}
-
-        <RichText className="border-b p-4" data={post.content} />
+        <RichText
+          className={cn(
+            "richtext border-t p-4",
+            faqItems.length === 0 && relatedPosts.length === 0 && "border-b",
+          )}
+          data={post.content}
+        />
       </article>
+
+      {faqItems.length > 0 && (
+        <BlogFaq description={post.faq?.description} items={faqItems} title={post.faq?.title} />
+      )}
 
       {relatedPosts.length > 0 && (
         <section className="mb-12 flex flex-col gap-6 border-t p-4 lg:mb-24">
-          <h2 className="text-xl font-semibold tracking-tight">Related posts</h2>
+          <h2 className="font-semibold text-xl tracking-tight">Related posts</h2>
           <PostGrid posts={relatedPosts} />
         </section>
       )}

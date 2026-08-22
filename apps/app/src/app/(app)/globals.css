@@ -126,3 +126,85 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .richtext {
+    @apply max-w-none text-[15px] text-foreground/90 leading-7 sm:text-base;
+
+    & > * + * {
+      @apply mt-5;
+    }
+
+    & h1,
+    & h2,
+    & h3,
+    & h4 {
+      @apply font-semibold text-foreground tracking-tight;
+    }
+    & h1 {
+      @apply mt-10 text-2xl;
+    }
+    & h2 {
+      @apply mt-10 text-xl;
+    }
+    & h3 {
+      @apply mt-8 text-lg;
+    }
+    & h4 {
+      @apply mt-6 text-base;
+    }
+
+    & a {
+      @apply font-medium text-foreground underline underline-offset-4 hover:text-primary;
+    }
+
+    & strong {
+      @apply font-semibold text-foreground;
+    }
+
+    & ul {
+      @apply list-disc space-y-2 pl-6 marker:text-muted-foreground;
+    }
+    & ol {
+      @apply list-decimal space-y-2 pl-6 marker:text-muted-foreground;
+    }
+    & li > ul,
+    & li > ol {
+      @apply mt-2;
+    }
+
+    & blockquote {
+      @apply border-l-2 pl-4 text-muted-foreground italic;
+    }
+
+    & hr {
+      @apply my-8 border-border;
+    }
+
+    & code {
+      @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em];
+    }
+    & pre {
+      @apply overflow-x-auto rounded-lg border bg-muted p-4 text-sm;
+
+      & code {
+        @apply bg-transparent p-0;
+      }
+    }
+
+    & img {
+      @apply rounded-lg border;
+    }
+
+    & table {
+      @apply w-full border-collapse overflow-x-auto text-sm;
+    }
+    & th,
+    & td {
+      @apply border p-2 text-left;
+    }
+    & th {
+      @apply bg-muted font-semibold;
+    }
+  }
+}

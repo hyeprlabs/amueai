@@ -3,7 +3,13 @@ import { NewspaperIcon } from "lucide-react";
 
 import { CategoryDropdown } from "@/components/category-dropdown";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import type { Blog, Category } from "@/payload-types";
 
@@ -43,11 +49,13 @@ export function BlogSection({
           </div>
         ) : (
           <Empty className="border-none py-16">
-            <EmptyMedia variant="icon">
-              <NewspaperIcon />
-            </EmptyMedia>
-            <EmptyTitle>No posts yet</EmptyTitle>
-            <EmptyDescription>Check back soon for new content.</EmptyDescription>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <NewspaperIcon />
+              </EmptyMedia>
+              <EmptyTitle>No posts yet</EmptyTitle>
+              <EmptyDescription>Check back soon for new content.</EmptyDescription>
+            </EmptyHeader>
           </Empty>
         )}
         <FullWidthDivider />
@@ -74,13 +82,13 @@ function BlogCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
       href={`/blog/${post.slug}`}
       {...props}
     >
-      <div className="relative flex items-end justify-center gap-2">
-        <h3 className="whitespace-nowrap font-medium text-foreground text-lg md:text-xl">
+      <div className="relative flex min-w-0 items-end justify-center gap-2">
+        <h3 className="min-w-0 shrink truncate font-medium text-foreground text-lg md:text-xl">
           {post.title}
         </h3>
-        <span className="mb-[6px] w-full border-b-2 border-dashed" />
+        <span className="mb-[6px] w-full shrink border-b-2 border-dashed" />
         {date && (
-          <span className="whitespace-nowrap font-mono text-muted-foreground text-xs uppercase group-hover:text-foreground md:text-sm">
+          <span className="shrink-0 whitespace-nowrap font-mono text-muted-foreground text-xs uppercase group-hover:text-foreground md:text-sm">
             {date}
           </span>
         )}
