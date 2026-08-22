@@ -22,7 +22,7 @@ export function Pager({
   page: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
-  /** Non-pagination query params (e.g. category/tag) to preserve across page links. */
+  /** Non-pagination query params (e.g. category) to preserve across page links. */
   params?: Record<string, string | undefined>;
 }) {
   if (!hasNextPage && !hasPrevPage) return null;

@@ -7,10 +7,11 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 
 import { AuthorByline } from "@/components/blog/author-byline";
 import { PostGrid } from "@/components/blog/post-grid";
+import { CategoryDropdown } from "@/components/category-dropdown";
 import { JsonLd } from "@/components/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";
-import { getPostBySlug, getRelatedPosts } from "@/lib/blog";
+import { getCategories, getPostBySlug, getRelatedPosts } from "@/lib/blog";
 import { resolveMedia } from "@/lib/media";
 import { createMetadata, truncateForDescription } from "@/lib/seo";
 import {
@@ -21,7 +22,7 @@ import {
   webPageSchema,
   websiteSchema,
 } from "@/lib/structured-data";
-import type { Author, Category, Tag } from "@/payload-types";
+import type { Author, Category } from "@/payload-types";
 
 async function loadPost(slug: string) {
   const { isEnabled: draft } = await draftMode();
@@ -62,11 +63,13 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
   const categories = (post.categories ?? []).filter(
     (category): category is Category => typeof category === "object",
   );
-  const tags = (post.tags ?? []).filter((tag): tag is Tag => typeof tag === "object");
   const image = resolveMedia(post.featuredImage, "og");
   const summary = truncateForDescription(post.meta?.description || post.excerpt);
   const pathname = `/blog/${post.slug}`;
-  const relatedPosts = draft ? [] : await getRelatedPosts(post);
+  const [relatedPosts, allCategories] = await Promise.all([
+    draft ? Promise.resolve([]) : getRelatedPosts(post),
+    getCategories(),
+  ]);
 
   return (
     <>
@@ -99,7 +102,14 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
       />
 
       <article className="my-12 lg:my-24">
-        <header className="flex flex-col gap-6 border-t p-4">
+        <div className="flex flex-col items-start gap-4 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">{post.title}</h1>
+          {allCategories.length > 0 && (
+            <CategoryDropdown activeSlug={categories[0]?.slug} categories={allCategories} />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4 border-t p-4">
           {categories.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {categories.map((category) => (
@@ -113,7 +123,6 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
               ))}
             </div>
           )}
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">{post.title}</h1>
           {author && (
             <AuthorByline
               author={author}
@@ -121,7 +130,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
               readingTime={post.readingTime}
             />
           )}
-        </header>
+        </div>
 
         {image && (
           <div className="relative aspect-video w-full overflow-hidden border-y bg-muted">
@@ -137,20 +146,6 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
         )}
 
         <RichText className="border-b p-4" data={post.content} />
-
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 border-b p-4">
-            {tags.map((tag) => (
-              <Badge
-                key={tag.id}
-                render={<Link href={`/blog?tags=${tag.slug}`} />}
-                variant="outline"
-              >
-                #{tag.title}
-              </Badge>
-            ))}
-          </div>
-        )}
       </article>
 
       {relatedPosts.length > 0 && (

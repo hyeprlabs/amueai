@@ -69,13 +69,6 @@ export const Blog: CollectionConfig = {
       admin: { position: "sidebar" },
     },
     {
-      name: "tags",
-      type: "relationship",
-      relationTo: "tags",
-      hasMany: true,
-      admin: { position: "sidebar" },
-    },
-    {
       name: "publishedAt",
       type: "date",
       admin: {
