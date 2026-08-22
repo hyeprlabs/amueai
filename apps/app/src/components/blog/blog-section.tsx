@@ -1,15 +1,8 @@
 import Link from "next/link";
-import { NewspaperIcon } from "lucide-react";
 
+import { BlogEmpty } from "@/components/blog/blog-empty";
 import { CategoryDropdown } from "@/components/category-dropdown";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import type { Blog, Category } from "@/payload-types";
 
@@ -48,15 +41,16 @@ export function BlogSection({
             ))}
           </div>
         ) : (
-          <Empty className="border-none py-16">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <NewspaperIcon />
-              </EmptyMedia>
-              <EmptyTitle>No posts yet</EmptyTitle>
-              <EmptyDescription>Check back soon for new content.</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <BlogEmpty
+            categorySlug={activeCategorySlug}
+            className="py-16"
+            description={
+              activeCategorySlug
+                ? "No posts in this category yet. Check back soon or browse everything else."
+                : "Check back soon for new content."
+            }
+            title={activeCategorySlug ? "No posts in this category" : "No posts yet"}
+          />
         )}
         <FullWidthDivider />
       </div>
