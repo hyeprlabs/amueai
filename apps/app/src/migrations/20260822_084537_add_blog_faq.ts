@@ -11,9 +11,10 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
    );
    --> statement-breakpoint
    CREATE TABLE IF NOT EXISTS "payload"."_blog_v_version_faq_items" (
+   	"id" serial PRIMARY KEY NOT NULL,
    	"_order" integer NOT NULL,
    	"_parent_id" integer NOT NULL,
-   	"id" varchar PRIMARY KEY NOT NULL,
+   	"_uuid" varchar,
    	"question" varchar,
    	"answer" varchar
    );
