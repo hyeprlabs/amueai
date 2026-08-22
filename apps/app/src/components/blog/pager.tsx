@@ -2,16 +2,28 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
+function buildHref(basePath: string, page: number, params?: Record<string, string | undefined>) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value) search.set(key, value);
+  }
+  search.set("page", String(page));
+  return `${basePath}?${search.toString()}`;
+}
+
 export function Pager({
   basePath,
   page,
   hasNextPage,
   hasPrevPage,
+  params,
 }: {
   basePath: string;
   page: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  /** Non-pagination query params (e.g. category/tag) to preserve across page links. */
+  params?: Record<string, string | undefined>;
 }) {
   if (!hasNextPage && !hasPrevPage) return null;
 
@@ -20,7 +32,7 @@ export function Pager({
       <Button
         disabled={!hasPrevPage}
         nativeButton={false}
-        render={<Link href={`${basePath}?page=${page - 1}`} />}
+        render={<Link href={buildHref(basePath, page - 1, params)} />}
         variant="outline"
       >
         Previous
@@ -29,7 +41,7 @@ export function Pager({
       <Button
         disabled={!hasNextPage}
         nativeButton={false}
-        render={<Link href={`${basePath}?page=${page + 1}`} />}
+        render={<Link href={buildHref(basePath, page + 1, params)} />}
         variant="outline"
       >
         Next

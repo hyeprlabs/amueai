@@ -40,17 +40,6 @@ export default buildConfig({
     },
   }),
   sharp,
-  jobs: {
-    // Powers Blog's `versions.drafts.schedulePublish`. Next.js on Vercel has no
-    // long-running process to run an in-process cron, so scheduled jobs are
-    // instead drained by hitting GET /api/payload-jobs/run — see vercel.json.
-    // That cron runs once daily (Vercel Hobby plan caps crons at daily), so a
-    // scheduled publish/unpublish can land up to ~24h after its target time.
-    // Upgrading to Vercel Pro unlocks more frequent crons (e.g. every 5 min).
-    access: {
-      run: ({ req }) => req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`,
-    },
-  },
   plugins: [
     vercelBlobStorage({
       collections: { media: true },

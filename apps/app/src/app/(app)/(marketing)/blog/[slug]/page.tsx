@@ -94,7 +94,6 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
             datePublished: post.publishedAt ?? undefined,
             dateModified: post.updatedAt,
             authorName: author?.name ?? siteConfig.publisher,
-            authorPathname: author ? `/blog/author/${author.slug}` : undefined,
           }),
         )}
       />
@@ -106,7 +105,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
               {categories.map((category) => (
                 <Badge
                   key={category.id}
-                  render={<Link href={`/blog/category/${category.slug}`} />}
+                  render={<Link href={`/blog?category=${category.slug}`} />}
                   variant="secondary"
                 >
                   {category.title}
@@ -144,7 +143,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
             {tags.map((tag) => (
               <Badge
                 key={tag.id}
-                render={<Link href={`/blog/tag/${tag.slug}`} />}
+                render={<Link href={`/blog?tag=${tag.slug}`} />}
                 variant="outline"
               >
                 #{tag.title}

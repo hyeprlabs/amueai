@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import type { SearchParams } from "nuqs/server";
 
+import { BlogFilters } from "@/components/blog/blog-filters";
 import { PostGrid } from "@/components/blog/post-grid";
 import { Pager } from "@/components/blog/pager";
-import { Badge } from "@/components/ui/badge";
 import { JsonLd } from "@/components/json-ld";
 import { siteConfig } from "@/config/site";
-import { getCategories, getPosts } from "@/lib/blog";
+import { getCategories, getPosts, getTags } from "@/lib/blog";
+import { loadBlogSearchParams } from "@/lib/blog-search-params";
 import { createMetadata } from "@/lib/seo";
 import {
   breadcrumbSchema,
@@ -31,13 +32,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function BlogIndexPage({ searchParams }: PageProps<"/blog">) {
-  const { page: pageParam } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
+export default async function BlogIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const { page, category, tag } = await loadBlogSearchParams(searchParams);
 
-  const [{ docs: posts, hasNextPage, hasPrevPage }, categories] = await Promise.all([
-    getPosts({ page }),
+  const [{ docs: posts, hasNextPage, hasPrevPage }, categories, tags] = await Promise.all([
+    getPosts({ page, category: category ?? undefined, tag: tag ?? undefined }),
     getCategories(),
+    getTags(),
   ]);
 
   return (
@@ -64,24 +69,18 @@ export default async function BlogIndexPage({ searchParams }: PageProps<"/blog">
           <p className="text-muted-foreground">{description}</p>
         </div>
 
-        {categories.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <Badge
-                key={category.id}
-                render={<Link href={`/blog/category/${category.slug}`} />}
-                variant="outline"
-              >
-                {category.title}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <BlogFilters categories={categories} tags={tags} />
 
         <PostGrid posts={posts} />
       </div>
 
-      <Pager basePath="/blog" hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} page={page} />
+      <Pager
+        basePath="/blog"
+        hasNextPage={hasNextPage}
+        hasPrevPage={hasPrevPage}
+        page={page}
+        params={{ category: category ?? undefined, tag: tag ?? undefined }}
+      />
     </>
   );
 }

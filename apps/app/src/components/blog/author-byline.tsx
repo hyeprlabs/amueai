@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { resolveMedia } from "@/lib/media";
 import type { Author } from "@/payload-types";
@@ -17,16 +15,12 @@ export function AuthorByline({
 
   return (
     <div className="flex items-center gap-3">
-      <Link aria-label={author.name} href={`/blog/author/${author.slug}`}>
-        <Avatar size="lg">
-          {avatar && <AvatarImage alt={avatar.alt} src={avatar.src} />}
-          <AvatarFallback>{author.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
-      </Link>
+      <Avatar size="lg">
+        {avatar && <AvatarImage alt={avatar.alt} src={avatar.src} />}
+        <AvatarFallback>{author.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
       <div className="text-sm">
-        <Link className="font-medium hover:underline" href={`/blog/author/${author.slug}`}>
-          {author.name}
-        </Link>
+        <span className="font-medium">{author.name}</span>
         <div className="flex items-center gap-2 text-muted-foreground">
           {publishedAt && (
             <time dateTime={publishedAt}>

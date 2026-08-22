@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { getCategories, getPublishedPostSlugs } from "@/lib/blog";
+import { getPublishedPostSlugs } from "@/lib/blog";
 import { getPublishedLegalPages } from "@/lib/legal-pages";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -20,21 +20,14 @@ const marketingRoutes = [
  */
 async function getBlogRoutes(): Promise<MetadataRoute.Sitemap> {
   try {
-    const [posts, categories] = await Promise.all([getPublishedPostSlugs(), getCategories()]);
+    const posts = await getPublishedPostSlugs();
 
-    return [
-      ...posts.map((post) => ({
-        url: absoluteUrl(`/blog/${post.slug}`),
-        lastModified: new Date(post.updatedAt),
-        changeFrequency: "monthly" as const,
-        priority: 0.6,
-      })),
-      ...categories.map((category) => ({
-        url: absoluteUrl(`/blog/category/${category.slug}`),
-        changeFrequency: "weekly" as const,
-        priority: 0.4,
-      })),
-    ];
+    return posts.map((post) => ({
+      url: absoluteUrl(`/blog/${post.slug}`),
+      lastModified: new Date(post.updatedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
   } catch (error) {
     console.error("[sitemap] Skipping blog routes, Payload could not be reached:", error);
 

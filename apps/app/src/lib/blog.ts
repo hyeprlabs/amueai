@@ -2,7 +2,7 @@ import config from "@payload-config";
 import { getPayload, type Where } from "payload";
 import { cache } from "react";
 
-import type { Author, Blog, Category, Tag } from "@/payload-types";
+import type { Blog, Category, Tag } from "@/payload-types";
 
 const POSTS_PER_PAGE = 12;
 
@@ -11,9 +11,10 @@ const publishedOnly = { _status: { equals: "published" } };
 type PostListOptions = {
   page?: number;
   limit?: number;
+  /** Category slug. */
   category?: string;
+  /** Tag slug. */
   tag?: string;
-  author?: string;
 };
 
 /**
@@ -40,20 +41,18 @@ export const getPostBySlug = cache(
   },
 );
 
-/** Paginated, published posts, newest first — optionally scoped to a category or tag. */
+/** Paginated, published posts, newest first — optionally scoped to a category or tag slug. */
 export async function getPosts({
   page = 1,
   limit = POSTS_PER_PAGE,
   category,
   tag,
-  author,
 }: PostListOptions = {}) {
   const payload = await getPayload({ config });
 
   const where: Where = { ...publishedOnly };
-  if (category) where.categories = { in: [category] };
-  if (tag) where.tags = { in: [tag] };
-  if (author) where.author = { equals: author };
+  if (category) where["categories.slug"] = { equals: category };
+  if (tag) where["tags.slug"] = { equals: tag };
 
   const result = await payload.find({
     collection: "blog",
@@ -121,35 +120,14 @@ export const getCategories = cache(async (): Promise<Category[]> => {
   return docs;
 });
 
-export const getCategoryBySlug = cache(async (slug: string): Promise<Category | undefined> => {
-  const payload = await getPayload({ config });
-  const { docs } = await payload.find({
-    collection: "categories",
-    where: { slug: { equals: slug } },
-    limit: 1,
-  });
-
-  return docs[0];
-});
-
-export const getTagBySlug = cache(async (slug: string): Promise<Tag | undefined> => {
+export const getTags = cache(async (): Promise<Tag[]> => {
   const payload = await getPayload({ config });
   const { docs } = await payload.find({
     collection: "tags",
-    where: { slug: { equals: slug } },
-    limit: 1,
+    pagination: false,
+    sort: "title",
+    depth: 0,
   });
 
-  return docs[0];
-});
-
-export const getAuthorBySlug = cache(async (slug: string): Promise<Author | undefined> => {
-  const payload = await getPayload({ config });
-  const { docs } = await payload.find({
-    collection: "authors",
-    where: { slug: { equals: slug } },
-    limit: 1,
-  });
-
-  return docs[0];
+  return docs;
 });

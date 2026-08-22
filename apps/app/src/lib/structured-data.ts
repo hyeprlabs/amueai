@@ -136,7 +136,6 @@ type ArticleOptions = {
   datePublished?: string;
   dateModified?: string;
   authorName: string;
-  authorPathname?: string;
 };
 
 export function articleSchema({
@@ -147,7 +146,6 @@ export function articleSchema({
   datePublished,
   dateModified,
   authorName,
-  authorPathname,
 }: ArticleOptions): StructuredData {
   return {
     "@type": "BlogPosting",
@@ -164,7 +162,6 @@ export function articleSchema({
     author: {
       "@type": "Person",
       name: authorName,
-      ...(authorPathname && { url: absoluteUrl(authorPathname) }),
     },
   };
 }

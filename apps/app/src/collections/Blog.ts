@@ -32,10 +32,7 @@ export const Blog: CollectionConfig = {
     delete: isLoggedIn,
   },
   versions: {
-    drafts: {
-      autosave: { interval: 2000 },
-      schedulePublish: true,
-    },
+    drafts: true,
     maxPerDoc: 50,
   },
   fields: [
