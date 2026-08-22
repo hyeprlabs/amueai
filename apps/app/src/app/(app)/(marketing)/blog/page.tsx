@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import type { SearchParams } from "nuqs/server";
 
-import { BlogFilters } from "@/components/blog/blog-filters";
-import { PostGrid } from "@/components/blog/post-grid";
+import { BlogSection } from "@/components/blog/blog-section";
 import { Pager } from "@/components/blog/pager";
 import { JsonLd } from "@/components/json-ld";
 import { siteConfig } from "@/config/site";
-import { getCategories, getPosts, getTags } from "@/lib/blog";
-import { loadBlogSearchParams } from "@/lib/blog-search-params";
+import { getCategories, getPosts } from "@/lib/blog";
 import { createMetadata } from "@/lib/seo";
 import {
   breadcrumbSchema,
@@ -17,7 +14,7 @@ import {
   websiteSchema,
 } from "@/lib/structured-data";
 
-const title = "Blog";
+const title = "Latest Blogs";
 const description = `Product updates, guides and stories from the ${siteConfig.name} team.`;
 
 export const metadata: Metadata = {
@@ -35,14 +32,14 @@ export const metadata: Metadata = {
 export default async function BlogIndexPage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams>;
+  searchParams: Promise<{ category?: string; page?: string }>;
 }) {
-  const { page, category, tag } = await loadBlogSearchParams(searchParams);
+  const { category, page: pageParam } = await searchParams;
+  const page = Number(pageParam) > 0 ? Number(pageParam) : 1;
 
-  const [{ docs: posts, hasNextPage, hasPrevPage }, categories, tags] = await Promise.all([
-    getPosts({ page, category: category ?? undefined, tag: tag ?? undefined }),
+  const [{ docs: posts, hasNextPage, hasPrevPage }, categories] = await Promise.all([
+    getPosts({ page, category }),
     getCategories(),
-    getTags(),
   ]);
 
   return (
@@ -63,23 +60,20 @@ export default async function BlogIndexPage({
         )}
       />
 
-      <div className="my-12 flex flex-col gap-8 border-t p-4 lg:my-24">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
-          <p className="text-muted-foreground">{description}</p>
-        </div>
-
-        <BlogFilters categories={categories} tags={tags} />
-
-        <PostGrid posts={posts} />
-      </div>
+      <BlogSection
+        activeCategorySlug={category}
+        categories={categories}
+        description={description}
+        posts={posts}
+        title={title}
+      />
 
       <Pager
         basePath="/blog"
         hasNextPage={hasNextPage}
         hasPrevPage={hasPrevPage}
         page={page}
-        params={{ category: category ?? undefined, tag: tag ?? undefined }}
+        params={{ category }}
       />
     </>
   );

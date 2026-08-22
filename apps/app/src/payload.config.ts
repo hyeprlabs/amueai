@@ -12,7 +12,6 @@ import { Users } from "./collections/Users";
 import { Media } from "./collections/Media";
 import { Blog } from "./collections/Blog";
 import { Categories } from "./collections/Categories";
-import { Tags } from "./collections/Tags";
 import { Authors } from "./collections/Authors";
 import { LegalPages } from "./collections/LegalPages";
 
@@ -28,7 +27,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Blog, Categories, Tags, Authors, LegalPages],
+  collections: [Users, Media, Blog, Categories, Authors, LegalPages],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
@@ -38,6 +37,8 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || "",
     },
+    // Keep every Payload-managed table out of `public` and in its own schema.
+    schemaName: "payload",
   }),
   sharp,
   plugins: [

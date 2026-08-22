@@ -2,7 +2,7 @@ import config from "@payload-config";
 import { getPayload, type Where } from "payload";
 import { cache } from "react";
 
-import type { Blog, Category, Tag } from "@/payload-types";
+import type { Blog, Category } from "@/payload-types";
 
 const POSTS_PER_PAGE = 12;
 
@@ -13,8 +13,6 @@ type PostListOptions = {
   limit?: number;
   /** Category slug. */
   category?: string;
-  /** Tag slug. */
-  tag?: string;
 };
 
 /**
@@ -41,18 +39,16 @@ export const getPostBySlug = cache(
   },
 );
 
-/** Paginated, published posts, newest first — optionally scoped to a category or tag slug. */
+/** Paginated, published posts, newest first — optionally scoped to a category slug. */
 export async function getPosts({
   page = 1,
   limit = POSTS_PER_PAGE,
   category,
-  tag,
 }: PostListOptions = {}) {
   const payload = await getPayload({ config });
 
   const where: Where = { ...publishedOnly };
   if (category) where["categories.slug"] = { equals: category };
-  if (tag) where["tags.slug"] = { equals: tag };
 
   const result = await payload.find({
     collection: "blog",
@@ -112,18 +108,6 @@ export const getCategories = cache(async (): Promise<Category[]> => {
   const payload = await getPayload({ config });
   const { docs } = await payload.find({
     collection: "categories",
-    pagination: false,
-    sort: "title",
-    depth: 0,
-  });
-
-  return docs;
-});
-
-export const getTags = cache(async (): Promise<Tag[]> => {
-  const payload = await getPayload({ config });
-  const { docs } = await payload.find({
-    collection: "tags",
     pagination: false,
     sort: "title",
     depth: 0,
