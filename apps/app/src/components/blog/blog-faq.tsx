@@ -32,7 +32,7 @@ export function BlogFaq({
         {description && <p className="text-muted-foreground text-sm">{description}</p>}
       </div>
 
-      <Accordion className="rounded-none border-x-0 border-y">
+      <Accordion className="rounded-none border-x-0 border-t border-b-0">
         {items.map((item, index) => (
           <AccordionItem className="px-4" key={item.id ?? index} value={item.id ?? index}>
             <AccordionTrigger>{item.question}</AccordionTrigger>

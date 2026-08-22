@@ -30,7 +30,7 @@ export function BlogEmpty({
     <Empty className={cn("border-none", className)}>
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <NewspaperIcon />
+          <NewspaperIcon aria-hidden />
         </EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>
         <EmptyDescription>{description}</EmptyDescription>
@@ -45,7 +45,7 @@ export function BlogEmpty({
         nativeButton={false}
         render={
           <Link href="/">
-            Explore {siteConfig.name} <ArrowUpRightIcon />
+            Explore {siteConfig.name} <ArrowUpRightIcon aria-hidden />
           </Link>
         }
         size="sm"

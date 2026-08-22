@@ -28,6 +28,7 @@ export function CategoryDropdown({
           <Button className="group w-max" size="sm" variant="outline">
             {activeCategory?.title ?? "All categories"}
             <ChevronDownIcon
+              aria-hidden
               className="transition-transform duration-200 group-data-popup-open:rotate-180"
               data-icon="inline-end"
             />

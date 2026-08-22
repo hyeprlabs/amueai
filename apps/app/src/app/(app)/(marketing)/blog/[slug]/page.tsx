@@ -117,9 +117,9 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
       )}
 
       <article className="my-12 lg:my-24">
-        <div className="flex items-center justify-between gap-2 border-t p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t p-4">
           <Button className="w-fit" render={<Link href="/blog" />} size="sm" variant="outline">
-            <ArrowLeftIcon data-icon="inline-start" />
+            <ArrowLeftIcon aria-hidden data-icon="inline-start" />
             Back
           </Button>
           {categories.length > 0 && (
@@ -132,7 +132,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
                   size="sm"
                   variant="outline"
                 >
-                  <FolderIcon data-icon="inline-start" />
+                  <FolderIcon aria-hidden data-icon="inline-start" />
                   {category.title}
                 </Button>
               ))}

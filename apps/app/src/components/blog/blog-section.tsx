@@ -70,7 +70,7 @@ function BlogCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
   return (
     <Link
       className={cn(
-        "group flex h-24 w-full flex-col justify-center gap-y-1 p-4 hover:cursor-pointer hover:bg-accent/30 active:bg-accent dark:active:bg-accent/50",
+        "group flex min-h-24 w-full flex-col justify-center gap-y-1 p-4 hover:cursor-pointer hover:bg-accent/30 active:bg-accent dark:active:bg-accent/50",
         className,
       )}
       href={`/blog/${post.slug}`}
@@ -87,7 +87,7 @@ function BlogCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
           </span>
         )}
       </div>
-      <div className="max-w-sm text-muted-foreground text-sm group-hover:text-foreground md:max-w-full md:text-base">
+      <div className="line-clamp-2 max-w-sm text-muted-foreground text-sm group-hover:text-foreground md:max-w-full md:text-base">
         {post.excerpt}
       </div>
     </Link>
