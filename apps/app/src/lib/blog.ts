@@ -13,8 +13,8 @@ type PostListOptions = {
   limit?: number;
   /** Category slug. */
   category?: string;
-  /** Tag slug. */
-  tag?: string;
+  /** Tag slugs — a post matching any one of them is included. */
+  tags?: string[];
 };
 
 /**
@@ -46,13 +46,13 @@ export async function getPosts({
   page = 1,
   limit = POSTS_PER_PAGE,
   category,
-  tag,
+  tags,
 }: PostListOptions = {}) {
   const payload = await getPayload({ config });
 
   const where: Where = { ...publishedOnly };
   if (category) where["categories.slug"] = { equals: category };
-  if (tag) where["tags.slug"] = { equals: tag };
+  if (tags && tags.length > 0) where["tags.slug"] = { in: tags };
 
   const result = await payload.find({
     collection: "blog",

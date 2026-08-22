@@ -143,7 +143,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
             {tags.map((tag) => (
               <Badge
                 key={tag.id}
-                render={<Link href={`/blog?tag=${tag.slug}`} />}
+                render={<Link href={`/blog?tags=${tag.slug}`} />}
                 variant="outline"
               >
                 #{tag.title}

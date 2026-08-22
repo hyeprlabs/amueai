@@ -37,10 +37,10 @@ export default async function BlogIndexPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { page, category, tag } = await loadBlogSearchParams(searchParams);
+  const { page, category, tags: selectedTags } = await loadBlogSearchParams(searchParams);
 
   const [{ docs: posts, hasNextPage, hasPrevPage }, categories, tags] = await Promise.all([
-    getPosts({ page, category: category ?? undefined, tag: tag ?? undefined }),
+    getPosts({ page, category: category ?? undefined, tags: selectedTags }),
     getCategories(),
     getTags(),
   ]);
@@ -79,7 +79,10 @@ export default async function BlogIndexPage({
         hasNextPage={hasNextPage}
         hasPrevPage={hasPrevPage}
         page={page}
-        params={{ category: category ?? undefined, tag: tag ?? undefined }}
+        params={{
+          category: category ?? undefined,
+          tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
+        }}
       />
     </>
   );

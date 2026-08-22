@@ -38,6 +38,8 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || "",
     },
+    // Keep every Payload-managed table out of `public` and in its own schema.
+    schemaName: "payload",
   }),
   sharp,
   plugins: [
