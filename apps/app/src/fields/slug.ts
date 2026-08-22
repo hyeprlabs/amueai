@@ -15,8 +15,11 @@ export function slugField(sourceField: string): TextField {
     admin: { position: "sidebar" },
     hooks: {
       beforeValidate: [
-        ({ value, siblingData }) =>
-          value || slugify((siblingData as Record<string, unknown>)[sourceField] as string),
+        ({ value, siblingData }) => {
+          if (value) return value;
+          const source = (siblingData as Record<string, unknown>)[sourceField];
+          return typeof source === "string" && source.length > 0 ? slugify(source) : value;
+        },
       ],
     },
   };
