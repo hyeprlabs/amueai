@@ -3,7 +3,7 @@ import Link from "next/link";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-import { ArrowLeftIcon, FolderIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 import {
   ArticleJsonLd,
   BreadcrumbJsonLd,
@@ -14,10 +14,11 @@ import {
 
 import { AuthorInfo } from "@/components/blog/author-info";
 import { BlogFaq } from "@/components/blog/blog-faq";
+import { PostCategoryDropdown } from "@/components/blog/post-category-dropdown";
 import { PostGrid } from "@/components/blog/post-grid";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { getPostBySlug, getRelatedPosts } from "@/lib/blog";
+import { getCategories, getPostBySlug, getRelatedPosts } from "@/lib/blog";
 import { resolveMedia } from "@/lib/media";
 import {
   breadcrumbItems,
@@ -71,7 +72,10 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
   const image = resolveMedia(post.featuredImage, "og");
   const summary = truncateForDescription(post.meta?.description || post.excerpt);
   const pathname = `/blog/${post.slug}`;
-  const relatedPosts = draft ? [] : await getRelatedPosts(post);
+  const [relatedPosts, allCategories] = await Promise.all([
+    draft ? Promise.resolve([]) : getRelatedPosts(post),
+    getCategories(),
+  ]);
   const faqItems = post.faq?.enabled ? (post.faq.items ?? []) : [];
 
   return (
@@ -122,21 +126,8 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
             <ArrowLeftIcon aria-hidden data-icon="inline-start" />
             Back
           </Button>
-          {categories.length > 0 && (
-            <div className="flex flex-wrap justify-end gap-2">
-              {categories.map((category) => (
-                <Button
-                  className="w-fit"
-                  key={category.id}
-                  render={<Link href={`/blog?category=${category.slug}`} />}
-                  size="sm"
-                  variant="outline"
-                >
-                  <FolderIcon aria-hidden data-icon="inline-start" />
-                  {category.title}
-                </Button>
-              ))}
-            </div>
+          {allCategories.length > 0 && (
+            <PostCategoryDropdown activeSlug={categories[0]?.slug} categories={allCategories} />
           )}
         </div>
 
