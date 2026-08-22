@@ -129,29 +129,29 @@
 
 @layer components {
   .richtext {
-    @apply max-w-none text-[15px] text-foreground/90 leading-6 sm:text-base;
+    @apply max-w-none text-[15px] text-foreground/90 leading-5 sm:text-base;
 
     & > * + * {
-      @apply mt-5;
+      @apply mt-3;
     }
 
     & h1,
     & h2,
     & h3,
     & h4 {
-      @apply font-semibold text-foreground tracking-tight;
+      @apply font-semibold text-foreground leading-tight tracking-tight;
     }
     & h1 {
-      @apply mt-10 text-2xl;
+      @apply mt-6 text-2xl;
     }
     & h2 {
-      @apply mt-10 text-xl;
+      @apply mt-6 text-xl;
     }
     & h3 {
-      @apply mt-8 text-lg;
+      @apply mt-5 text-lg;
     }
     & h4 {
-      @apply mt-6 text-base;
+      @apply mt-4 text-base;
     }
 
     & a {
@@ -163,14 +163,17 @@
     }
 
     & ul {
-      @apply list-disc space-y-2 pl-6 marker:text-muted-foreground;
+      @apply list-disc space-y-1 pl-6 marker:text-muted-foreground;
     }
     & ol {
-      @apply list-decimal space-y-2 pl-6 marker:text-muted-foreground;
+      @apply list-decimal space-y-1 pl-6 marker:text-muted-foreground;
+    }
+    & li {
+      @apply leading-5;
     }
     & li > ul,
     & li > ol {
-      @apply mt-2;
+      @apply mt-1;
     }
 
     & blockquote {
@@ -178,7 +181,7 @@
     }
 
     & hr {
-      @apply my-8 border-border;
+      @apply my-6 border-border;
     }
 
     & code {

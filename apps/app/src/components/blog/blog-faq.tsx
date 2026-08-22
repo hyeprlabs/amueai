@@ -21,17 +21,17 @@ export function BlogFaq({
   if (items.length === 0) return null;
 
   return (
-    <section className="mb-12 flex flex-col gap-6 border-t p-4 lg:mb-24">
-      <div className="w-full space-y-2">
+    <section className="mb-12 border-y lg:mb-24">
+      <div className="space-y-2 p-4">
         <h2 className="font-semibold text-xl tracking-tight sm:text-2xl">
           {title || "Frequently asked questions"}
         </h2>
         {description && <p className="text-muted-foreground text-sm">{description}</p>}
       </div>
 
-      <div className="w-full divide-y border-t">
+      <div className="divide-y border-t">
         {items.map((item, index) => (
-          <Collapsible className="group/faq w-full py-4" key={item.id ?? index}>
+          <Collapsible className="group/faq p-4" key={item.id ?? index}>
             <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 text-left font-medium text-sm sm:text-base">
               {item.question}
               <PlusIcon
@@ -39,7 +39,7 @@ export function BlogFaq({
                 className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/faq:rotate-45"
               />
             </CollapsibleTrigger>
-            <CollapsibleContent className="w-full pt-3 text-muted-foreground text-sm leading-relaxed">
+            <CollapsibleContent className="pt-3 text-muted-foreground text-sm leading-relaxed">
               {item.answer}
             </CollapsibleContent>
           </Collapsible>

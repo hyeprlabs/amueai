@@ -105,10 +105,10 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
             <div className="flex flex-wrap gap-1.5">
               {categories.map((category) => (
                 <Badge
-                  className="rounded-md bg-secondary/60 backdrop-blur-sm"
+                  className="rounded-md"
                   key={category.id}
                   render={<Link href={`/blog?category=${category.slug}`} />}
-                  variant="secondary"
+                  variant="outline"
                 >
                   {category.title}
                 </Badge>
