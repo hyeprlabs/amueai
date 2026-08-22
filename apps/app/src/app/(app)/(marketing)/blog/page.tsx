@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
+import { BlogPagination } from "@/components/blog/blog-pagination";
 import { BlogSection } from "@/components/blog/blog-section";
-import { Pager } from "@/components/blog/pager";
 import { siteConfig } from "@/config/site";
 import { getCategories, getPosts } from "@/lib/blog";
 import {
@@ -36,7 +36,7 @@ export default async function BlogIndexPage({
   const { category, page: pageParam } = await searchParams;
   const page = Number(pageParam) > 0 ? Number(pageParam) : 1;
 
-  const [{ docs: posts, hasNextPage, hasPrevPage }, categories] = await Promise.all([
+  const [{ docs: posts, totalPages }, categories] = await Promise.all([
     getPosts({ page, category }),
     getCategories(),
   ]);
@@ -65,13 +65,7 @@ export default async function BlogIndexPage({
         title={title}
       />
 
-      <Pager
-        basePath="/blog"
-        hasNextPage={hasNextPage}
-        hasPrevPage={hasPrevPage}
-        page={page}
-        params={{ category }}
-      />
+      <BlogPagination basePath="/blog" page={page} params={{ category }} totalPages={totalPages} />
     </>
   );
 }
