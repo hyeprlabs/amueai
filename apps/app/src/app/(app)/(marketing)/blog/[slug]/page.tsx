@@ -3,24 +3,28 @@ import Link from "next/link";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
+import {
+  ArticleJsonLd,
+  BreadcrumbJsonLd,
+  FAQJsonLd,
+  JsonLdScript,
+  OrganizationJsonLd,
+} from "next-seo";
 
 import { AuthorByline } from "@/components/blog/author-byline";
 import { BlogFaq } from "@/components/blog/blog-faq";
 import { PostGrid } from "@/components/blog/post-grid";
-import { JsonLd } from "@/components/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";
 import { getPostBySlug, getRelatedPosts } from "@/lib/blog";
 import { resolveMedia } from "@/lib/media";
-import { createMetadata, truncateForDescription } from "@/lib/seo";
 import {
-  articleSchema,
-  breadcrumbSchema,
-  organizationSchema,
-  structuredDataGraph,
-  webPageSchema,
-  websiteSchema,
-} from "@/lib/structured-data";
+  breadcrumbItems,
+  organizationJsonLdProps,
+  webPageJsonLd,
+  webSiteJsonLd,
+} from "@/lib/next-seo";
+import { absoluteUrl, createMetadata, truncateForDescription } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import type { Author, Category } from "@/payload-types";
 
@@ -71,33 +75,45 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
 
   return (
     <>
-      <JsonLd
-        data={structuredDataGraph(
-          organizationSchema(),
-          websiteSchema(),
-          webPageSchema({
-            name: post.title,
-            description: summary,
-            pathname,
-            datePublished: post.publishedAt ?? undefined,
-            dateModified: post.updatedAt,
-            breadcrumb: breadcrumbSchema([
-              { name: "Home", pathname: "/" },
-              { name: "Blog", pathname: "/blog" },
-              { name: post.title, pathname },
-            ]),
-          }),
-          articleSchema({
-            title: post.title,
-            description: summary,
-            pathname,
-            image: image?.src,
-            datePublished: post.publishedAt ?? undefined,
-            dateModified: post.updatedAt,
-            authorName: author?.name ?? siteConfig.publisher,
-          }),
-        )}
+      <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
+      <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
+      <JsonLdScript
+        data={webPageJsonLd({
+          name: post.title,
+          description: summary,
+          pathname,
+          datePublished: post.publishedAt ?? undefined,
+          dateModified: post.updatedAt,
+        })}
+        scriptKey="webpage"
       />
+      <BreadcrumbJsonLd
+        items={breadcrumbItems([
+          { name: "Home", pathname: "/" },
+          { name: "Blog", pathname: "/blog" },
+          { name: post.title, pathname },
+        ])}
+        scriptKey="breadcrumb"
+      />
+      <ArticleJsonLd
+        type="BlogPosting"
+        headline={post.title}
+        description={summary}
+        url={absoluteUrl(pathname)}
+        author={{ "@type": "Person", name: author?.name ?? siteConfig.publisher }}
+        datePublished={post.publishedAt ?? undefined}
+        dateModified={post.updatedAt}
+        image={image?.src ? absoluteUrl(image.src) : undefined}
+        publisher={{ "@type": "Organization", name: siteConfig.name }}
+        mainEntityOfPage={absoluteUrl(pathname)}
+        scriptKey="article"
+      />
+      {faqItems.length > 0 && (
+        <FAQJsonLd
+          questions={faqItems.map((item) => ({ question: item.question, answer: item.answer }))}
+          scriptKey="faq"
+        />
+      )}
 
       <article className="my-12 lg:my-24">
         <div className="flex flex-col gap-4 border-t p-4">

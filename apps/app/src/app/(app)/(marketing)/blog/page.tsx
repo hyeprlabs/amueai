@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
+import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
 import { BlogSection } from "@/components/blog/blog-section";
 import { Pager } from "@/components/blog/pager";
-import { JsonLd } from "@/components/json-ld";
 import { siteConfig } from "@/config/site";
 import { getCategories, getPosts } from "@/lib/blog";
-import { createMetadata } from "@/lib/seo";
 import {
-  breadcrumbSchema,
-  organizationSchema,
-  structuredDataGraph,
-  webPageSchema,
-  websiteSchema,
-} from "@/lib/structured-data";
+  breadcrumbItems,
+  organizationJsonLdProps,
+  webPageJsonLd,
+  webSiteJsonLd,
+} from "@/lib/next-seo";
+import { createMetadata } from "@/lib/seo";
 
 const title = "Latest Blogs";
 const description = `Product updates, guides and stories from the ${siteConfig.name} team.`;
@@ -44,20 +43,18 @@ export default async function BlogIndexPage({
 
   return (
     <>
-      <JsonLd
-        data={structuredDataGraph(
-          organizationSchema(),
-          websiteSchema(),
-          webPageSchema({
-            name: title,
-            description,
-            pathname: "/blog",
-            breadcrumb: breadcrumbSchema([
-              { name: "Home", pathname: "/" },
-              { name: title, pathname: "/blog" },
-            ]),
-          }),
-        )}
+      <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
+      <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
+      <JsonLdScript
+        data={webPageJsonLd({ name: title, description, pathname: "/blog" })}
+        scriptKey="webpage"
+      />
+      <BreadcrumbJsonLd
+        items={breadcrumbItems([
+          { name: "Home", pathname: "/" },
+          { name: title, pathname: "/blog" },
+        ])}
+        scriptKey="breadcrumb"
       />
 
       <BlogSection

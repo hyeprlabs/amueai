@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
+import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
-import { JsonLd } from "@/components/json-ld";
 import { LegalContact } from "@/components/legal-contact";
 import { LegalDropdown } from "@/components/legal-dropdown";
 import { siteConfig } from "@/config/site";
 import { getLegalPage } from "@/lib/legal-pages";
+import {
+  breadcrumbItems,
+  organizationJsonLdProps,
+  webPageJsonLd,
+  webSiteJsonLd,
+} from "@/lib/next-seo";
 import { richTextToPlainText } from "@/lib/rich-text";
 import { createMetadata, truncateForDescription } from "@/lib/seo";
-import {
-  breadcrumbSchema,
-  organizationSchema,
-  structuredDataGraph,
-  webPageSchema,
-  websiteSchema,
-} from "@/lib/structured-data";
 
 export async function generateMetadata({ params }: PageProps<"/legal/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -56,24 +55,26 @@ export default async function LegalPage({ params }: PageProps<"/legal/[slug]">) 
 
   return (
     <>
-      <JsonLd
-        data={structuredDataGraph(
-          organizationSchema(),
-          websiteSchema(),
-          webPageSchema({
-            name: page.title,
-            description: summary
-              ? truncateForDescription(summary)
-              : `${page.title} for ${siteConfig.name}.`,
-            pathname,
-            datePublished: page.createdAt,
-            dateModified: page.updatedAt,
-            breadcrumb: breadcrumbSchema([
-              { name: "Home", pathname: "/" },
-              { name: page.title, pathname },
-            ]),
-          }),
-        )}
+      <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
+      <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
+      <JsonLdScript
+        data={webPageJsonLd({
+          name: page.title,
+          description: summary
+            ? truncateForDescription(summary)
+            : `${page.title} for ${siteConfig.name}.`,
+          pathname,
+          datePublished: page.createdAt,
+          dateModified: page.updatedAt,
+        })}
+        scriptKey="webpage"
+      />
+      <BreadcrumbJsonLd
+        items={breadcrumbItems([
+          { name: "Home", pathname: "/" },
+          { name: page.title, pathname },
+        ])}
+        scriptKey="breadcrumb"
       />
 
       <article className="my-12 lg:my-24">
