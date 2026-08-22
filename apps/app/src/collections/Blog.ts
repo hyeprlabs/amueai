@@ -119,6 +119,43 @@ export const Blog: CollectionConfig = {
       admin: { position: "sidebar" },
       filterOptions: ({ id }) => (id ? { id: { not_equals: id } } : true),
     },
+    {
+      name: "faq",
+      type: "group",
+      label: "FAQ",
+      admin: {
+        description: "Optional FAQ section rendered below the post content.",
+      },
+      fields: [
+        {
+          name: "enabled",
+          type: "checkbox",
+          defaultValue: false,
+          admin: { description: "Show a FAQ section on this post." },
+        },
+        {
+          name: "title",
+          type: "text",
+          defaultValue: "Frequently asked questions",
+          admin: { condition: (_, siblingData) => Boolean(siblingData?.enabled) },
+        },
+        {
+          name: "description",
+          type: "textarea",
+          admin: { condition: (_, siblingData) => Boolean(siblingData?.enabled) },
+        },
+        {
+          name: "items",
+          type: "array",
+          labels: { singular: "Question", plural: "Questions" },
+          admin: { condition: (_, siblingData) => Boolean(siblingData?.enabled) },
+          fields: [
+            { name: "question", type: "text", required: true },
+            { name: "answer", type: "textarea", required: true },
+          ],
+        },
+      ],
+    },
   ],
   timestamps: true,
 };

@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
+import {
+  BreadcrumbJsonLd,
+  JsonLdScript,
+  OrganizationJsonLd,
+  SoftwareApplicationJsonLd,
+} from "next-seo";
 
-import { JsonLd } from "@/components/json-ld";
 import { plans } from "@/components/marketing/pricing/plans";
 import { PricingSection } from "@/components/marketing/pricing/pricing-section";
 import { siteConfig } from "@/config/site";
-import { createMetadata } from "@/lib/seo";
 import {
-  breadcrumbSchema,
-  organizationSchema,
-  softwareApplicationSchema,
-  structuredDataGraph,
-  webPageSchema,
-  websiteSchema,
-} from "@/lib/structured-data";
+  breadcrumbItems,
+  organizationJsonLdProps,
+  webPageJsonLd,
+  webSiteJsonLd,
+} from "@/lib/next-seo";
+import { absoluteUrl, createMetadata } from "@/lib/seo";
 
 const title = "Pricing";
 const description = `Simple, transparent pricing for ${siteConfig.name}. Compare the Basic, Pro and Business plans and pick the one that scales with your team.`;
@@ -26,28 +29,32 @@ export const metadata: Metadata = createMetadata({
 export default function Page() {
   return (
     <>
-      <JsonLd
-        data={structuredDataGraph(
-          organizationSchema(),
-          websiteSchema(),
-          webPageSchema({
-            name: title,
-            description,
-            pathname: "/pricing",
-            breadcrumb: breadcrumbSchema([
-              { name: "Home", pathname: "/" },
-              { name: title, pathname: "/pricing" },
-            ]),
-          }),
-          softwareApplicationSchema(
-            plans.map((plan) => ({
-              name: plan.name,
-              description: plan.info,
-              price: plan.price.monthly,
-              billingDuration: "P1M",
-            })),
-          ),
-        )}
+      <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
+      <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
+      <JsonLdScript
+        data={webPageJsonLd({ name: title, description, pathname: "/pricing" })}
+        scriptKey="webpage"
+      />
+      <BreadcrumbJsonLd
+        items={breadcrumbItems([
+          { name: "Home", pathname: "/" },
+          { name: title, pathname: "/pricing" },
+        ])}
+        scriptKey="breadcrumb"
+      />
+      <SoftwareApplicationJsonLd
+        applicationCategory="BusinessApplication"
+        description={siteConfig.description}
+        name={siteConfig.name}
+        offers={plans.map((plan) => ({
+          price: plan.price.monthly,
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          url: absoluteUrl("/pricing"),
+        }))}
+        operatingSystem="Web"
+        scriptKey="software-application"
+        url={absoluteUrl("/pricing")}
       />
 
       <PricingSection />

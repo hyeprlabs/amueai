@@ -1,15 +1,10 @@
+import { BlogEmpty } from "@/components/blog/blog-empty";
 import { PostCard } from "@/components/blog/post-card";
-import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import type { Blog } from "@/payload-types";
 
 export function PostGrid({ posts }: { posts: Blog[] }) {
   if (posts.length === 0) {
-    return (
-      <Empty>
-        <EmptyTitle>No posts yet</EmptyTitle>
-        <EmptyDescription>Check back soon for new content.</EmptyDescription>
-      </Empty>
-    );
+    return <BlogEmpty className="py-12" />;
   }
 
   return (

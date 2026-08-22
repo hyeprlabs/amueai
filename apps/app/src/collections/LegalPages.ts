@@ -1,7 +1,7 @@
 import type { Access, CollectionConfig } from "payload";
-import slugify from "slug";
 
 import { isLoggedIn } from "@/access/is-logged-in";
+import { slugField } from "@/fields/slug";
 
 /** Anyone can read published pages; logged-in admin users can also see drafts. */
 const readPublishedOrLoggedIn: Access = ({ req }) => {
@@ -26,17 +26,7 @@ export const LegalPages: CollectionConfig = {
   },
   fields: [
     { name: "title", type: "text", required: true },
-    {
-      name: "slug",
-      type: "text",
-      required: true,
-      unique: true,
-      index: true,
-      admin: { position: "sidebar" },
-      hooks: {
-        beforeValidate: [({ value, siblingData }) => value || slugify(siblingData.title)],
-      },
-    },
+    slugField("title"),
     { name: "content", type: "richText", required: true },
   ],
   timestamps: true,

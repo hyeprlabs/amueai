@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { NewspaperIcon } from "lucide-react";
 
-import { CategoryDropdown } from "@/components/category-dropdown";
+import { BlogEmpty } from "@/components/blog/blog-empty";
+import { CategoryDropdown } from "@/components/blog/category-dropdown";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import type { Blog, Category } from "@/payload-types";
 
@@ -42,13 +41,16 @@ export function BlogSection({
             ))}
           </div>
         ) : (
-          <Empty className="border-none py-16">
-            <EmptyMedia variant="icon">
-              <NewspaperIcon />
-            </EmptyMedia>
-            <EmptyTitle>No posts yet</EmptyTitle>
-            <EmptyDescription>Check back soon for new content.</EmptyDescription>
-          </Empty>
+          <BlogEmpty
+            categorySlug={activeCategorySlug}
+            className="py-16"
+            description={
+              activeCategorySlug
+                ? "No posts in this category yet. Check back soon or browse everything else."
+                : "Check back soon for new content."
+            }
+            title={activeCategorySlug ? "No posts in this category" : "No posts yet"}
+          />
         )}
         <FullWidthDivider />
       </div>
@@ -68,24 +70,24 @@ function BlogCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
   return (
     <Link
       className={cn(
-        "group flex h-24 w-full flex-col justify-center gap-y-1 p-4 hover:cursor-pointer hover:bg-accent/30 active:bg-accent dark:active:bg-accent/50",
+        "group flex min-h-24 w-full flex-col justify-center gap-y-1 p-4 hover:cursor-pointer hover:bg-accent/30 active:bg-accent dark:active:bg-accent/50",
         className,
       )}
       href={`/blog/${post.slug}`}
       {...props}
     >
-      <div className="relative flex items-end justify-center gap-2">
-        <h3 className="whitespace-nowrap font-medium text-foreground text-lg md:text-xl">
+      <div className="relative flex min-w-0 items-end justify-center gap-2">
+        <h3 className="min-w-0 shrink truncate font-medium text-foreground text-lg md:text-xl">
           {post.title}
         </h3>
-        <span className="mb-[6px] w-full border-b-2 border-dashed" />
+        <span className="mb-[6px] w-full shrink border-b-2 border-dashed" />
         {date && (
-          <span className="whitespace-nowrap font-mono text-muted-foreground text-xs uppercase group-hover:text-foreground md:text-sm">
+          <span className="shrink-0 whitespace-nowrap font-mono text-muted-foreground text-xs uppercase group-hover:text-foreground md:text-sm">
             {date}
           </span>
         )}
       </div>
-      <div className="max-w-sm text-muted-foreground text-sm group-hover:text-foreground md:max-w-full md:text-base">
+      <div className="line-clamp-2 max-w-sm text-muted-foreground text-sm group-hover:text-foreground md:max-w-full md:text-base">
         {post.excerpt}
       </div>
     </Link>
