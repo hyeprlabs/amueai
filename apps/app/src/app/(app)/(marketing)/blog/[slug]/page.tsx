@@ -13,8 +13,8 @@ import {
 } from "next-seo";
 
 import { AuthorInfo } from "@/components/blog/author-info";
+import { CategoryDropdown } from "@/components/blog/category-dropdown";
 import { BlogFaq } from "@/components/blog/blog-faq";
-import { PostCategoryDropdown } from "@/components/blog/post-category-dropdown";
 import { PostGrid } from "@/components/blog/post-grid";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -127,7 +127,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
             Back
           </Button>
           {allCategories.length > 0 && (
-            <PostCategoryDropdown activeSlug={categories[0]?.slug} categories={allCategories} />
+            <CategoryDropdown activeSlug={categories[0]?.slug} categories={allCategories} />
           )}
         </div>
 

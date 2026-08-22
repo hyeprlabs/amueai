@@ -15,8 +15,8 @@ import type { Category } from "@/payload-types";
 
 const serialize = createSerializer({ category: parseAsString });
 
-/** Post-page category switcher: shows the post's category, links to /blog filtered by any other. */
-export function PostCategoryDropdown({
+/** Category switcher shared by /blog and /blog/[slug] — every item links to /blog filtered by category. */
+export function CategoryDropdown({
   categories,
   activeSlug,
 }: {
@@ -40,11 +40,14 @@ export function PostCategoryDropdown({
               className="hidden group-data-popup-open:block"
               data-icon="inline-start"
             />
-            {activeCategory?.title ?? "Categories"}
+            {activeCategory?.title ?? "All categories"}
           </Button>
         }
       />
       <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
+        <DropdownMenuItem render={<Link href={serialize("/blog", { category: null })} />}>
+          All categories
+        </DropdownMenuItem>
         {categories.map((category) => (
           <DropdownMenuItem
             key={category.id}
