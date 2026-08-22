@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { getCategories, getPublishedPostSlugs } from "@/lib/blog";
 import { getPublishedLegalPages } from "@/lib/legal-pages";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -9,7 +10,37 @@ export const revalidate = 3600;
 const marketingRoutes = [
   { pathname: "/", changeFrequency: "weekly", priority: 1 },
   { pathname: "/pricing", changeFrequency: "monthly", priority: 0.8 },
+  { pathname: "/blog", changeFrequency: "daily", priority: 0.8 },
 ] as const;
+
+/**
+ * Blog content lives in Payload, which is unreachable during builds that run
+ * without a database. Falling back to the static routes keeps the sitemap valid
+ * instead of failing the build outright.
+ */
+async function getBlogRoutes(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const [posts, categories] = await Promise.all([getPublishedPostSlugs(), getCategories()]);
+
+    return [
+      ...posts.map((post) => ({
+        url: absoluteUrl(`/blog/${post.slug}`),
+        lastModified: new Date(post.updatedAt),
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
+      })),
+      ...categories.map((category) => ({
+        url: absoluteUrl(`/blog/category/${category.slug}`),
+        changeFrequency: "weekly" as const,
+        priority: 0.4,
+      })),
+    ];
+  } catch (error) {
+    console.error("[sitemap] Skipping blog routes, Payload could not be reached:", error);
+
+    return [];
+  }
+}
 
 /**
  * Legal pages live in Payload, which is unreachable during builds that run
@@ -44,5 +75,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority,
     })),
     ...(await getLegalRoutes()),
+    ...(await getBlogRoutes()),
   ];
 }
