@@ -46,7 +46,7 @@ export async function GET() {
       <description>${escapeXml(post.excerpt)}</description>
       ${pubDate ? `<pubDate>${pubDate}</pubDate>` : ""}
       ${author ? `<author>${escapeXml(author)}</author>` : ""}
-      <content:encoded><![CDATA[${richTextToPlainText(post.content)}]]></content:encoded>
+      <content:encoded>${escapeXml(richTextToPlainText(post.content))}</content:encoded>
     </item>`;
     })
     .join("");

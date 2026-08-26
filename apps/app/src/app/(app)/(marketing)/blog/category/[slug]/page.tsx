@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Pager } from "@/components/blog/pager";
 import { PostGrid } from "@/components/blog/post-grid";
 import { JsonLd } from "@/components/json-ld";
-import { getCategoryBySlug, getPosts } from "@/lib/blog";
+import { getCategoryBySlug, getPosts, parsePageParam } from "@/lib/blog";
 import { createMetadata } from "@/lib/seo";
 import {
   breadcrumbSchema,
@@ -42,7 +42,7 @@ export default async function BlogCategoryPage({
 }: PageProps<"/blog/category/[slug]">) {
   const { slug } = await params;
   const { page: pageParam } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
+  const page = parsePageParam(pageParam);
 
   const category = await getCategoryBySlug(slug);
   if (!category) notFound();

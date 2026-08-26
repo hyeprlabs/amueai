@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     return new Response("Missing slug", { status: 400 });
   }
 
-  const post = await getPostBySlug(slug, { draft: true });
+  const post = await getPostBySlug(slug, true);
   if (!post) {
     return new Response("Invalid slug", { status: 401 });
   }

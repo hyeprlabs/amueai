@@ -48,7 +48,11 @@ export default buildConfig({
     // scheduled publish/unpublish can land up to ~24h after its target time.
     // Upgrading to Vercel Pro unlocks more frequent crons (e.g. every 5 min).
     access: {
-      run: ({ req }) => req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`,
+      run: ({ req }) => {
+        const secret = process.env.CRON_SECRET;
+        if (!secret) return false;
+        return req.headers.get("authorization") === `Bearer ${secret}`;
+      },
     },
   },
   plugins: [

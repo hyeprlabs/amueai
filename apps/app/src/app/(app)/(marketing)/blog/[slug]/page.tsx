@@ -25,7 +25,7 @@ import type { Author, Category, Tag } from "@/payload-types";
 
 async function loadPost(slug: string) {
   const { isEnabled: draft } = await draftMode();
-  return { post: await getPostBySlug(slug, { draft }), draft };
+  return { post: await getPostBySlug(slug, draft), draft };
 }
 
 export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): Promise<Metadata> {

@@ -5,7 +5,7 @@ import { Pager } from "@/components/blog/pager";
 import { PostGrid } from "@/components/blog/post-grid";
 import { JsonLd } from "@/components/json-ld";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getAuthorBySlug, getPosts } from "@/lib/blog";
+import { getAuthorBySlug, getPosts, parsePageParam } from "@/lib/blog";
 import { resolveMedia } from "@/lib/media";
 import { createMetadata } from "@/lib/seo";
 import {
@@ -44,7 +44,7 @@ export default async function BlogAuthorPage({
 }: PageProps<"/blog/author/[slug]">) {
   const { slug } = await params;
   const { page: pageParam } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
+  const page = parsePageParam(pageParam);
 
   const author = await getAuthorBySlug(slug);
   if (!author) notFound();

@@ -6,7 +6,7 @@ import { Pager } from "@/components/blog/pager";
 import { Badge } from "@/components/ui/badge";
 import { JsonLd } from "@/components/json-ld";
 import { siteConfig } from "@/config/site";
-import { getCategories, getPosts } from "@/lib/blog";
+import { getCategories, getPosts, parsePageParam } from "@/lib/blog";
 import { createMetadata } from "@/lib/seo";
 import {
   breadcrumbSchema,
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 
 export default async function BlogIndexPage({ searchParams }: PageProps<"/blog">) {
   const { page: pageParam } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
+  const page = parsePageParam(pageParam);
 
   const [{ docs: posts, hasNextPage, hasPrevPage }, categories] = await Promise.all([
     getPosts({ page }),

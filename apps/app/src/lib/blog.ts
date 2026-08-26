@@ -16,6 +16,14 @@ type PostListOptions = {
   author?: string;
 };
 
+/** Parses a `?page=` search param into a safe, finite, positive integer, defaulting to 1. */
+export function parsePageParam(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const page = Number(raw);
+
+  return Number.isSafeInteger(page) && page > 0 ? page : 1;
+}
+
 /**
  * Loads a single blog post by slug.
  *
@@ -24,7 +32,7 @@ type PostListOptions = {
  * latest unpublished revision instead.
  */
 export const getPostBySlug = cache(
-  async (slug: string, { draft = false }: { draft?: boolean } = {}): Promise<Blog | undefined> => {
+  async (slug: string, draft = false): Promise<Blog | undefined> => {
     const payload = await getPayload({ config });
     const { docs } = await payload.find({
       collection: "blog",
