@@ -55,7 +55,7 @@ function CompetitorRow({
       {...props}
     >
       <div className="relative flex min-w-0 items-end justify-center gap-2">
-        <h3 className="min-w-0 shrink font-medium text-foreground text-lg md:text-xl">
+        <h3 className="min-w-0 shrink whitespace-nowrap font-medium text-foreground text-lg md:text-xl">
           {competitor.name} vs. {siteConfig.name}
         </h3>
         <span className="mb-[6px] w-full shrink border-b-2 border-dashed" />
