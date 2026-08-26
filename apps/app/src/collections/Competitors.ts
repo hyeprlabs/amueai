@@ -118,29 +118,47 @@ export const Competitors: CollectionConfig = {
       labels: { singular: "Row", plural: "Rows" },
       admin: {
         description:
-          "The side-by-side table rendered at the top of the page: one row per aspect, each side marked as supported or not. Order rows to lead with what makes " +
+          "The side-by-side table rendered at the top of the page: one row per aspect. Use checkbox rows for features or string rows for metrics. Order rows to lead with what makes " +
           `${siteConfig.name} win.`,
       },
       fields: [
         {
-          name: "feature",
+          name: "label",
           type: "text",
           required: true,
-          admin: { description: 'The aspect being compared, e.g. "Live on WhatsApp".' },
+          admin: { description: 'The aspect being compared, e.g. "Live on WhatsApp" or "Seats".' },
         },
         {
           name: "competitorSupported",
           type: "checkbox",
-          label: "Competitor",
+          label: "Competitor Support",
           defaultValue: false,
-          admin: { description: "Does the competitor support this?", width: "30%" },
+          admin: { description: "Does the competitor support this feature?", width: "30%" },
         },
         {
           name: "usSupported",
           type: "checkbox",
-          label: siteConfig.name,
+          label: `${siteConfig.name} Support`,
           defaultValue: true,
-          admin: { description: `Does ${siteConfig.name} support this?`, width: "30%" },
+          admin: { description: `Does ${siteConfig.name} support this feature?`, width: "30%" },
+        },
+        {
+          name: "competitorValue",
+          type: "text",
+          admin: {
+            description:
+              "For metrics (not features), the competitor value. E.g. '0' or 'Limited'. Leave empty for checkbox-style rows.",
+            width: "30%",
+          },
+        },
+        {
+          name: "usValue",
+          type: "text",
+          admin: {
+            description:
+              `For metrics (not features), the ${siteConfig.name} value. E.g. '10' or 'Full'. Leave empty for checkbox-style rows.`,
+            width: "30%",
+          },
         },
       ],
     },

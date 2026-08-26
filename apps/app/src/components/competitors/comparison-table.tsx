@@ -43,14 +43,14 @@ export function ComparisonTable({
             <TableHead className="border-b" scope="col">
               Aspect
             </TableHead>
-            <TableHead className="border-b border-l text-center font-medium" scope="col">
-              {competitorName}
-            </TableHead>
             <TableHead
               className="border-b border-l bg-primary/5 text-center font-semibold text-foreground"
               scope="col"
             >
               {siteConfig.name}
+            </TableHead>
+            <TableHead className="border-b border-l text-center font-medium" scope="col">
+              {competitorName}
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -58,14 +58,27 @@ export function ComparisonTable({
           {rows.map((row, index) => (
             <TableRow className="hover:bg-transparent" key={row.id ?? index}>
               <TableHead className="border-t font-medium" scope="row">
-                {row.feature}
+                {row.label}
               </TableHead>
-              <TableCell className="border-t border-l text-center">
-                <SupportIcon supported={row.competitorSupported} />
-              </TableCell>
-              <TableCell className="border-t border-l bg-primary/5 text-center">
-                <SupportIcon supported={row.usSupported} />
-              </TableCell>
+              {row.usValue ? (
+                <>
+                  <TableCell className="border-t border-l bg-primary/5 text-center">
+                    {row.usValue}
+                  </TableCell>
+                  <TableCell className="border-t border-l text-center">
+                    {row.competitorValue}
+                  </TableCell>
+                </>
+              ) : (
+                <>
+                  <TableCell className="border-t border-l bg-primary/5 text-center">
+                    <SupportIcon supported={row.usSupported} />
+                  </TableCell>
+                  <TableCell className="border-t border-l text-center">
+                    <SupportIcon supported={row.competitorSupported} />
+                  </TableCell>
+                </>
+              )}
             </TableRow>
           ))}
         </TableBody>

@@ -177,7 +177,7 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
           <div className="flex flex-wrap gap-2">
             {related.map((other) => (
               <Button key={other.id} render={<Link href={`/vs/${other.slug}`} />} variant="outline">
-                {other.name} vs. {siteConfig.name}
+                {siteConfig.name} vs. {other.name}
                 <ArrowUpRightIcon aria-hidden data-icon="inline-end" />
               </Button>
             ))}
