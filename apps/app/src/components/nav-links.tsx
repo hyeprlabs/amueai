@@ -13,6 +13,7 @@ import {
   LifeBuoyIcon,
   HistoryIcon,
   MessagesSquareIcon,
+  SwordsIcon,
 } from "lucide-react";
 
 export const featureLinks: LinkItemType[] = [
@@ -85,6 +86,11 @@ export const companyLinks2: LinkItemType[] = [
     label: "Changelog",
     href: "/changelog",
     icon: <HistoryIcon />,
+  },
+  {
+    label: "Competition",
+    href: "/competition",
+    icon: <SwordsIcon />,
   },
   {
     label: "Community",

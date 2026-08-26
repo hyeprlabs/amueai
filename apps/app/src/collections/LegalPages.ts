@@ -1,19 +1,18 @@
-import type { Access, CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
 
 import { isLoggedIn } from "@/access/is-logged-in";
+import { readPublishedOrLoggedIn } from "@/access/read-published";
 import { slugField } from "@/fields/slug";
 
-/** Anyone can read published pages; logged-in admin users can also see drafts. */
-const readPublishedOrLoggedIn: Access = ({ req }) => {
-  if (req.user) return true;
-  return { _status: { equals: "published" } };
-};
-
+/** Legal Pages. One document is a page, published at `/legal/[slug]`. */
 export const LegalPages: CollectionConfig = {
   slug: "legal-pages",
+  labels: { singular: "Page", plural: "Legal Pages" },
+  typescript: { interface: "LegalPage" },
   admin: {
     useAsTitle: "title",
     defaultColumns: ["title", "_status", "createdAt"],
+    group: "Legal Pages",
   },
   access: {
     read: readPublishedOrLoggedIn,

@@ -19,17 +19,17 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
    	"answer" varchar
    );
    --> statement-breakpoint
-   ALTER TABLE "payload"."blog" ADD COLUMN "faq_enabled" boolean DEFAULT false;
+   ALTER TABLE "payload"."blog" ADD COLUMN IF NOT EXISTS "faq_enabled" boolean DEFAULT false;
    --> statement-breakpoint
-   ALTER TABLE "payload"."blog" ADD COLUMN "faq_title" varchar DEFAULT 'Frequently asked questions';
+   ALTER TABLE "payload"."blog" ADD COLUMN IF NOT EXISTS "faq_title" varchar DEFAULT 'Frequently asked questions';
    --> statement-breakpoint
-   ALTER TABLE "payload"."blog" ADD COLUMN "faq_description" varchar;
+   ALTER TABLE "payload"."blog" ADD COLUMN IF NOT EXISTS "faq_description" varchar;
    --> statement-breakpoint
-   ALTER TABLE "payload"."_blog_v" ADD COLUMN "version_faq_enabled" boolean DEFAULT false;
+   ALTER TABLE "payload"."_blog_v" ADD COLUMN IF NOT EXISTS "version_faq_enabled" boolean DEFAULT false;
    --> statement-breakpoint
-   ALTER TABLE "payload"."_blog_v" ADD COLUMN "version_faq_title" varchar DEFAULT 'Frequently asked questions';
+   ALTER TABLE "payload"."_blog_v" ADD COLUMN IF NOT EXISTS "version_faq_title" varchar DEFAULT 'Frequently asked questions';
    --> statement-breakpoint
-   ALTER TABLE "payload"."_blog_v" ADD COLUMN "version_faq_description" varchar;
+   ALTER TABLE "payload"."_blog_v" ADD COLUMN IF NOT EXISTS "version_faq_description" varchar;
    --> statement-breakpoint
    DO $$ BEGIN
     ALTER TABLE "payload"."blog_faq_items" ADD CONSTRAINT "blog_faq_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."blog"("id") ON DELETE cascade ON UPDATE no action;

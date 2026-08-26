@@ -1,11 +1,11 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/dashboard/app-header";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
-import { getLatestChangelogEntry } from "@/lib/changelog";
+import { getLatestChange } from "@/lib/changelog";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   // A transient DB hiccup shouldn't take the whole dashboard down.
-  const latestChange = await getLatestChangelogEntry().catch(() => undefined);
+  const latestChange = await getLatestChange().catch(() => undefined);
 
   return (
     <SidebarProvider>

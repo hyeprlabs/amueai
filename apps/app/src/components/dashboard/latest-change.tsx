@@ -4,14 +4,14 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
-import type { Changelog } from "@/payload-types";
+import type { Change } from "@/payload-types";
 
-export function LatestChange({ entry }: { entry?: Changelog }) {
+export function LatestChange({ change }: { change?: Change }) {
   const [isOpen, setIsOpen] = useState(true);
 
-  if (!entry) return null;
+  if (!change) return null;
 
-  const href = `/changelog#${entry.slug}`;
+  const href = `/changelog#${change.slug}`;
 
   return (
     <div
@@ -23,8 +23,8 @@ export function LatestChange({ entry }: { entry?: Changelog }) {
       )}
     >
       <span className="font-light font-mono text-[10px] text-muted-foreground">CHANGELOG</span>
-      <p className="font-medium text-xs">{entry.title}</p>
-      <span className="text-[10px] text-muted-foreground">{entry.shortDescription}</span>
+      <p className="font-medium text-xs">{change.title}</p>
+      <span className="text-[10px] text-muted-foreground">{change.shortDescription}</span>
       <Button
         className="w-max px-0 font-light text-xs"
         nativeButton={false}

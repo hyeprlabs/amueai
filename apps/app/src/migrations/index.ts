@@ -1,7 +1,14 @@
+import * as migration_20260101_000000_init from "./20260101_000000_init";
 import * as migration_20260822_084537_add_blog_faq from "./20260822_084537_add_blog_faq";
 import * as migration_20260826_124420_add_changelog from "./20260826_124420_add_changelog";
+import * as migration_20260826_141631_add_competitors from "./20260826_141631_add_competitors";
 
 export const migrations = [
+  {
+    up: migration_20260101_000000_init.up,
+    down: migration_20260101_000000_init.down,
+    name: "20260101_000000_init",
+  },
   {
     up: migration_20260822_084537_add_blog_faq.up,
     down: migration_20260822_084537_add_blog_faq.down,
@@ -11,5 +18,10 @@ export const migrations = [
     up: migration_20260826_124420_add_changelog.up,
     down: migration_20260826_124420_add_changelog.down,
     name: "20260826_124420_add_changelog",
+  },
+  {
+    up: migration_20260826_141631_add_competitors.up,
+    down: migration_20260826_141631_add_competitors.down,
+    name: "20260826_141631_add_competitors",
   },
 ];

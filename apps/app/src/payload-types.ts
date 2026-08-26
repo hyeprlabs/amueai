@@ -69,11 +69,12 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
-    blog: Blog;
+    blog: Post;
     categories: Category;
     authors: Author;
     "legal-pages": LegalPage;
-    changelog: Changelog;
+    changelog: Change;
+    competitors: Competitor;
     search: Search;
     "payload-kv": PayloadKv;
     "payload-locked-documents": PayloadLockedDocument;
@@ -96,6 +97,7 @@ export interface Config {
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     "legal-pages": LegalPagesSelect<false> | LegalPagesSelect<true>;
     changelog: ChangelogSelect<false> | ChangelogSelect<true>;
+    competitors: CompetitorsSelect<false> | CompetitorsSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
     "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
     "payload-locked-documents":
@@ -212,7 +214,7 @@ export interface Media {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "blog".
  */
-export interface Blog {
+export interface Post {
   id: number;
   title: string;
   slug: string;
@@ -243,13 +245,13 @@ export interface Blog {
    * Estimated reading time in minutes, computed from the content.
    */
   readingTime?: number | null;
-  relatedPosts?: (number | Blog)[] | null;
+  relatedPosts?: (number | Post)[] | null;
   /**
    * Optional FAQ section rendered below the post content.
    */
   faq?: {
     /**
-     * Show a FAQ section on this post.
+     * Show a FAQ section on this page.
      */
     enabled?: boolean | null;
     title?: string | null;
@@ -296,7 +298,7 @@ export interface Author {
       }[]
     | null;
   posts?: {
-    docs?: (number | Blog)[];
+    docs?: (number | Post)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -313,7 +315,7 @@ export interface Category {
   slug: string;
   description?: string | null;
   posts?: {
-    docs?: (number | Blog)[];
+    docs?: (number | Post)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -351,7 +353,7 @@ export interface LegalPage {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "changelog".
  */
-export interface Changelog {
+export interface Change {
   id: number;
   title: string;
   slug: string;
@@ -366,7 +368,7 @@ export interface Changelog {
   version?: string | null;
   publishedAt?: string | null;
   /**
-   * Optional image shown with this entry and used as its social card.
+   * Optional image shown with this change and used as its social card.
    */
   featuredImage?: (number | null) | Media;
   content: {
@@ -397,6 +399,135 @@ export interface Changelog {
   _status?: ("draft" | "published") | null;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "competitors".
+ */
+export interface Competitor {
+  id: number;
+  /**
+   * The competitor's product name on its own, e.g. "Intercom". Drives the /vs/ URL and every "AmueAI vs …" heading.
+   */
+  name: string;
+  slug: string;
+  /**
+   * Page headline and default meta title, e.g. "AmueAI vs Intercom: which AI support agent should you pick?". Lead with the comparison — it is the query people search.
+   */
+  title: string;
+  /**
+   * One or two sentences summarising the comparison. Shown on /competition and used as the default meta description.
+   */
+  excerpt: string;
+  /**
+   * The short answer, rendered directly under the headline. Written to stand on its own so search engines and AI answers can quote it.
+   */
+  verdict: string;
+  /**
+   * Who this competitor suits best, e.g. "Large support teams with an existing helpdesk". Shown next to the entry on /competition.
+   */
+  bestFor?: string | null;
+  /**
+   * The competitor's homepage. Used in the structured data describing them.
+   */
+  website?: string | null;
+  /**
+   * The competitor's logo, shown beside their entry on /competition.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * Social card for this comparison.
+   */
+  featuredImage: number | Media;
+  author: number | Author;
+  publishedAt?: string | null;
+  /**
+   * The side-by-side table. Keep the feature names to the words people actually search for.
+   */
+  comparison?:
+    | {
+        feature: string;
+        /**
+         * How AmueAI handles this.
+         */
+        us: string;
+        /**
+         * How the competitor handles this. Keep it accurate and fair.
+         */
+        them: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Where the competitor genuinely wins. Credibility is what ranks.
+   */
+  strengths?:
+    | {
+        point: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Where the competitor falls short for the reader.
+   */
+  limitations?:
+    | {
+        point: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The long-form comparison, rendered below the table.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Estimated reading time in minutes, computed from the content.
+   */
+  readingTime?: number | null;
+  relatedCompetitors?: (number | Competitor)[] | null;
+  /**
+   * Optional FAQ section rendered below the comparison, published as FAQ structured data.
+   */
+  faq?: {
+    /**
+     * Show a FAQ section on this page.
+     */
+    enabled?: boolean | null;
+    title?: string | null;
+    description?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
  * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -409,11 +540,15 @@ export interface Search {
   doc:
     | {
         relationTo: "blog";
-        value: number | Blog;
+        value: number | Post;
       }
     | {
         relationTo: "changelog";
-        value: number | Changelog;
+        value: number | Change;
+      }
+    | {
+        relationTo: "competitors";
+        value: number | Competitor;
       };
   updatedAt: string;
   createdAt: string;
@@ -452,7 +587,7 @@ export interface PayloadLockedDocument {
       } | null)
     | ({
         relationTo: "blog";
-        value: number | Blog;
+        value: number | Post;
       } | null)
     | ({
         relationTo: "categories";
@@ -468,7 +603,11 @@ export interface PayloadLockedDocument {
       } | null)
     | ({
         relationTo: "changelog";
-        value: number | Changelog;
+        value: number | Change;
+      } | null)
+    | ({
+        relationTo: "competitors";
+        value: number | Competitor;
       } | null)
     | ({
         relationTo: "search";
@@ -688,6 +827,70 @@ export interface ChangelogSelect<T extends boolean = true> {
   publishedAt?: T;
   featuredImage?: T;
   content?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "competitors_select".
+ */
+export interface CompetitorsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  title?: T;
+  excerpt?: T;
+  verdict?: T;
+  bestFor?: T;
+  website?: T;
+  logo?: T;
+  featuredImage?: T;
+  author?: T;
+  publishedAt?: T;
+  comparison?:
+    | T
+    | {
+        feature?: T;
+        us?: T;
+        them?: T;
+        id?: T;
+      };
+  strengths?:
+    | T
+    | {
+        point?: T;
+        id?: T;
+      };
+  limitations?:
+    | T
+    | {
+        point?: T;
+        id?: T;
+      };
+  content?: T;
+  readingTime?: T;
+  relatedCompetitors?: T;
+  faq?:
+    | T
+    | {
+        enabled?: T;
+        title?: T;
+        description?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {

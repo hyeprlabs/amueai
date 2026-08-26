@@ -4,7 +4,7 @@ import { BlogEmpty } from "@/components/blog/blog-empty";
 import { CategoryDropdown } from "@/components/blog/category-dropdown";
 import { FullWidthDivider } from "@/components/full-width-divider";
 import { cn } from "@/lib/utils";
-import type { Blog, Category } from "@/payload-types";
+import type { Category, Post } from "@/payload-types";
 
 /** `/blog` listing: header, category switcher, and the divided post list. */
 export function BlogSection({
@@ -16,7 +16,7 @@ export function BlogSection({
 }: {
   title: string;
   description: string;
-  posts: Blog[];
+  posts: Post[];
   categories: Category[];
   activeCategorySlug?: string;
 }) {
@@ -37,7 +37,7 @@ export function BlogSection({
         {posts.length > 0 ? (
           <div className="divide-y">
             {posts.map((post) => (
-              <BlogCard key={post.id} post={post} />
+              <PostRow key={post.id} post={post} />
             ))}
           </div>
         ) : (
@@ -58,7 +58,7 @@ export function BlogSection({
   );
 }
 
-function BlogCard({ post, className, ...props }: React.ComponentProps<"a"> & { post: Blog }) {
+function PostRow({ post, className, ...props }: React.ComponentProps<"a"> & { post: Post }) {
   const date = post.publishedAt
     ? new Date(post.publishedAt).toLocaleDateString("en-US", {
         year: "numeric",

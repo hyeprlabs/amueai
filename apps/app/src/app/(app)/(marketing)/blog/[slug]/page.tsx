@@ -14,7 +14,7 @@ import {
 
 import { AuthorInfo } from "@/components/blog/author-info";
 import { CategoryDropdown } from "@/components/blog/category-dropdown";
-import { BlogFaq } from "@/components/blog/blog-faq";
+import { MarketingFaq } from "@/components/marketing-faq";
 import { PostGrid } from "@/components/blog/post-grid";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -152,7 +152,11 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
       </article>
 
       {faqItems.length > 0 && (
-        <BlogFaq description={post.faq?.description} items={faqItems} title={post.faq?.title} />
+        <MarketingFaq
+          description={post.faq?.description}
+          items={faqItems}
+          title={post.faq?.title}
+        />
       )}
 
       {relatedPosts.length > 0 && (

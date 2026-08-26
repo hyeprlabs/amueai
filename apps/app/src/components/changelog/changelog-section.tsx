@@ -3,22 +3,22 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 import { ChangelogEmpty } from "@/components/changelog/changelog-empty";
 import { Badge } from "@/components/ui/badge";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { CHANGELOG_TYPES } from "@/lib/changelog-types";
-import type { Changelog } from "@/payload-types";
+import { CHANGE_TYPES } from "@/lib/change-types";
+import type { Change } from "@/payload-types";
 
 const TYPE_LABELS = Object.fromEntries(
-  CHANGELOG_TYPES.map(({ value, label }) => [value, label]),
-) as Record<Changelog["type"], string>;
+  CHANGE_TYPES.map(({ value, label }) => [value, label]),
+) as Record<Change["type"], string>;
 
-/** `/changelog`: header and the divided, dated list of entries. */
+/** `/changelog`: header and the divided, dated list of changes. */
 export function ChangelogSection({
   title,
   description,
-  entries,
+  changes,
 }: {
   title: string;
   description: string;
-  entries: Changelog[];
+  changes: Change[];
 }) {
   return (
     <div className="flex w-full flex-col justify-start">
@@ -29,10 +29,10 @@ export function ChangelogSection({
 
       <div className="relative">
         <FullWidthDivider />
-        {entries.length > 0 ? (
+        {changes.length > 0 ? (
           <div className="divide-y">
-            {entries.map((entry) => (
-              <ChangelogCard entry={entry} key={entry.id} />
+            {changes.map((change) => (
+              <ChangeRow change={change} key={change.id} />
             ))}
           </div>
         ) : (
@@ -44,9 +44,9 @@ export function ChangelogSection({
   );
 }
 
-function ChangelogCard({ entry }: { entry: Changelog }) {
-  const date = entry.publishedAt
-    ? new Date(entry.publishedAt).toLocaleDateString("en-US", {
+function ChangeRow({ change }: { change: Change }) {
+  const date = change.publishedAt
+    ? new Date(change.publishedAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -54,15 +54,15 @@ function ChangelogCard({ entry }: { entry: Changelog }) {
     : undefined;
 
   return (
-    <article className="scroll-mt-20 flex flex-col gap-3 p-4" id={entry.slug}>
+    <article className="scroll-mt-20 flex flex-col gap-3 p-4" id={change.slug}>
       <div className="flex flex-wrap items-center gap-3">
         <Badge className="rounded-md" variant="outline">
-          {TYPE_LABELS[entry.type]}
+          {TYPE_LABELS[change.type]}
         </Badge>
         {date && (
           <time
             className="font-mono text-muted-foreground text-xs uppercase"
-            dateTime={entry.publishedAt ?? undefined}
+            dateTime={change.publishedAt ?? undefined}
           >
             {date}
           </time>
@@ -70,10 +70,10 @@ function ChangelogCard({ entry }: { entry: Changelog }) {
       </div>
 
       <h3 className="font-semibold text-foreground text-xl tracking-tight md:text-2xl">
-        {entry.title}
+        {change.title}
       </h3>
 
-      <RichText className="richtext" data={entry.content} />
+      <RichText className="richtext" data={change.content} />
     </article>
   );
 }

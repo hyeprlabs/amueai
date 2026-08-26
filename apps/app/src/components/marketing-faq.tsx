@@ -5,21 +5,25 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-export type BlogFaqItem = {
+export type MarketingFaqItem = {
   id?: string | null;
   question: string;
   answer: string;
 };
 
-/** Optional per-post FAQ, rendered below the article content when enabled in Payload. */
-export function BlogFaq({
+/**
+ * Optional FAQ block rendered below an article's content — shared by blog posts
+ * and competitor comparisons. Both publish the same questions as FAQ
+ * structured data, so the copy on the page and in the markup never diverge.
+ */
+export function MarketingFaq({
   title,
   description,
   items,
 }: {
   title?: string | null;
   description?: string | null;
-  items: BlogFaqItem[];
+  items: MarketingFaqItem[];
 }) {
   if (items.length === 0) return null;
 
