@@ -11,7 +11,7 @@ import {
   webPageJsonLd,
   webSiteJsonLd,
 } from "@/lib/next-seo";
-import { createMetadata, listPathname, listTitle } from "@/lib/seo";
+import { createMetadata, listPathname } from "@/lib/seo";
 
 const title = "Blog";
 const description = `Product updates, guides and stories from the ${siteConfig.name} team.`;
@@ -33,7 +33,7 @@ export async function generateMetadata({
 
   return {
     ...createMetadata({
-      title: listTitle(title, page),
+      title,
       description,
       pathname,
     }),
@@ -65,7 +65,7 @@ export default async function BlogIndexPage({
       <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
       <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
       <JsonLdScript
-        data={webPageJsonLd({ name: listTitle(title, page), description, pathname })}
+        data={webPageJsonLd({ name: title, description, pathname })}
         scriptKey="webpage"
       />
       <BreadcrumbJsonLd

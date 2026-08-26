@@ -12,7 +12,7 @@ import {
   webPageJsonLd,
   webSiteJsonLd,
 } from "@/lib/next-seo";
-import { createMetadata, listPathname, listTitle } from "@/lib/seo";
+import { createMetadata, listPathname } from "@/lib/seo";
 
 const title = "Competition";
 const description = `How ${siteConfig.name} compares to every other AI agent platform — pricing, setup, channels and support, side by side.`;
@@ -30,7 +30,7 @@ export async function generateMetadata({
 
   // Page two and beyond canonicalise to themselves rather than to page one.
   return createMetadata({
-    title: listTitle(title, page),
+    title,
     description,
     pathname: listPathname("/competition", page),
   });
@@ -52,7 +52,7 @@ export default async function CompetitionPage({
       <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
       <JsonLdScript
         data={webPageJsonLd({
-          name: listTitle(title, page),
+          name: title,
           description,
           pathname,
           type: "CollectionPage",

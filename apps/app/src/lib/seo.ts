@@ -96,11 +96,6 @@ export function listPathname(
   return query ? `${basePath}?${query}` : basePath;
 }
 
-/** Page-2-and-beyond needs its own title, or every page of a list looks identical. */
-export function listTitle(title: string, page: number): string {
-  return page > 1 ? `${title} — Page ${page}` : title;
-}
-
 /** Collapses whitespace and clips text to a length search engines will display. */
 export function truncateForDescription(text: string, maxLength = 155): string {
   const normalized = text.replace(/\s+/g, " ").trim();

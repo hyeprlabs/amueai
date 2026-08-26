@@ -2,6 +2,7 @@ import * as migration_20260101_000000_init from "./20260101_000000_init";
 import * as migration_20260822_084537_add_blog_faq from "./20260822_084537_add_blog_faq";
 import * as migration_20260826_124420_add_changelog from "./20260826_124420_add_changelog";
 import * as migration_20260826_141631_add_competitors from "./20260826_141631_add_competitors";
+import * as migration_20260826_165700_strip_meta_title_suffix from "./20260826_165700_strip_meta_title_suffix";
 
 export const migrations = [
   {
@@ -23,5 +24,10 @@ export const migrations = [
     up: migration_20260826_141631_add_competitors.up,
     down: migration_20260826_141631_add_competitors.down,
     name: "20260826_141631_add_competitors",
+  },
+  {
+    up: migration_20260826_165700_strip_meta_title_suffix.up,
+    down: migration_20260826_165700_strip_meta_title_suffix.down,
+    name: "20260826_165700_strip_meta_title_suffix",
   },
 ];

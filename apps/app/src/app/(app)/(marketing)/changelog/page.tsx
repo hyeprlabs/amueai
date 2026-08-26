@@ -11,7 +11,7 @@ import {
   webPageJsonLd,
   webSiteJsonLd,
 } from "@/lib/next-seo";
-import { absoluteUrl, createMetadata, listPathname, listTitle } from "@/lib/seo";
+import { absoluteUrl, createMetadata, listPathname } from "@/lib/seo";
 
 const title = "Changelog";
 const description = `Everything we've shipped for ${siteConfig.name}: new features, improvements and fixes.`;
@@ -29,7 +29,7 @@ export async function generateMetadata({
 
   // Page two and beyond canonicalise to themselves rather than to page one.
   return createMetadata({
-    title: listTitle(title, page),
+    title,
     description,
     pathname: listPathname("/changelog", page),
   });
@@ -50,7 +50,7 @@ export default async function ChangelogPage({
       <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
       <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
       <JsonLdScript
-        data={webPageJsonLd({ name: listTitle(title, page), description, pathname })}
+        data={webPageJsonLd({ name: title, description, pathname })}
         scriptKey="webpage"
       />
       <BreadcrumbJsonLd
