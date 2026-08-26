@@ -14,6 +14,7 @@ import { Blog } from "./collections/Blog";
 import { Categories } from "./collections/Categories";
 import { Authors } from "./collections/Authors";
 import { LegalPages } from "./collections/LegalPages";
+import { Changelog } from "./collections/Changelog";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -27,7 +28,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Blog, Categories, Authors, LegalPages],
+  collections: [Users, Media, Blog, Categories, Authors, LegalPages, Changelog],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
@@ -47,21 +48,23 @@ export default buildConfig({
       token: process.env.BLOB_READ_WRITE_TOKEN,
     }),
     seoPlugin({
-      collections: ["blog"],
+      collections: ["blog", "changelog"],
       uploadsCollection: "media",
       generateTitle: ({ doc }) => `${doc.title} | ${siteUrl.replace(/^https?:\/\//, "")}`,
-      generateDescription: ({ doc }) => doc.excerpt,
+      generateDescription: ({ doc }) => doc.excerpt || doc.shortDescription,
       generateImage: ({ doc }) => doc.featuredImage,
-      generateURL: ({ doc }) => `${siteUrl}/blog/${doc.slug}`,
+      generateURL: ({ doc }) =>
+        doc.excerpt ? `${siteUrl}/blog/${doc.slug}` : `${siteUrl}/changelog#${doc.slug}`,
     }),
     searchPlugin({
-      collections: ["blog"],
+      collections: ["blog", "changelog"],
       syncDrafts: false,
       searchOverrides: {
         admin: { group: "Blog" },
       },
       defaultPriorities: {
         blog: 10,
+        changelog: 8,
       },
     }),
   ],
