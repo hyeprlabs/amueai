@@ -20,12 +20,12 @@ type ComparisonRow = NonNullable<Competitor["comparison"]>[number];
  *
  * Competitor first, {@link siteConfig.name} second: a reader scanning left to
  * right meets the thing they searched for, then sees it lose the row to us.
- * No card, no rounded box — just the same straight hairlines the rest of the
- * app's grid uses, so the table reads as part of the page, not a widget
- * dropped into it. Built on the shadcn `Table` primitives so it's a real
- * `<table>` for the screen readers and crawlers that read a comparison page
- * structurally, with a real `<caption>` carrying the summary line — the
- * table's accessible name, not just decoration above it.
+ * No card, no rounded box, no side padding: it bleeds edge to edge like the
+ * rest of the app's grid, with a plain top border, so it reads as part of the
+ * page rather than a widget dropped into it. Built on the shadcn `Table`
+ * primitives so it's a real `<table>` for screen readers and crawlers. The
+ * `<caption>` carries the summary line and is the table's accessible name,
+ * not just decoration above it.
  */
 export function ComparisonTable({
   competitorName,
@@ -37,9 +37,9 @@ export function ComparisonTable({
   if (rows.length === 0) return null;
 
   return (
-    <section className="border-t p-4">
+    <section className="border-t">
       <Table className="border-separate border-spacing-0">
-        <TableCaption className="caption-top mb-4 text-left text-muted-foreground text-sm">
+        <TableCaption className="caption-top mb-4 px-3 text-left text-muted-foreground text-sm">
           A feature-by-feature comparison of {competitorName} and {siteConfig.name}.
         </TableCaption>
         <TableHeader>

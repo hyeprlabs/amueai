@@ -11,7 +11,7 @@ const publishedOnly = { _status: { equals: "published" } } as const;
 
 /** The page headline and default meta title for a competitor: always computed, never freeform. */
 export function competitorPageTitle(name: string): string {
-  return `${siteConfig.name} vs ${name}`;
+  return `${siteConfig.name} vs. ${name}`;
 }
 
 /**
@@ -45,7 +45,7 @@ export const getCompetitorBySlug = cache(
  * Paginated, published competitors.
  *
  * Sorted by name so `/competitors` reads like a directory and its ordering
- * stays stable as comparisons are added — a moving list would keep changing
+ * stays stable as comparisons are added. A moving list would keep changing
  * what each paginated URL contains.
  */
 export async function getCompetitors({
@@ -64,7 +64,7 @@ export async function getCompetitors({
   });
 }
 
-/** Every published competitor's slug + updatedAt — used to build the sitemap. */
+/** Every published competitor's slug and updatedAt, used to build the sitemap. */
 export async function getPublishedCompetitorSlugs(): Promise<
   Pick<Competitor, "slug" | "updatedAt">[]
 > {
@@ -106,7 +106,7 @@ export async function getRelatedCompetitors(
   return docs;
 }
 
-/** When the competitors index last changed, used for the sitemap's `lastModified`. */
+/** When the competitors index last changed. Used for the sitemap's `lastModified`. */
 export async function getLatestCompetitorUpdate(): Promise<string | undefined> {
   const payload = await getPayload({ config });
   const { docs } = await payload.find({

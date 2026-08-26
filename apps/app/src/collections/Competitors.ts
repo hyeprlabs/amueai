@@ -43,7 +43,7 @@ export const Competitors: CollectionConfig = {
       type: "text",
       required: true,
       admin: {
-        description: `The competitor's product name on its own, e.g. "Intercom". Drives the /vs/ URL and every "${siteConfig.name} vs …" heading.`,
+        description: `The competitor's product name on its own, e.g. "Intercom". Drives the /vs/ URL and every "${siteConfig.name} vs. Intercom" heading.`,
       },
     },
     slugField("name"),

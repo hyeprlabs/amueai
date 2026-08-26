@@ -15,7 +15,6 @@ import {
 import { AuthorInfo } from "@/components/blog/author-info";
 import { ComparisonTable } from "@/components/competitors/comparison-table";
 import { MarketingFaq } from "@/components/marketing-faq";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { competitorPageTitle, getCompetitorBySlug, getRelatedCompetitors } from "@/lib/competitors";
@@ -135,7 +134,7 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
             variant="outline"
           >
             <ArrowLeftIcon aria-hidden data-icon="inline-start" />
-            All comparisons
+            All Competitors
           </Button>
         </div>
 
@@ -150,15 +149,18 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
           )}
         </div>
 
-        <ComparisonTable competitorName={competitor.name} rows={rows} />
-
-        <RichText className="richtext border-t border-b p-4" data={competitor.content} />
-
-        {/* The short answer: it is what a snippet quotes. */}
-        <div className={cn("p-4", !hasFaq && !hasRelated && "border-b")}>
+        {/* The short answer, above the table: it is what a snippet quotes. */}
+        <div className="border-t p-4">
           <h2 className="font-medium text-muted-foreground text-sm">The short answer</h2>
           <p className="mt-2 text-balance text-lg leading-relaxed">{competitor.verdict}</p>
         </div>
+
+        <ComparisonTable competitorName={competitor.name} rows={rows} />
+
+        <RichText
+          className={cn("richtext border-t p-4", !hasFaq && !hasRelated && "border-b")}
+          data={competitor.content}
+        />
       </article>
 
       {hasFaq && (
@@ -170,19 +172,14 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
       )}
 
       {hasRelated && (
-        <section className={cn("mb-12 p-4 lg:mb-24 border-b", !hasFaq && "border-t")}>
+        <section className="mb-12 border-y p-4 lg:mb-24">
           <h2 className="mb-3 font-semibold text-xl tracking-tight">Other comparisons</h2>
           <div className="flex flex-wrap gap-2">
             {related.map((other) => (
-              <Badge
-                className="h-auto gap-1.5 rounded-md px-3 py-1.5 text-sm"
-                key={other.id}
-                render={<Link href={`/vs/${other.slug}`} />}
-                variant="outline"
-              >
+              <Button key={other.id} render={<Link href={`/vs/${other.slug}`} />} variant="outline">
                 {other.name} vs. {siteConfig.name}
                 <ArrowUpRightIcon aria-hidden data-icon="inline-end" />
-              </Badge>
+              </Button>
             ))}
           </div>
         </section>

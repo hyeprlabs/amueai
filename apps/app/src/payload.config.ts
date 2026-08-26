@@ -66,10 +66,10 @@ export default buildConfig({
       uploadsCollection: "media",
       // Just the document title: the app's root metadata template appends
       // "| AmueAI" at render time, so adding a suffix here would double it.
-      // Competitors has no `title` field of its own — the page title is
+      // Competitors has no `title` field of its own. The page title is
       // always computed from its name, never freeform.
       generateTitle: ({ collectionSlug, doc }) =>
-        collectionSlug === "competitors" ? `${siteConfig.name} vs ${doc.name}` : doc.title,
+        collectionSlug === "competitors" ? `${siteConfig.name} vs. ${doc.name}` : doc.title,
       // Each collection names its summary field differently; fall back through
       // them rather than guessing from the shape of the document.
       generateDescription: ({ doc }) => doc.excerpt || doc.shortDescription || "",

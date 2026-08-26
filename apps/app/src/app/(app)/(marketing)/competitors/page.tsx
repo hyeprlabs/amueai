@@ -4,7 +4,7 @@ import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 import { CompetitorsSection } from "@/components/competitors/competitors-section";
 import { MarketingPagination } from "@/components/marketing-pagination";
 import { siteConfig } from "@/config/site";
-import { getCompetitors } from "@/lib/competitors";
+import { competitorPageTitle, getCompetitors } from "@/lib/competitors";
 import {
   breadcrumbItems,
   itemListJsonLd,
@@ -15,7 +15,7 @@ import {
 import { createMetadata, listPathname } from "@/lib/seo";
 
 const title = "Competitors";
-const description = `How ${siteConfig.name} compares to every other AI agent platform — pricing, setup, channels and support, side by side.`;
+const description = `How ${siteConfig.name} compares to every other AI agent platform: pricing, setup, channels and support, side by side.`;
 
 type CompetitorsSearchParams = { page?: string };
 
@@ -71,7 +71,7 @@ export default async function CompetitorsPage({
           data={itemListJsonLd(
             `${siteConfig.name} comparisons`,
             competitors.map((competitor) => ({
-              name: `${siteConfig.name} vs ${competitor.name}`,
+              name: competitorPageTitle(competitor.name),
               pathname: `/vs/${competitor.slug}`,
             })),
           )}

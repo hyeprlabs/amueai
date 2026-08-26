@@ -23,7 +23,7 @@ export function CompetitorsEmpty({ className }: { className?: string }) {
         </EmptyMedia>
         <EmptyTitle>No comparisons yet</EmptyTitle>
         <EmptyDescription>
-          Check back soon — we publish a side-by-side breakdown for every alternative worth
+          Check back soon. We publish a side-by-side breakdown for every alternative worth
           comparing.
         </EmptyDescription>
       </EmptyHeader>
