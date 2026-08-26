@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   // `/vs/<competitor>` articles have no index of their own — trimming the URL
   // should land on the page that lists them, not on a 404.
   async redirects() {
-    return [{ source: "/vs", destination: "/competition", permanent: true }];
+    return [{ source: "/vs", destination: "/competitors", permanent: true }];
   },
   images: {
     // Serve modern formats so Largest Contentful Paint stays cheap.

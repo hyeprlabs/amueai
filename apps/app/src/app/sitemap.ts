@@ -85,7 +85,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // No `lastModified` for the marketing routes: the only value available at
   // request time is "now", which crawlers rightly ignore. CMS-backed routes
   // carry a real timestamp.
-  const [legal, posts, competitors, changelog, competition] = await Promise.all([
+  const [legal, posts, competitors, changelog, competitorsIndex] = await Promise.all([
     getLegalRoutes(),
     getBlogRoutes(),
     getCompetitorRoutes(),
@@ -93,7 +93,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.7,
     }),
-    indexRoute("competition index", "/competition", getLatestCompetitorUpdate, {
+    indexRoute("competitors index", "/competitors", getLatestCompetitorUpdate, {
       changeFrequency: "weekly",
       priority: 0.8,
     }),
@@ -105,7 +105,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency,
       priority,
     })),
-    ...competition,
+    ...competitorsIndex,
     ...legal,
     ...posts,
     ...competitors,

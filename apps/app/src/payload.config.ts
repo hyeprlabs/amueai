@@ -16,6 +16,7 @@ import { Authors } from "./collections/Authors";
 import { LegalPages } from "./collections/LegalPages";
 import { Changelog } from "./collections/Changelog";
 import { Competitors } from "./collections/Competitors";
+import { siteConfig } from "./config/site";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -65,7 +66,10 @@ export default buildConfig({
       uploadsCollection: "media",
       // Just the document title: the app's root metadata template appends
       // "| AmueAI" at render time, so adding a suffix here would double it.
-      generateTitle: ({ doc }) => doc.title,
+      // Competitors has no `title` field of its own — the page title is
+      // always computed from its name, never freeform.
+      generateTitle: ({ collectionSlug, doc }) =>
+        collectionSlug === "competitors" ? `${siteConfig.name} vs ${doc.name}` : doc.title,
       // Each collection names its summary field differently; fall back through
       // them rather than guessing from the shape of the document.
       generateDescription: ({ doc }) => doc.excerpt || doc.shortDescription || "",

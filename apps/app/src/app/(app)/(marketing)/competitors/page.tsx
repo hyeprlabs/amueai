@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
-import { CompetitionSection } from "@/components/competition/competition-section";
+import { CompetitorsSection } from "@/components/competitors/competitors-section";
 import { MarketingPagination } from "@/components/marketing-pagination";
 import { siteConfig } from "@/config/site";
 import { getCompetitors } from "@/lib/competitors";
@@ -14,17 +14,17 @@ import {
 } from "@/lib/next-seo";
 import { createMetadata, listPathname } from "@/lib/seo";
 
-const title = "Competition";
+const title = "Competitors";
 const description = `How ${siteConfig.name} compares to every other AI agent platform — pricing, setup, channels and support, side by side.`;
 
-type CompetitionSearchParams = { page?: string };
+type CompetitorsSearchParams = { page?: string };
 
-const readPage = ({ page }: CompetitionSearchParams) => (Number(page) > 0 ? Number(page) : 1);
+const readPage = ({ page }: CompetitorsSearchParams) => (Number(page) > 0 ? Number(page) : 1);
 
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<CompetitionSearchParams>;
+  searchParams: Promise<CompetitorsSearchParams>;
 }): Promise<Metadata> {
   const page = readPage(await searchParams);
 
@@ -32,18 +32,18 @@ export async function generateMetadata({
   return createMetadata({
     title,
     description,
-    pathname: listPathname("/competition", page),
+    pathname: listPathname("/competitors", page),
   });
 }
 
-export default async function CompetitionPage({
+export default async function CompetitorsPage({
   searchParams,
 }: {
-  searchParams: Promise<CompetitionSearchParams>;
+  searchParams: Promise<CompetitorsSearchParams>;
 }) {
   const page = readPage(await searchParams);
 
-  const pathname = listPathname("/competition", page);
+  const pathname = listPathname("/competitors", page);
   const { docs: competitors, totalPages } = await getCompetitors({ page });
 
   return (
@@ -62,7 +62,7 @@ export default async function CompetitionPage({
       <BreadcrumbJsonLd
         items={breadcrumbItems([
           { name: "Home", pathname: "/" },
-          { name: title, pathname: "/competition" },
+          { name: title, pathname: "/competitors" },
         ])}
         scriptKey="breadcrumb"
       />
@@ -79,9 +79,9 @@ export default async function CompetitionPage({
         />
       )}
 
-      <CompetitionSection competitors={competitors} description={description} title={title} />
+      <CompetitorsSection competitors={competitors} description={description} title={title} />
 
-      <MarketingPagination basePath="/competition" page={page} totalPages={totalPages} />
+      <MarketingPagination basePath="/competitors" page={page} totalPages={totalPages} />
     </>
   );
 }

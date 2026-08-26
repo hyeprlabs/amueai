@@ -14,7 +14,7 @@ import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
 /** Empty state shown when no competitor comparison has been published yet. */
-export function CompetitionEmpty({ className }: { className?: string }) {
+export function CompetitorsEmpty({ className }: { className?: string }) {
   return (
     <Empty className={cn("border-none", className)}>
       <EmptyHeader>

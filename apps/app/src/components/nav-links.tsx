@@ -88,8 +88,8 @@ export const companyLinks2: LinkItemType[] = [
     icon: <HistoryIcon />,
   },
   {
-    label: "Competition",
-    href: "/competition",
+    label: "Competitors",
+    href: "/competitors",
     icon: <SwordsIcon />,
   },
   {

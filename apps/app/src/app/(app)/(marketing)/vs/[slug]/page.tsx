@@ -3,7 +3,7 @@ import Link from "next/link";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-import { ArrowLeftIcon, ArrowUpRightIcon, CheckIcon, MinusIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowUpRightIcon } from "lucide-react";
 import {
   ArticleJsonLd,
   BreadcrumbJsonLd,
@@ -13,11 +13,12 @@ import {
 } from "next-seo";
 
 import { AuthorInfo } from "@/components/blog/author-info";
-import { ComparisonTable } from "@/components/competition/comparison-table";
+import { ComparisonTable } from "@/components/competitors/comparison-table";
 import { MarketingFaq } from "@/components/marketing-faq";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { getCompetitorBySlug, getRelatedCompetitors } from "@/lib/competitors";
+import { competitorPageTitle, getCompetitorBySlug, getRelatedCompetitors } from "@/lib/competitors";
 import { resolveMedia } from "@/lib/media";
 import {
   breadcrumbItems,
@@ -28,7 +29,7 @@ import {
 } from "@/lib/next-seo";
 import { absoluteUrl, createMetadata, truncateForDescription } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import type { Author, Competitor } from "@/payload-types";
+import type { Author } from "@/payload-types";
 
 async function loadCompetitor(slug: string) {
   const { isEnabled: draft } = await draftMode();
@@ -49,7 +50,7 @@ export async function generateMetadata({ params }: PageProps<"/vs/[slug]">): Pro
   }
 
   return createMetadata({
-    title: competitor.meta?.title || competitor.title,
+    title: competitor.meta?.title || competitorPageTitle(competitor.name),
     description: competitor.meta?.description || truncateForDescription(competitor.excerpt),
     pathname: `/vs/${competitor.slug}`,
     article: {
@@ -65,15 +66,16 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
 
   if (!competitor) notFound();
 
+  const title = competitorPageTitle(competitor.name);
   const author = typeof competitor.author === "object" ? (competitor.author as Author) : undefined;
   const image = resolveMedia(competitor.featuredImage, "og");
   const summary = truncateForDescription(competitor.meta?.description || competitor.excerpt);
   const pathname = `/vs/${competitor.slug}`;
   const rows = competitor.comparison ?? [];
-  const strengths = competitor.strengths ?? [];
-  const limitations = competitor.limitations ?? [];
   const faqItems = competitor.faq?.enabled ? (competitor.faq.items ?? []) : [];
   const related = draft ? [] : await getRelatedCompetitors(competitor);
+  const hasFaq = faqItems.length > 0;
+  const hasRelated = related.length > 0;
 
   return (
     <>
@@ -81,7 +83,7 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
       <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
       <JsonLdScript
         data={webPageJsonLd({
-          name: competitor.title,
+          name: title,
           description: summary,
           pathname,
           datePublished: competitor.publishedAt ?? undefined,
@@ -92,14 +94,14 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
       <BreadcrumbJsonLd
         items={breadcrumbItems([
           { name: "Home", pathname: "/" },
-          { name: "Competition", pathname: "/competition" },
-          { name: `${siteConfig.name} vs ${competitor.name}`, pathname },
+          { name: "Competitors", pathname: "/competitors" },
+          { name: title, pathname },
         ])}
         scriptKey="breadcrumb"
       />
       <ArticleJsonLd
         type="Article"
-        headline={competitor.title}
+        headline={title}
         description={summary}
         url={absoluteUrl(pathname)}
         author={{ "@type": "Person", name: author?.name ?? siteConfig.publisher }}
@@ -117,7 +119,7 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
         })}
         scriptKey="comparison"
       />
-      {faqItems.length > 0 && (
+      {hasFaq && (
         <FAQJsonLd
           questions={faqItems.map((item) => ({ question: item.question, answer: item.answer }))}
           scriptKey="faq"
@@ -125,33 +127,20 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
       )}
 
       <article className="my-12 lg:my-24">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t p-4">
+        <div className="border-t p-4">
           <Button
             className="w-fit"
-            render={<Link href="/competition" />}
+            render={<Link href="/competitors" />}
             size="sm"
             variant="outline"
           >
             <ArrowLeftIcon aria-hidden data-icon="inline-start" />
             All comparisons
           </Button>
-          {competitor.website && (
-            <Button
-              className="text-muted-foreground"
-              nativeButton={false}
-              render={
-                <a href={competitor.website} rel="nofollow noopener noreferrer" target="_blank">
-                  {competitor.name} website <ArrowUpRightIcon aria-hidden />
-                </a>
-              }
-              size="sm"
-              variant="link"
-            />
-          )}
         </div>
 
         <div className="flex flex-col gap-4 border-t p-4">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">{competitor.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
           {author && (
             <AuthorInfo
               author={author}
@@ -163,57 +152,16 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
 
         <ComparisonTable competitorName={competitor.name} rows={rows} />
 
+        <RichText className="richtext border-t border-b p-4" data={competitor.content} />
+
         {/* The short answer: it is what a snippet quotes. */}
-        <div className="border-t p-4">
+        <div className={cn("p-4", !hasFaq && !hasRelated && "border-b")}>
           <h2 className="font-medium text-muted-foreground text-sm">The short answer</h2>
           <p className="mt-2 text-balance text-lg leading-relaxed">{competitor.verdict}</p>
         </div>
-
-        {(strengths.length > 0 || limitations.length > 0) && (
-          <section className="grid gap-x-8 gap-y-6 border-t p-4 sm:grid-cols-2">
-            {strengths.length > 0 && (
-              <div>
-                <h2 className="font-semibold text-lg tracking-tight">
-                  Where {competitor.name} is strong
-                </h2>
-                <ul className="mt-3 space-y-2 text-sm">
-                  {strengths.map((item, index) => (
-                    <li className="flex gap-2" key={item.id ?? index}>
-                      <CheckIcon aria-hidden className="mt-0.5 size-4 shrink-0" />
-                      <span>{item.point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {limitations.length > 0 && (
-              <div>
-                <h2 className="font-semibold text-lg tracking-tight">
-                  Where {competitor.name} falls short
-                </h2>
-                <ul className="mt-3 space-y-2 text-muted-foreground text-sm">
-                  {limitations.map((item, index) => (
-                    <li className="flex gap-2" key={item.id ?? index}>
-                      <MinusIcon aria-hidden className="mt-0.5 size-4 shrink-0" />
-                      <span>{item.point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
-        )}
-
-        <RichText
-          className={cn(
-            "richtext border-t p-4",
-            faqItems.length === 0 && related.length === 0 && "border-b",
-          )}
-          data={competitor.content}
-        />
       </article>
 
-      {faqItems.length > 0 && (
+      {hasFaq && (
         <MarketingFaq
           description={competitor.faq?.description}
           items={faqItems}
@@ -221,23 +169,22 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
         />
       )}
 
-      {related.length > 0 && (
-        <section className="mb-12 flex flex-col gap-3 border-t p-4 lg:mb-24">
-          <h2 className="font-semibold text-xl tracking-tight">Other comparisons</h2>
-          <ul className="flex flex-wrap gap-2">
-            {related.map((other: Competitor) => (
-              <li key={other.id}>
-                <Button
-                  nativeButton={false}
-                  render={<Link href={`/vs/${other.slug}`} />}
-                  size="sm"
-                  variant="outline"
-                >
-                  {siteConfig.name} vs {other.name}
-                </Button>
-              </li>
+      {hasRelated && (
+        <section className={cn("mb-12 p-4 lg:mb-24 border-b", !hasFaq && "border-t")}>
+          <h2 className="mb-3 font-semibold text-xl tracking-tight">Other comparisons</h2>
+          <div className="flex flex-wrap gap-2">
+            {related.map((other) => (
+              <Badge
+                className="h-auto gap-1.5 rounded-md px-3 py-1.5 text-sm"
+                key={other.id}
+                render={<Link href={`/vs/${other.slug}`} />}
+                variant="outline"
+              >
+                {other.name} vs. {siteConfig.name}
+                <ArrowUpRightIcon aria-hidden data-icon="inline-end" />
+              </Badge>
             ))}
-          </ul>
+          </div>
         </section>
       )}
     </>

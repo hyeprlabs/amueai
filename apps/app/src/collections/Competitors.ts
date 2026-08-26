@@ -22,7 +22,7 @@ export const Competitors: CollectionConfig = {
   typescript: { interface: "Competitor" },
   admin: {
     useAsTitle: "name",
-    defaultColumns: ["name", "title", "_status", "publishedAt"],
+    defaultColumns: ["name", "_status", "publishedAt"],
     group: "Competitors",
     livePreview: { url: ({ data }) => previewUrl("competitors", data?.slug) },
     preview: (data) => previewUrl("competitors", data?.slug),
@@ -48,21 +48,13 @@ export const Competitors: CollectionConfig = {
     },
     slugField("name"),
     {
-      name: "title",
-      type: "text",
-      required: true,
-      admin: {
-        description: `Page headline and default meta title, e.g. "${siteConfig.name} vs Intercom: which AI support agent should you pick?". Lead with the comparison — it is the query people search.`,
-      },
-    },
-    {
       name: "excerpt",
       type: "textarea",
       required: true,
       maxLength: 300,
       admin: {
         description:
-          "One or two sentences summarising the comparison. Shown on /competition and used as the default meta description.",
+          "One or two sentences summarising the comparison. Shown on /competitors and used as the default meta description.",
       },
     },
     {
@@ -79,7 +71,7 @@ export const Competitors: CollectionConfig = {
       name: "bestFor",
       type: "text",
       admin: {
-        description: `Who this competitor suits best, e.g. "Large support teams with an existing helpdesk". Shown next to the entry on /competition.`,
+        description: `Who this competitor suits best, e.g. "Large support teams with an existing helpdesk".`,
       },
     },
     {
@@ -102,7 +94,7 @@ export const Competitors: CollectionConfig = {
       relationTo: "media",
       admin: {
         position: "sidebar",
-        description: "The competitor's logo, shown beside their entry on /competition.",
+        description: "The competitor's logo.",
       },
     },
     {
@@ -151,20 +143,6 @@ export const Competitors: CollectionConfig = {
           admin: { description: `Does ${siteConfig.name} support this?`, width: "30%" },
         },
       ],
-    },
-    {
-      name: "strengths",
-      type: "array",
-      labels: { singular: "Strength", plural: "Strengths" },
-      admin: { description: "Where the competitor genuinely wins. Credibility is what ranks." },
-      fields: [{ name: "point", type: "text", required: true }],
-    },
-    {
-      name: "limitations",
-      type: "array",
-      labels: { singular: "Limitation", plural: "Limitations" },
-      admin: { description: "Where the competitor falls short for the reader." },
-      fields: [{ name: "point", type: "text", required: true }],
     },
     {
       name: "content",

@@ -4,6 +4,7 @@ import * as migration_20260826_124420_add_changelog from "./20260826_124420_add_
 import * as migration_20260826_141631_add_competitors from "./20260826_141631_add_competitors";
 import * as migration_20260826_165700_strip_meta_title_suffix from "./20260826_165700_strip_meta_title_suffix";
 import * as migration_20260826_172000_rework_competitor_comparison from "./20260826_172000_rework_competitor_comparison";
+import * as migration_20260826_180000_simplify_competitors from "./20260826_180000_simplify_competitors";
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20260826_172000_rework_competitor_comparison.up,
     down: migration_20260826_172000_rework_competitor_comparison.down,
     name: "20260826_172000_rework_competitor_comparison",
+  },
+  {
+    up: migration_20260826_180000_simplify_competitors.up,
+    down: migration_20260826_180000_simplify_competitors.down,
+    name: "20260826_180000_simplify_competitors",
   },
 ];

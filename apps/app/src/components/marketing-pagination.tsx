@@ -20,7 +20,7 @@ import { listPathname } from "@/lib/seo";
 
 /**
  * Pager shared by every paginated marketing list — /blog, /changelog and
- * /competition. Links carry the page in the query string so each page stays a
+ * /competitors. Links carry the page in the query string so each page stays a
  * crawlable, canonical URL of its own.
  */
 export function MarketingPagination({

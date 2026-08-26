@@ -2,11 +2,17 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 import { cache } from "react";
 
+import { siteConfig } from "@/config/site";
 import type { Competitor } from "@/payload-types";
 
 const COMPETITORS_PER_PAGE = 20;
 
 const publishedOnly = { _status: { equals: "published" } } as const;
+
+/** The page headline and default meta title for a competitor: always computed, never freeform. */
+export function competitorPageTitle(name: string): string {
+  return `${siteConfig.name} vs ${name}`;
+}
 
 /**
  * Loads a single competitor by slug.
@@ -38,7 +44,7 @@ export const getCompetitorBySlug = cache(
 /**
  * Paginated, published competitors.
  *
- * Sorted by name so `/competition` reads like a directory and its ordering
+ * Sorted by name so `/competitors` reads like a directory and its ordering
  * stays stable as comparisons are added — a moving list would keep changing
  * what each paginated URL contains.
  */
@@ -100,7 +106,7 @@ export async function getRelatedCompetitors(
   return docs;
 }
 
-/** When the competition index last changed, used for the sitemap's `lastModified`. */
+/** When the competitors index last changed, used for the sitemap's `lastModified`. */
 export async function getLatestCompetitorUpdate(): Promise<string | undefined> {
   const payload = await getPayload({ config });
   const { docs } = await payload.find({
