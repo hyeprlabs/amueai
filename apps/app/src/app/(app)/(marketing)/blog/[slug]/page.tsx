@@ -12,7 +12,7 @@ import {
   OrganizationJsonLd,
 } from "next-seo";
 
-import { AuthorInfo } from "@/components/blog/author-info";
+import { AuthorInfo } from "@/components/marketing/author-info";
 import { CategoryDropdown } from "@/components/blog/category-dropdown";
 import { MarketingFaq } from "@/components/marketing-faq";
 import { PostGrid } from "@/components/blog/post-grid";

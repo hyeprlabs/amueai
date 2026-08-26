@@ -23,6 +23,15 @@ const dirname = path.dirname(filename);
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
 
+const payloadSecret = process.env.PAYLOAD_SECRET;
+if (!payloadSecret) {
+  // An empty secret would let Payload sign auth/session tokens with a
+  // predictable value, so fail loudly instead of silently running insecure.
+  throw new Error(
+    "PAYLOAD_SECRET is required — set it in the environment before starting Payload.",
+  );
+}
+
 /** Collections whose documents get the SEO tab, and the public URL each one is served from. */
 const seoCollections = {
   blog: (slug: string) => `${siteUrl}/blog/${slug}`,
@@ -44,7 +53,7 @@ export default buildConfig({
   },
   collections: [Users, Media, Blog, Categories, Authors, LegalPages, Changelog, Competitors],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || "",
+  secret: payloadSecret,
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },

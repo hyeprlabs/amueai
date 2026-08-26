@@ -12,7 +12,7 @@ import {
   OrganizationJsonLd,
 } from "next-seo";
 
-import { AuthorInfo } from "@/components/blog/author-info";
+import { AuthorInfo } from "@/components/marketing/author-info";
 import { ComparisonTable } from "@/components/competitors/comparison-table";
 import { MarketingFaq } from "@/components/marketing-faq";
 import { Button } from "@/components/ui/button";
@@ -172,8 +172,8 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
       )}
 
       {hasRelated && (
-        <section className="mb-12 border-y p-4 lg:mb-24">
-          <h2 className="mb-3 font-semibold text-xl tracking-tight">Other comparisons</h2>
+        <section className="mb-12 flex flex-col gap-6 border-t p-4 lg:mb-24">
+          <h2 className="font-semibold text-xl tracking-tight">Other comparisons</h2>
           <div className="flex flex-wrap gap-2">
             {related.map((other) => (
               <Button key={other.id} render={<Link href={`/vs/${other.slug}`} />} variant="outline">

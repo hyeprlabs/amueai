@@ -2,9 +2,15 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
-   CREATE TYPE "payload"."enum_competitors_status" AS ENUM('draft', 'published');
-  CREATE TYPE "payload"."enum__competitors_v_version_status" AS ENUM('draft', 'published');
-  CREATE TABLE "payload"."competitors_comparison" (
+  DO $$ BEGIN
+    CREATE TYPE "payload"."enum_competitors_status" AS ENUM('draft', 'published');
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    CREATE TYPE "payload"."enum__competitors_v_version_status" AS ENUM('draft', 'published');
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  CREATE TABLE IF NOT EXISTS "payload"."competitors_comparison" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" varchar PRIMARY KEY NOT NULL,
@@ -12,30 +18,30 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   	"us" varchar,
   	"them" varchar
   );
-  
-  CREATE TABLE "payload"."competitors_strengths" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."competitors_strengths" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" varchar PRIMARY KEY NOT NULL,
   	"point" varchar
   );
-  
-  CREATE TABLE "payload"."competitors_limitations" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."competitors_limitations" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" varchar PRIMARY KEY NOT NULL,
   	"point" varchar
   );
-  
-  CREATE TABLE "payload"."competitors_faq_items" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."competitors_faq_items" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" varchar PRIMARY KEY NOT NULL,
-  	"question" varchar,
-  	"answer" varchar
+  	"question" varchar NOT NULL,
+  	"answer" varchar NOT NULL
   );
-  
-  CREATE TABLE "payload"."competitors" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."competitors" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"name" varchar,
   	"slug" varchar,
@@ -59,16 +65,16 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"_status" "payload"."enum_competitors_status" DEFAULT 'draft'
   );
-  
-  CREATE TABLE "payload"."competitors_rels" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."competitors_rels" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"order" integer,
   	"parent_id" integer NOT NULL,
   	"path" varchar NOT NULL,
   	"competitors_id" integer
   );
-  
-  CREATE TABLE "payload"."_competitors_v_version_comparison" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."_competitors_v_version_comparison" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" serial PRIMARY KEY NOT NULL,
@@ -77,24 +83,24 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   	"them" varchar,
   	"_uuid" varchar
   );
-  
-  CREATE TABLE "payload"."_competitors_v_version_strengths" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."_competitors_v_version_strengths" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" serial PRIMARY KEY NOT NULL,
   	"point" varchar,
   	"_uuid" varchar
   );
-  
-  CREATE TABLE "payload"."_competitors_v_version_limitations" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."_competitors_v_version_limitations" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" serial PRIMARY KEY NOT NULL,
   	"point" varchar,
   	"_uuid" varchar
   );
-  
-  CREATE TABLE "payload"."_competitors_v_version_faq_items" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."_competitors_v_version_faq_items" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" serial PRIMARY KEY NOT NULL,
@@ -102,8 +108,8 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   	"answer" varchar,
   	"_uuid" varchar
   );
-  
-  CREATE TABLE "payload"."_competitors_v" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."_competitors_v" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"parent_id" integer,
   	"version_name" varchar,
@@ -131,86 +137,155 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"latest" boolean
   );
-  
-  CREATE TABLE "payload"."_competitors_v_rels" (
+
+  CREATE TABLE IF NOT EXISTS "payload"."_competitors_v_rels" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"order" integer,
   	"parent_id" integer NOT NULL,
   	"path" varchar NOT NULL,
   	"competitors_id" integer
   );
-  
-  ALTER TABLE "payload"."search_rels" ADD COLUMN "competitors_id" integer;
-  ALTER TABLE "payload"."payload_locked_documents_rels" ADD COLUMN "competitors_id" integer;
-  ALTER TABLE "payload"."competitors_comparison" ADD CONSTRAINT "competitors_comparison_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."competitors_strengths" ADD CONSTRAINT "competitors_strengths_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."competitors_limitations" ADD CONSTRAINT "competitors_limitations_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."competitors_faq_items" ADD CONSTRAINT "competitors_faq_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."competitors" ADD CONSTRAINT "competitors_logo_id_media_id_fk" FOREIGN KEY ("logo_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."competitors" ADD CONSTRAINT "competitors_featured_image_id_media_id_fk" FOREIGN KEY ("featured_image_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."competitors" ADD CONSTRAINT "competitors_author_id_authors_id_fk" FOREIGN KEY ("author_id") REFERENCES "payload"."authors"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."competitors" ADD CONSTRAINT "competitors_meta_image_id_media_id_fk" FOREIGN KEY ("meta_image_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."competitors_rels" ADD CONSTRAINT "competitors_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."competitors_rels" ADD CONSTRAINT "competitors_rels_competitors_fk" FOREIGN KEY ("competitors_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v_version_comparison" ADD CONSTRAINT "_competitors_v_version_comparison_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v_version_strengths" ADD CONSTRAINT "_competitors_v_version_strengths_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v_version_limitations" ADD CONSTRAINT "_competitors_v_version_limitations_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v_version_faq_items" ADD CONSTRAINT "_competitors_v_version_faq_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_parent_id_competitors_id_fk" FOREIGN KEY ("parent_id") REFERENCES "payload"."competitors"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_version_logo_id_media_id_fk" FOREIGN KEY ("version_logo_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_version_featured_image_id_media_id_fk" FOREIGN KEY ("version_featured_image_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_version_author_id_authors_id_fk" FOREIGN KEY ("version_author_id") REFERENCES "payload"."authors"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_version_meta_image_id_media_id_fk" FOREIGN KEY ("version_meta_image_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v_rels" ADD CONSTRAINT "_competitors_v_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."_competitors_v_rels" ADD CONSTRAINT "_competitors_v_rels_competitors_fk" FOREIGN KEY ("competitors_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  CREATE INDEX "competitors_comparison_order_idx" ON "payload"."competitors_comparison" USING btree ("_order");
-  CREATE INDEX "competitors_comparison_parent_id_idx" ON "payload"."competitors_comparison" USING btree ("_parent_id");
-  CREATE INDEX "competitors_strengths_order_idx" ON "payload"."competitors_strengths" USING btree ("_order");
-  CREATE INDEX "competitors_strengths_parent_id_idx" ON "payload"."competitors_strengths" USING btree ("_parent_id");
-  CREATE INDEX "competitors_limitations_order_idx" ON "payload"."competitors_limitations" USING btree ("_order");
-  CREATE INDEX "competitors_limitations_parent_id_idx" ON "payload"."competitors_limitations" USING btree ("_parent_id");
-  CREATE INDEX "competitors_faq_items_order_idx" ON "payload"."competitors_faq_items" USING btree ("_order");
-  CREATE INDEX "competitors_faq_items_parent_id_idx" ON "payload"."competitors_faq_items" USING btree ("_parent_id");
-  CREATE UNIQUE INDEX "competitors_slug_idx" ON "payload"."competitors" USING btree ("slug");
-  CREATE INDEX "competitors_logo_idx" ON "payload"."competitors" USING btree ("logo_id");
-  CREATE INDEX "competitors_featured_image_idx" ON "payload"."competitors" USING btree ("featured_image_id");
-  CREATE INDEX "competitors_author_idx" ON "payload"."competitors" USING btree ("author_id");
-  CREATE INDEX "competitors_meta_meta_image_idx" ON "payload"."competitors" USING btree ("meta_image_id");
-  CREATE INDEX "competitors_updated_at_idx" ON "payload"."competitors" USING btree ("updated_at");
-  CREATE INDEX "competitors_created_at_idx" ON "payload"."competitors" USING btree ("created_at");
-  CREATE INDEX "competitors__status_idx" ON "payload"."competitors" USING btree ("_status");
-  CREATE INDEX "competitors_rels_order_idx" ON "payload"."competitors_rels" USING btree ("order");
-  CREATE INDEX "competitors_rels_parent_idx" ON "payload"."competitors_rels" USING btree ("parent_id");
-  CREATE INDEX "competitors_rels_path_idx" ON "payload"."competitors_rels" USING btree ("path");
-  CREATE INDEX "competitors_rels_competitors_id_idx" ON "payload"."competitors_rels" USING btree ("competitors_id");
-  CREATE INDEX "_competitors_v_version_comparison_order_idx" ON "payload"."_competitors_v_version_comparison" USING btree ("_order");
-  CREATE INDEX "_competitors_v_version_comparison_parent_id_idx" ON "payload"."_competitors_v_version_comparison" USING btree ("_parent_id");
-  CREATE INDEX "_competitors_v_version_strengths_order_idx" ON "payload"."_competitors_v_version_strengths" USING btree ("_order");
-  CREATE INDEX "_competitors_v_version_strengths_parent_id_idx" ON "payload"."_competitors_v_version_strengths" USING btree ("_parent_id");
-  CREATE INDEX "_competitors_v_version_limitations_order_idx" ON "payload"."_competitors_v_version_limitations" USING btree ("_order");
-  CREATE INDEX "_competitors_v_version_limitations_parent_id_idx" ON "payload"."_competitors_v_version_limitations" USING btree ("_parent_id");
-  CREATE INDEX "_competitors_v_version_faq_items_order_idx" ON "payload"."_competitors_v_version_faq_items" USING btree ("_order");
-  CREATE INDEX "_competitors_v_version_faq_items_parent_id_idx" ON "payload"."_competitors_v_version_faq_items" USING btree ("_parent_id");
-  CREATE INDEX "_competitors_v_parent_idx" ON "payload"."_competitors_v" USING btree ("parent_id");
-  CREATE INDEX "_competitors_v_version_version_slug_idx" ON "payload"."_competitors_v" USING btree ("version_slug");
-  CREATE INDEX "_competitors_v_version_version_logo_idx" ON "payload"."_competitors_v" USING btree ("version_logo_id");
-  CREATE INDEX "_competitors_v_version_version_featured_image_idx" ON "payload"."_competitors_v" USING btree ("version_featured_image_id");
-  CREATE INDEX "_competitors_v_version_version_author_idx" ON "payload"."_competitors_v" USING btree ("version_author_id");
-  CREATE INDEX "_competitors_v_version_meta_version_meta_image_idx" ON "payload"."_competitors_v" USING btree ("version_meta_image_id");
-  CREATE INDEX "_competitors_v_version_version_updated_at_idx" ON "payload"."_competitors_v" USING btree ("version_updated_at");
-  CREATE INDEX "_competitors_v_version_version_created_at_idx" ON "payload"."_competitors_v" USING btree ("version_created_at");
-  CREATE INDEX "_competitors_v_version_version__status_idx" ON "payload"."_competitors_v" USING btree ("version__status");
-  CREATE INDEX "_competitors_v_created_at_idx" ON "payload"."_competitors_v" USING btree ("created_at");
-  CREATE INDEX "_competitors_v_updated_at_idx" ON "payload"."_competitors_v" USING btree ("updated_at");
-  CREATE INDEX "_competitors_v_latest_idx" ON "payload"."_competitors_v" USING btree ("latest");
-  CREATE INDEX "_competitors_v_rels_order_idx" ON "payload"."_competitors_v_rels" USING btree ("order");
-  CREATE INDEX "_competitors_v_rels_parent_idx" ON "payload"."_competitors_v_rels" USING btree ("parent_id");
-  CREATE INDEX "_competitors_v_rels_path_idx" ON "payload"."_competitors_v_rels" USING btree ("path");
-  CREATE INDEX "_competitors_v_rels_competitors_id_idx" ON "payload"."_competitors_v_rels" USING btree ("competitors_id");
-  ALTER TABLE "payload"."search_rels" ADD CONSTRAINT "search_rels_competitors_fk" FOREIGN KEY ("competitors_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload"."payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_competitors_fk" FOREIGN KEY ("competitors_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
-  CREATE INDEX "search_rels_competitors_id_idx" ON "payload"."search_rels" USING btree ("competitors_id");
-  CREATE INDEX "payload_locked_documents_rels_competitors_id_idx" ON "payload"."payload_locked_documents_rels" USING btree ("competitors_id");`);
+
+  ALTER TABLE "payload"."search_rels" ADD COLUMN IF NOT EXISTS "competitors_id" integer;
+  ALTER TABLE "payload"."payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "competitors_id" integer;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors_comparison" ADD CONSTRAINT "competitors_comparison_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors_strengths" ADD CONSTRAINT "competitors_strengths_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors_limitations" ADD CONSTRAINT "competitors_limitations_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors_faq_items" ADD CONSTRAINT "competitors_faq_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors" ADD CONSTRAINT "competitors_logo_id_media_id_fk" FOREIGN KEY ("logo_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors" ADD CONSTRAINT "competitors_featured_image_id_media_id_fk" FOREIGN KEY ("featured_image_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors" ADD CONSTRAINT "competitors_author_id_authors_id_fk" FOREIGN KEY ("author_id") REFERENCES "payload"."authors"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors" ADD CONSTRAINT "competitors_meta_image_id_media_id_fk" FOREIGN KEY ("meta_image_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors_rels" ADD CONSTRAINT "competitors_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."competitors_rels" ADD CONSTRAINT "competitors_rels_competitors_fk" FOREIGN KEY ("competitors_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v_version_comparison" ADD CONSTRAINT "_competitors_v_version_comparison_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v_version_strengths" ADD CONSTRAINT "_competitors_v_version_strengths_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v_version_limitations" ADD CONSTRAINT "_competitors_v_version_limitations_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v_version_faq_items" ADD CONSTRAINT "_competitors_v_version_faq_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_parent_id_competitors_id_fk" FOREIGN KEY ("parent_id") REFERENCES "payload"."competitors"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_version_logo_id_media_id_fk" FOREIGN KEY ("version_logo_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_version_featured_image_id_media_id_fk" FOREIGN KEY ("version_featured_image_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_version_author_id_authors_id_fk" FOREIGN KEY ("version_author_id") REFERENCES "payload"."authors"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v" ADD CONSTRAINT "_competitors_v_version_meta_image_id_media_id_fk" FOREIGN KEY ("version_meta_image_id") REFERENCES "payload"."media"("id") ON DELETE set null ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v_rels" ADD CONSTRAINT "_competitors_v_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "payload"."_competitors_v"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."_competitors_v_rels" ADD CONSTRAINT "_competitors_v_rels_competitors_fk" FOREIGN KEY ("competitors_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  CREATE INDEX IF NOT EXISTS "competitors_comparison_order_idx" ON "payload"."competitors_comparison" USING btree ("_order");
+  CREATE INDEX IF NOT EXISTS "competitors_comparison_parent_id_idx" ON "payload"."competitors_comparison" USING btree ("_parent_id");
+  CREATE INDEX IF NOT EXISTS "competitors_strengths_order_idx" ON "payload"."competitors_strengths" USING btree ("_order");
+  CREATE INDEX IF NOT EXISTS "competitors_strengths_parent_id_idx" ON "payload"."competitors_strengths" USING btree ("_parent_id");
+  CREATE INDEX IF NOT EXISTS "competitors_limitations_order_idx" ON "payload"."competitors_limitations" USING btree ("_order");
+  CREATE INDEX IF NOT EXISTS "competitors_limitations_parent_id_idx" ON "payload"."competitors_limitations" USING btree ("_parent_id");
+  CREATE INDEX IF NOT EXISTS "competitors_faq_items_order_idx" ON "payload"."competitors_faq_items" USING btree ("_order");
+  CREATE INDEX IF NOT EXISTS "competitors_faq_items_parent_id_idx" ON "payload"."competitors_faq_items" USING btree ("_parent_id");
+  CREATE UNIQUE INDEX IF NOT EXISTS "competitors_slug_idx" ON "payload"."competitors" USING btree ("slug");
+  CREATE INDEX IF NOT EXISTS "competitors_logo_idx" ON "payload"."competitors" USING btree ("logo_id");
+  CREATE INDEX IF NOT EXISTS "competitors_featured_image_idx" ON "payload"."competitors" USING btree ("featured_image_id");
+  CREATE INDEX IF NOT EXISTS "competitors_author_idx" ON "payload"."competitors" USING btree ("author_id");
+  CREATE INDEX IF NOT EXISTS "competitors_meta_meta_image_idx" ON "payload"."competitors" USING btree ("meta_image_id");
+  CREATE INDEX IF NOT EXISTS "competitors_updated_at_idx" ON "payload"."competitors" USING btree ("updated_at");
+  CREATE INDEX IF NOT EXISTS "competitors_created_at_idx" ON "payload"."competitors" USING btree ("created_at");
+  CREATE INDEX IF NOT EXISTS "competitors__status_idx" ON "payload"."competitors" USING btree ("_status");
+  CREATE INDEX IF NOT EXISTS "competitors_rels_order_idx" ON "payload"."competitors_rels" USING btree ("order");
+  CREATE INDEX IF NOT EXISTS "competitors_rels_parent_idx" ON "payload"."competitors_rels" USING btree ("parent_id");
+  CREATE INDEX IF NOT EXISTS "competitors_rels_path_idx" ON "payload"."competitors_rels" USING btree ("path");
+  CREATE INDEX IF NOT EXISTS "competitors_rels_competitors_id_idx" ON "payload"."competitors_rels" USING btree ("competitors_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_comparison_order_idx" ON "payload"."_competitors_v_version_comparison" USING btree ("_order");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_comparison_parent_id_idx" ON "payload"."_competitors_v_version_comparison" USING btree ("_parent_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_strengths_order_idx" ON "payload"."_competitors_v_version_strengths" USING btree ("_order");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_strengths_parent_id_idx" ON "payload"."_competitors_v_version_strengths" USING btree ("_parent_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_limitations_order_idx" ON "payload"."_competitors_v_version_limitations" USING btree ("_order");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_limitations_parent_id_idx" ON "payload"."_competitors_v_version_limitations" USING btree ("_parent_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_faq_items_order_idx" ON "payload"."_competitors_v_version_faq_items" USING btree ("_order");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_faq_items_parent_id_idx" ON "payload"."_competitors_v_version_faq_items" USING btree ("_parent_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_parent_idx" ON "payload"."_competitors_v" USING btree ("parent_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_version_slug_idx" ON "payload"."_competitors_v" USING btree ("version_slug");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_version_logo_idx" ON "payload"."_competitors_v" USING btree ("version_logo_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_version_featured_image_idx" ON "payload"."_competitors_v" USING btree ("version_featured_image_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_version_author_idx" ON "payload"."_competitors_v" USING btree ("version_author_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_meta_version_meta_image_idx" ON "payload"."_competitors_v" USING btree ("version_meta_image_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_version_updated_at_idx" ON "payload"."_competitors_v" USING btree ("version_updated_at");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_version_created_at_idx" ON "payload"."_competitors_v" USING btree ("version_created_at");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_version_version__status_idx" ON "payload"."_competitors_v" USING btree ("version__status");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_created_at_idx" ON "payload"."_competitors_v" USING btree ("created_at");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_updated_at_idx" ON "payload"."_competitors_v" USING btree ("updated_at");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_latest_idx" ON "payload"."_competitors_v" USING btree ("latest");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_rels_order_idx" ON "payload"."_competitors_v_rels" USING btree ("order");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_rels_parent_idx" ON "payload"."_competitors_v_rels" USING btree ("parent_id");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_rels_path_idx" ON "payload"."_competitors_v_rels" USING btree ("path");
+  CREATE INDEX IF NOT EXISTS "_competitors_v_rels_competitors_id_idx" ON "payload"."_competitors_v_rels" USING btree ("competitors_id");
+  DO $$ BEGIN
+    ALTER TABLE "payload"."search_rels" ADD CONSTRAINT "search_rels_competitors_fk" FOREIGN KEY ("competitors_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  DO $$ BEGIN
+    ALTER TABLE "payload"."payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_competitors_fk" FOREIGN KEY ("competitors_id") REFERENCES "payload"."competitors"("id") ON DELETE cascade ON UPDATE no action;
+  EXCEPTION WHEN duplicate_object THEN null;
+  END $$;
+  CREATE INDEX IF NOT EXISTS "search_rels_competitors_id_idx" ON "payload"."search_rels" USING btree ("competitors_id");
+  CREATE INDEX IF NOT EXISTS "payload_locked_documents_rels_competitors_id_idx" ON "payload"."payload_locked_documents_rels" USING btree ("competitors_id");`);
 }
 
 export async function down({ db }: MigrateDownArgs): Promise<void> {
@@ -240,9 +315,9 @@ export async function down({ db }: MigrateDownArgs): Promise<void> {
   DROP TABLE IF EXISTS "payload"."_competitors_v" CASCADE;
   DROP TABLE IF EXISTS "payload"."_competitors_v_rels" CASCADE;
   ALTER TABLE "payload"."search_rels" DROP CONSTRAINT IF EXISTS "search_rels_competitors_fk";
-  
+
   ALTER TABLE "payload"."payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_competitors_fk";
-  
+
   DROP INDEX IF EXISTS "payload"."search_rels_competitors_id_idx";
   DROP INDEX IF EXISTS "payload"."payload_locked_documents_rels_competitors_id_idx";
   ALTER TABLE "payload"."search_rels" DROP COLUMN IF EXISTS "competitors_id";

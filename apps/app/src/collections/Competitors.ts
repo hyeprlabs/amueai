@@ -155,8 +155,7 @@ export const Competitors: CollectionConfig = {
           name: "usValue",
           type: "text",
           admin: {
-            description:
-              `For metrics (not features), the ${siteConfig.name} value. E.g. '10' or 'Full'. Leave empty for checkbox-style rows.`,
+            description: `For metrics (not features), the ${siteConfig.name} value. E.g. '10' or 'Full'. Leave empty for checkbox-style rows.`,
             width: "30%",
           },
         },
