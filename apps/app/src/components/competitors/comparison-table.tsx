@@ -3,7 +3,6 @@ import { CheckIcon, XIcon } from "lucide-react";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -39,9 +38,6 @@ export function ComparisonTable({
   return (
     <section className="border-t">
       <Table className="border-separate border-spacing-0">
-        <TableCaption className="caption-top mb-4 px-3 text-left text-muted-foreground text-sm">
-          A feature-by-feature comparison of {competitorName} and {siteConfig.name}.
-        </TableCaption>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="border-b" scope="col">
