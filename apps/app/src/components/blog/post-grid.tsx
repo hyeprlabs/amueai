@@ -1,8 +1,8 @@
 import { BlogEmpty } from "@/components/blog/blog-empty";
 import { PostCard } from "@/components/blog/post-card";
-import type { Blog } from "@/payload-types";
+import type { Post } from "@/payload-types";
 
-export function PostGrid({ posts }: { posts: Blog[] }) {
+export function PostGrid({ posts }: { posts: Post[] }) {
   if (posts.length === 0) {
     return <BlogEmpty className="py-12" />;
   }

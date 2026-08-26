@@ -2,7 +2,7 @@ import config from "@payload-config";
 import { getPayload, type Where } from "payload";
 import { cache } from "react";
 
-import type { Blog, Category } from "@/payload-types";
+import type { Category, Post } from "@/payload-types";
 
 const POSTS_PER_PAGE = 12;
 
@@ -16,14 +16,14 @@ type PostListOptions = {
 };
 
 /**
- * Loads a single blog post by slug.
+ * Loads a single post by slug.
  *
  * Cached per request so the page body and its `generateMetadata` share one
  * query. Pass `draft: true` from a route with Draft Mode enabled to read the
  * latest unpublished revision instead.
  */
 export const getPostBySlug = cache(
-  async (slug: string, { draft = false }: { draft?: boolean } = {}): Promise<Blog | undefined> => {
+  async (slug: string, { draft = false }: { draft?: boolean } = {}): Promise<Post | undefined> => {
     const payload = await getPayload({ config });
     const { docs } = await payload.find({
       collection: "blog",
@@ -63,7 +63,7 @@ export async function getPosts({
 }
 
 /** Every published post slug, ordered by slug — used to build the sitemap. */
-export async function getPublishedPostSlugs(): Promise<Pick<Blog, "slug" | "updatedAt">[]> {
+export async function getPublishedPostSlugs(): Promise<Pick<Post, "slug" | "updatedAt">[]> {
   const payload = await getPayload({ config });
   const { docs } = await payload.find({
     collection: "blog",
@@ -74,15 +74,15 @@ export async function getPublishedPostSlugs(): Promise<Pick<Blog, "slug" | "upda
     select: { slug: true, updatedAt: true },
   });
 
-  return docs as Pick<Blog, "slug" | "updatedAt">[];
+  return docs as Pick<Post, "slug" | "updatedAt">[];
 }
 
 /** Related posts: the post's manually curated list, falling back to posts sharing a category. */
-export async function getRelatedPosts(post: Blog, limit = 3): Promise<Blog[]> {
+export async function getRelatedPosts(post: Post, limit = 3): Promise<Post[]> {
   const payload = await getPayload({ config });
 
   const curated = (post.relatedPosts ?? []).filter(
-    (related): related is Blog => typeof related === "object",
+    (related): related is Post => typeof related === "object",
   );
   if (curated.length > 0) return curated.slice(0, limit);
 

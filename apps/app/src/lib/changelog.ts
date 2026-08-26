@@ -2,16 +2,16 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 import { cache } from "react";
 
-import type { Changelog } from "@/payload-types";
+import type { Change } from "@/payload-types";
 
-const ENTRIES_PER_PAGE = 15;
+const CHANGES_PER_PAGE = 15;
 
 const publishedOnly = { _status: { equals: "published" } } as const;
 
-/** Paginated, published changelog entries, newest first. */
-export async function getChangelogEntries({
+/** Paginated, published changes, newest first. */
+export async function getChanges({
   page = 1,
-  limit = ENTRIES_PER_PAGE,
+  limit = CHANGES_PER_PAGE,
 }: { page?: number; limit?: number } = {}) {
   const payload = await getPayload({ config });
 
@@ -26,11 +26,11 @@ export async function getChangelogEntries({
 }
 
 /**
- * Most recent published entry, for the app sidebar's "latest update" widget.
+ * Most recent published change, for the app sidebar's "latest update" widget.
  *
  * Cached per request since the sidebar renders on every dashboard route.
  */
-export const getLatestChangelogEntry = cache(async (): Promise<Changelog | undefined> => {
+export const getLatestChange = cache(async (): Promise<Change | undefined> => {
   const payload = await getPayload({ config });
   const { docs } = await payload.find({
     collection: "changelog",
@@ -43,7 +43,7 @@ export const getLatestChangelogEntry = cache(async (): Promise<Changelog | undef
   return docs[0];
 });
 
-/** Every published entry's slug + updatedAt, used to build the sitemap `lastModified`. */
+/** When the changelog last changed, used for the sitemap's `lastModified`. */
 export async function getLatestChangelogUpdate(): Promise<string | undefined> {
   const payload = await getPayload({ config });
   const { docs } = await payload.find({

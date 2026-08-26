@@ -18,9 +18,9 @@ import { footerNavLinks, navGroups } from "@/components/dashboard/app-shared";
 import { LatestChange } from "@/components/dashboard/latest-change";
 import { ProductUsage } from "@/components/dashboard/product-usage";
 import { NavGroup } from "@/components/dashboard/nav-group";
-import type { Changelog } from "@/payload-types";
+import type { Change } from "@/payload-types";
 
-export function AppSidebar({ latestChange }: { latestChange?: Changelog }) {
+export function AppSidebar({ latestChange }: { latestChange?: Change }) {
   const { state } = useSidebar();
   const [mounted, setMounted] = useState(false);
 
@@ -49,7 +49,7 @@ export function AppSidebar({ latestChange }: { latestChange?: Changelog }) {
         ))}
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0">
-        <LatestChange entry={latestChange} />
+        <LatestChange change={latestChange} />
         <ProductUsage />
         <SidebarMenu className="border-t p-2">
           {footerNavLinks.map((item) => (

@@ -48,7 +48,7 @@ export function webSiteJsonLd(): WebSiteJsonLd {
 
 export type WebPageJsonLd = {
   "@context": "https://schema.org";
-  "@type": "WebPage";
+  "@type": "WebPage" | "CollectionPage";
   name: string;
   url: string;
   description: string;
@@ -63,16 +63,19 @@ export function webPageJsonLd({
   pathname,
   datePublished,
   dateModified,
+  type = "WebPage",
 }: {
   name: string;
   description: string;
   pathname: string;
   datePublished?: string;
   dateModified?: string;
+  /** Use `CollectionPage` for an index that lists other pages. */
+  type?: WebPageJsonLd["@type"];
 }): WebPageJsonLd {
   return {
     "@context": "https://schema.org",
-    "@type": "WebPage",
+    "@type": type,
     name,
     url: absoluteUrl(pathname),
     description,
@@ -80,4 +83,78 @@ export function webPageJsonLd({
     ...(datePublished && { datePublished }),
     ...(dateModified && { dateModified }),
   };
+}
+
+export type ItemListJsonLd = {
+  "@context": "https://schema.org";
+  "@type": "ItemList";
+  name: string;
+  itemListElement: {
+    "@type": "ListItem";
+    position: number;
+    name: string;
+    url: string;
+  }[];
+};
+
+/** An ordered list of the entries on an index page, so crawlers see the set as a set. */
+export function itemListJsonLd(
+  name: string,
+  items: { name: string; pathname: string }[],
+): ItemListJsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: absoluteUrl(item.pathname),
+    })),
+  };
+}
+
+export type SoftwareApplicationJsonLd = {
+  "@type": "SoftwareApplication";
+  name: string;
+  applicationCategory: "BusinessApplication";
+  operatingSystem: "Web";
+  url?: string;
+  description?: string;
+};
+
+/**
+ * The two products a comparison page is about.
+ *
+ * Described as `SoftwareApplication` entities rather than as a review: the
+ * pages are our own, and self-issued ratings are exactly what search engines
+ * discard. No `aggregateRating`, no `Review`.
+ */
+export function comparisonJsonLd({
+  competitorName,
+  competitorUrl,
+}: {
+  competitorName: string;
+  competitorUrl?: string;
+}) {
+  const products: SoftwareApplicationJsonLd[] = [
+    {
+      "@type": "SoftwareApplication",
+      name: siteConfig.name,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: absoluteUrl("/"),
+      description: siteConfig.description,
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: competitorName,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      ...(competitorUrl && { url: competitorUrl }),
+    },
+  ];
+
+  return { "@context": "https://schema.org", "@graph": products } as const;
 }

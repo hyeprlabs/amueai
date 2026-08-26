@@ -1,14 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  ChevronFirstIcon,
-  ChevronLastIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react";
+import { ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
-import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -16,18 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { listPathname } from "@/lib/seo";
 
-function buildHref(basePath: string, page: number, params?: Record<string, string | undefined>) {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params ?? {})) {
-    if (value) search.set(key, value);
-  }
-  if (page > 1) search.set("page", String(page));
-  const query = search.toString();
-  return query ? `${basePath}?${query}` : basePath;
-}
-
-export function BlogPagination({
+/**
+ * Pager shared by every paginated marketing list — /blog, /changelog and
+ * /competitors. Links carry the page in the query string so each page stays a
+ * crawlable, canonical URL of its own.
+ */
+export function MarketingPagination({
   basePath,
   page,
   totalPages,
@@ -54,7 +50,7 @@ export function BlogPagination({
             aria-disabled={isFirst ? true : undefined}
             aria-label="Go to first page"
             className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
-            href={isFirst ? undefined : buildHref(basePath, 1, params)}
+            href={isFirst ? undefined : listPathname(basePath, 1, params)}
             role={isFirst ? "link" : undefined}
           >
             <ChevronFirstIcon aria-hidden="true" size={16} />
@@ -66,7 +62,7 @@ export function BlogPagination({
             aria-disabled={isFirst ? true : undefined}
             aria-label="Go to previous page"
             className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
-            href={isFirst ? undefined : buildHref(basePath, page - 1, params)}
+            href={isFirst ? undefined : listPathname(basePath, page - 1, params)}
             role={isFirst ? "link" : undefined}
           >
             <ChevronLeftIcon aria-hidden="true" size={16} />
@@ -76,7 +72,7 @@ export function BlogPagination({
         <PaginationItem>
           <Select
             aria-label="Select page"
-            onValueChange={(value) => router.push(buildHref(basePath, Number(value), params))}
+            onValueChange={(value) => router.push(listPathname(basePath, Number(value), params))}
             value={String(page)}
           >
             <SelectTrigger className="w-fit whitespace-nowrap" id="select-page">
@@ -97,7 +93,7 @@ export function BlogPagination({
             aria-disabled={isLast ? true : undefined}
             aria-label="Go to next page"
             className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
-            href={isLast ? undefined : buildHref(basePath, page + 1, params)}
+            href={isLast ? undefined : listPathname(basePath, page + 1, params)}
             role={isLast ? "link" : undefined}
           >
             <ChevronRightIcon aria-hidden="true" size={16} />
@@ -109,7 +105,7 @@ export function BlogPagination({
             aria-disabled={isLast ? true : undefined}
             aria-label="Go to last page"
             className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
-            href={isLast ? undefined : buildHref(basePath, totalPages, params)}
+            href={isLast ? undefined : listPathname(basePath, totalPages, params)}
             role={isLast ? "link" : undefined}
           >
             <ChevronLastIcon aria-hidden="true" size={16} />

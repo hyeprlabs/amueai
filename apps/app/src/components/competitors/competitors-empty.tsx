@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRightIcon, HistoryIcon } from "lucide-react";
+import { ArrowUpRightIcon, SwordsIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,16 +13,19 @@ import {
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
-/** Empty state shown when the changelog has no published changes yet. */
-export function ChangelogEmpty({ className }: { className?: string }) {
+/** Empty state shown when no competitor comparison has been published yet. */
+export function CompetitorsEmpty({ className }: { className?: string }) {
   return (
     <Empty className={cn("border-none", className)}>
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <HistoryIcon aria-hidden />
+          <SwordsIcon aria-hidden />
         </EmptyMedia>
-        <EmptyTitle>No updates yet</EmptyTitle>
-        <EmptyDescription>Check back soon, we ship changes here as they land.</EmptyDescription>
+        <EmptyTitle>No comparisons yet</EmptyTitle>
+        <EmptyDescription>
+          Check back soon. We publish a side-by-side breakdown for every alternative worth
+          comparing.
+        </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button

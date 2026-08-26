@@ -1,5 +1,5 @@
-/** Shared between the Changelog collection config and its front-end display. */
-export const CHANGELOG_TYPES = [
+/** Shared between the Changelog collection config and the front-end display of a change. */
+export const CHANGE_TYPES = [
   { label: "Feature", value: "feature" },
   { label: "Improvement", value: "improvement" },
   { label: "Fix", value: "fix" },

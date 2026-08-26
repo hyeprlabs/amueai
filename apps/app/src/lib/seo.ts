@@ -73,6 +73,29 @@ export function createMetadata({
   };
 }
 
+/**
+ * Path of a paginated list page, e.g. `/blog?category=guides&page=2`.
+ *
+ * Shared by the pager links and each page's canonical so a filtered or deeper
+ * page is one URL everywhere — a list that canonicalises to page 1 tells search
+ * engines the rest of the list is not worth keeping.
+ */
+export function listPathname(
+  basePath: string,
+  page: number,
+  /** Non-pagination filters (e.g. category) that belong in the same URL. */
+  params?: Record<string, string | undefined>,
+): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value) search.set(key, value);
+  }
+  if (page > 1) search.set("page", String(page));
+
+  const query = search.toString();
+  return query ? `${basePath}?${query}` : basePath;
+}
+
 /** Collapses whitespace and clips text to a length search engines will display. */
 export function truncateForDescription(text: string, maxLength = 155): string {
   const normalized = text.replace(/\s+/g, " ").trim();

@@ -1,17 +1,16 @@
-import type { Access, CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
 
 import { isLoggedIn } from "@/access/is-logged-in";
+import { readPublishedOrLoggedIn } from "@/access/read-published";
+import { publishedAtField } from "@/fields/published-at";
 import { slugField } from "@/fields/slug";
-import { CHANGELOG_TYPES } from "@/lib/changelog-types";
+import { CHANGE_TYPES } from "@/lib/change-types";
 
-/** Anyone can read published entries; logged-in admin users can also see drafts. */
-const readPublishedOrLoggedIn: Access = ({ req }) => {
-  if (req.user) return true;
-  return { _status: { equals: "published" } };
-};
-
+/** The Changelog. One document is a change, listed at `/changelog#[slug]`. */
 export const Changelog: CollectionConfig = {
   slug: "changelog",
+  labels: { singular: "Change", plural: "Changelog" },
+  typescript: { interface: "Change" },
   admin: {
     useAsTitle: "title",
     defaultColumns: ["title", "type", "_status", "publishedAt"],
@@ -45,7 +44,7 @@ export const Changelog: CollectionConfig = {
       type: "select",
       required: true,
       defaultValue: "feature",
-      options: [...CHANGELOG_TYPES],
+      options: [...CHANGE_TYPES],
       admin: { position: "sidebar" },
     },
     {
@@ -56,31 +55,14 @@ export const Changelog: CollectionConfig = {
         description: "Optional version tag, e.g. v1.4.0",
       },
     },
-    {
-      name: "publishedAt",
-      type: "date",
-      admin: {
-        position: "sidebar",
-        date: { pickerAppearance: "dayAndTime" },
-      },
-      hooks: {
-        beforeChange: [
-          ({ siblingData, value }) => {
-            if (siblingData._status === "published" && !value) {
-              return new Date().toISOString();
-            }
-            return value;
-          },
-        ],
-      },
-    },
+    publishedAtField(),
     {
       name: "featuredImage",
       type: "upload",
       relationTo: "media",
       admin: {
         position: "sidebar",
-        description: "Optional image shown with this entry and used as its social card.",
+        description: "Optional image shown with this change and used as its social card.",
       },
     },
     {

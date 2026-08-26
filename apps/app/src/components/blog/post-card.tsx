@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { resolveMedia } from "@/lib/media";
-import type { Blog, Category } from "@/payload-types";
+import type { Category, Post } from "@/payload-types";
 
-export function PostCard({ post }: { post: Blog }) {
+export function PostCard({ post }: { post: Post }) {
   const image = resolveMedia(post.featuredImage, "card");
   const categories = (post.categories ?? []).filter(
     (category): category is Category => typeof category === "object",
