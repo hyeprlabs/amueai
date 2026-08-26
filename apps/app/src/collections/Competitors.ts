@@ -126,23 +126,29 @@ export const Competitors: CollectionConfig = {
       labels: { singular: "Row", plural: "Rows" },
       admin: {
         description:
-          "The side-by-side table. Keep the feature names to the words people actually search for.",
+          "The side-by-side table rendered at the top of the page: one row per aspect, each side marked as supported or not. Order rows to lead with what makes " +
+          `${siteConfig.name} win.`,
       },
       fields: [
-        { name: "feature", type: "text", required: true },
         {
-          name: "us",
-          type: "textarea",
+          name: "feature",
+          type: "text",
           required: true,
-          label: siteConfig.name,
-          admin: { description: `How ${siteConfig.name} handles this.` },
+          admin: { description: 'The aspect being compared, e.g. "Live on WhatsApp".' },
         },
         {
-          name: "them",
-          type: "textarea",
-          required: true,
+          name: "competitorSupported",
+          type: "checkbox",
           label: "Competitor",
-          admin: { description: "How the competitor handles this. Keep it accurate and fair." },
+          defaultValue: false,
+          admin: { description: "Does the competitor support this?", width: "30%" },
+        },
+        {
+          name: "usSupported",
+          type: "checkbox",
+          label: siteConfig.name,
+          defaultValue: true,
+          admin: { description: `Does ${siteConfig.name} support this?`, width: "30%" },
         },
       ],
     },

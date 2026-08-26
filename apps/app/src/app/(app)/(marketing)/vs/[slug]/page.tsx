@@ -161,13 +161,13 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
           )}
         </div>
 
-        {/* The short answer, first thing on the page: it is what a snippet quotes. */}
+        <ComparisonTable competitorName={competitor.name} rows={rows} />
+
+        {/* The short answer: it is what a snippet quotes. */}
         <div className="border-t p-4">
           <h2 className="font-medium text-muted-foreground text-sm">The short answer</h2>
           <p className="mt-2 text-balance text-lg leading-relaxed">{competitor.verdict}</p>
         </div>
-
-        <ComparisonTable competitorName={competitor.name} rows={rows} />
 
         {(strengths.length > 0 || limitations.length > 0) && (
           <section className="grid gap-x-8 gap-y-6 border-t p-4 sm:grid-cols-2">

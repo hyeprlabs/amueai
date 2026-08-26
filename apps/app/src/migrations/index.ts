@@ -3,6 +3,7 @@ import * as migration_20260822_084537_add_blog_faq from "./20260822_084537_add_b
 import * as migration_20260826_124420_add_changelog from "./20260826_124420_add_changelog";
 import * as migration_20260826_141631_add_competitors from "./20260826_141631_add_competitors";
 import * as migration_20260826_165700_strip_meta_title_suffix from "./20260826_165700_strip_meta_title_suffix";
+import * as migration_20260826_172000_rework_competitor_comparison from "./20260826_172000_rework_competitor_comparison";
 
 export const migrations = [
   {
@@ -29,5 +30,10 @@ export const migrations = [
     up: migration_20260826_165700_strip_meta_title_suffix.up,
     down: migration_20260826_165700_strip_meta_title_suffix.down,
     name: "20260826_165700_strip_meta_title_suffix",
+  },
+  {
+    up: migration_20260826_172000_rework_competitor_comparison.up,
+    down: migration_20260826_172000_rework_competitor_comparison.down,
+    name: "20260826_172000_rework_competitor_comparison",
   },
 ];
