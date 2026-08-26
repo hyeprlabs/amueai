@@ -73,6 +73,7 @@ export interface Config {
     categories: Category;
     authors: Author;
     "legal-pages": LegalPage;
+    changelog: Changelog;
     search: Search;
     "payload-kv": PayloadKv;
     "payload-locked-documents": PayloadLockedDocument;
@@ -94,6 +95,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     "legal-pages": LegalPagesSelect<false> | LegalPagesSelect<true>;
+    changelog: ChangelogSelect<false> | ChangelogSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
     "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
     "payload-locked-documents":
@@ -346,6 +348,55 @@ export interface LegalPage {
   _status?: ("draft" | "published") | null;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "changelog".
+ */
+export interface Changelog {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * One short line (max 140 characters). Shown in the app sidebar's latest-update widget and used as the default meta description.
+   */
+  shortDescription: string;
+  type: "feature" | "improvement" | "fix" | "breaking";
+  /**
+   * Optional version tag, e.g. v1.4.0
+   */
+  version?: string | null;
+  publishedAt?: string | null;
+  /**
+   * Optional image shown with this entry and used as its social card.
+   */
+  featuredImage?: (number | null) | Media;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
  * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -355,10 +406,15 @@ export interface Search {
   id: number;
   title?: string | null;
   priority?: number | null;
-  doc: {
-    relationTo: "blog";
-    value: number | Blog;
-  };
+  doc:
+    | {
+        relationTo: "blog";
+        value: number | Blog;
+      }
+    | {
+        relationTo: "changelog";
+        value: number | Changelog;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -409,6 +465,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: "legal-pages";
         value: number | LegalPage;
+      } | null)
+    | ({
+        relationTo: "changelog";
+        value: number | Changelog;
       } | null)
     | ({
         relationTo: "search";
@@ -611,6 +671,30 @@ export interface LegalPagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   content?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "changelog_select".
+ */
+export interface ChangelogSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  shortDescription?: T;
+  type?: T;
+  version?: T;
+  publishedAt?: T;
+  featuredImage?: T;
+  content?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
