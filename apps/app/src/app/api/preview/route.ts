@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "crypto";
+
 import { draftMode } from "next/headers";
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
@@ -15,6 +17,13 @@ const loaders: Record<PreviewCollection, (slug: string) => Promise<{ slug: strin
 const isPreviewCollection = (value: string | null): value is PreviewCollection =>
   Boolean(value && value in loaders);
 
+/** Constant-time secret comparison so guessing it can't be sped up by timing responses. */
+function secretsMatch(a: string, b: string): boolean {
+  const bufferA = Buffer.from(a);
+  const bufferB = Buffer.from(b);
+  return bufferA.length === bufferB.length && timingSafeEqual(bufferA, bufferB);
+}
+
 /**
  * Entered from a collection's `admin.livePreview`/`admin.preview` link. Enables
  * Draft Mode and redirects to the document so editors see unpublished content
@@ -27,7 +36,11 @@ export async function GET(request: NextRequest) {
   // `collection` was added after the Blog shipped; older admin links omit it.
   const collection = searchParams.get("collection") ?? "blog";
 
-  if (!process.env.PAYLOAD_PREVIEW_SECRET || secret !== process.env.PAYLOAD_PREVIEW_SECRET) {
+  if (
+    !secret ||
+    !process.env.PAYLOAD_PREVIEW_SECRET ||
+    !secretsMatch(secret, process.env.PAYLOAD_PREVIEW_SECRET)
+  ) {
     return new Response("Invalid token", { status: 401 });
   }
 

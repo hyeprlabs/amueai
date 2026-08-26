@@ -104,8 +104,8 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" varchar PRIMARY KEY NOT NULL,
-  	"question" varchar,
-  	"answer" varchar
+  	"question" varchar NOT NULL,
+  	"answer" varchar NOT NULL
   );
   CREATE TABLE IF NOT EXISTS "payload"."blog" (
   	"id" serial PRIMARY KEY NOT NULL,

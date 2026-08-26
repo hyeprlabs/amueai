@@ -61,7 +61,7 @@ function ChangeRow({ change }: { change: Change }) {
         </Badge>
         {date && (
           <time
-            className="font-mono text-muted-foreground text-xs uppercase"
+            className="font-mono text-muted-foreground text-xs uppercase md:text-sm"
             dateTime={change.publishedAt ?? undefined}
           >
             {date}
@@ -69,9 +69,7 @@ function ChangeRow({ change }: { change: Change }) {
         )}
       </div>
 
-      <h3 className="font-semibold text-foreground text-xl tracking-tight md:text-2xl">
-        {change.title}
-      </h3>
+      <h3 className="font-medium text-foreground text-lg md:text-xl">{change.title}</h3>
 
       <RichText className="richtext" data={change.content} />
     </article>

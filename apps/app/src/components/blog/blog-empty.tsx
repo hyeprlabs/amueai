@@ -40,17 +40,19 @@ export function BlogEmpty({
           <Button render={<Link href="/blog" />}>Browse all posts</Button>
         </EmptyContent>
       )}
-      <Button
-        className="text-muted-foreground"
-        nativeButton={false}
-        render={
-          <Link href="/">
-            Explore {siteConfig.name} <ArrowUpRightIcon aria-hidden />
-          </Link>
-        }
-        size="sm"
-        variant="link"
-      />
+      <EmptyContent>
+        <Button
+          className="text-muted-foreground"
+          nativeButton={false}
+          render={
+            <Link href="/">
+              Explore {siteConfig.name} <ArrowUpRightIcon aria-hidden />
+            </Link>
+          }
+          size="sm"
+          variant="link"
+        />
+      </EmptyContent>
     </Empty>
   );
 }
