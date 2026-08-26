@@ -22,7 +22,7 @@ export function ChangelogEmpty({ className }: { className?: string }) {
           <HistoryIcon aria-hidden />
         </EmptyMedia>
         <EmptyTitle>No updates yet</EmptyTitle>
-        <EmptyDescription>Check back soon — we ship changes here as they land.</EmptyDescription>
+        <EmptyDescription>Check back soon, we ship changes here as they land.</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button

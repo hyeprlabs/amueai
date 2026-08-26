@@ -54,31 +54,26 @@ function ChangelogCard({ entry }: { entry: Changelog }) {
     : undefined;
 
   return (
-    <article className="scroll-mt-20" id={entry.slug}>
-      <a
-        className="group flex min-h-24 w-full flex-col justify-center gap-y-1 p-4 hover:cursor-pointer hover:bg-accent/30 active:bg-accent dark:active:bg-accent/50"
-        href={`#${entry.slug}`}
-      >
-        <div className="relative flex min-w-0 items-end justify-center gap-2">
-          <Badge className="mb-[3px]" variant="secondary">
-            {TYPE_LABELS[entry.type]}
-          </Badge>
-          <h3 className="min-w-0 shrink truncate font-medium text-foreground text-lg md:text-xl">
-            {entry.title}
-          </h3>
-          <span className="mb-[6px] w-full shrink border-b-2 border-dashed" />
-          {date && (
-            <span className="shrink-0 whitespace-nowrap font-mono text-muted-foreground text-xs uppercase group-hover:text-foreground md:text-sm">
-              {date}
-            </span>
-          )}
-        </div>
-        <div className="line-clamp-2 max-w-sm text-muted-foreground text-sm group-hover:text-foreground md:max-w-full md:text-base">
-          {entry.shortDescription}
-        </div>
-      </a>
+    <article className="scroll-mt-20 flex flex-col gap-3 p-4" id={entry.slug}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Badge className="rounded-md" variant="outline">
+          {TYPE_LABELS[entry.type]}
+        </Badge>
+        {date && (
+          <time
+            className="font-mono text-muted-foreground text-xs uppercase"
+            dateTime={entry.publishedAt ?? undefined}
+          >
+            {date}
+          </time>
+        )}
+      </div>
 
-      <RichText className="richtext px-4 pb-4" data={entry.content} />
+      <h3 className="font-semibold text-foreground text-xl tracking-tight md:text-2xl">
+        {entry.title}
+      </h3>
+
+      <RichText className="richtext" data={entry.content} />
     </article>
   );
 }

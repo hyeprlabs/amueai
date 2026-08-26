@@ -14,7 +14,7 @@ import {
 import { absoluteUrl, createMetadata } from "@/lib/seo";
 
 const title = "Changelog";
-const description = `Everything we've shipped for ${siteConfig.name} — new features, improvements and fixes.`;
+const description = `Everything we've shipped for ${siteConfig.name}: new features, improvements and fixes.`;
 
 export const metadata: Metadata = createMetadata({
   title,
