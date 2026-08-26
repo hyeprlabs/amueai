@@ -4,16 +4,14 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
+import type { Change } from "@/payload-types";
 
-const latestChange = {
-  badge: "CHANGELOG",
-  title: "Product update",
-  description: "Performance boosts and UI polish.", // TIP: Use a single line of text for the description. (max 5 words)
-  readMore: { href: "#", label: "Learn more" },
-} as const;
-
-export function LatestChange() {
+export function LatestChange({ change }: { change?: Change }) {
   const [isOpen, setIsOpen] = useState(true);
+
+  if (!change) return null;
+
+  const href = `/changelog#${change.slug}`;
 
   return (
     <div
@@ -24,19 +22,17 @@ export function LatestChange() {
         "will-change-[opacity] transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0",
       )}
     >
-      <span className="font-light font-mono text-[10px] text-muted-foreground">
-        {latestChange.badge}
-      </span>
-      <p className="font-medium text-xs">{latestChange.title}</p>
-      <span className="text-[10px] text-muted-foreground">{latestChange.description}</span>
+      <span className="font-light font-mono text-[10px] text-muted-foreground">CHANGELOG</span>
+      <p className="font-medium text-xs">{change.title}</p>
+      <span className="text-[10px] text-muted-foreground">{change.shortDescription}</span>
       <Button
         className="w-max px-0 font-light text-xs"
         nativeButton={false}
-        render={<a href={latestChange.readMore.href} />}
+        render={<a href={href} />}
         size="sm"
         variant="link"
       >
-        {latestChange.readMore.label}
+        Learn more
       </Button>
       <Button
         aria-label="Dismiss"

@@ -1,29 +1,24 @@
-import type { Access, CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
 
 import { isLoggedIn } from "@/access/is-logged-in";
+import { readPublishedOrLoggedIn } from "@/access/read-published";
+import { faqField } from "@/fields/faq";
+import { publishedAtField } from "@/fields/published-at";
+import { readingTimeField } from "@/fields/reading-time";
 import { slugField } from "@/fields/slug";
-import { richTextToPlainText } from "@/lib/rich-text";
+import { previewUrl } from "@/lib/preview";
 
-const WORDS_PER_MINUTE = 200;
-
-/** Anyone can read published posts; logged-in admin users can also see drafts. */
-const readPublishedOrLoggedIn: Access = ({ req }) => {
-  if (req.user) return true;
-  return { _status: { equals: "published" } };
-};
-
+/** The Blog. One document is a post, published at `/blog/[slug]`. */
 export const Blog: CollectionConfig = {
   slug: "blog",
+  labels: { singular: "Post", plural: "Blog" },
+  typescript: { interface: "Post" },
   admin: {
     useAsTitle: "title",
     defaultColumns: ["title", "_status", "publishedAt", "author"],
     group: "Blog",
-    livePreview: {
-      url: ({ data }) =>
-        `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/preview?secret=${process.env.PAYLOAD_PREVIEW_SECRET || ""}&slug=${data?.slug}`,
-    },
-    preview: (data) =>
-      `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/preview?secret=${process.env.PAYLOAD_PREVIEW_SECRET || ""}&slug=${data?.slug}`,
+    livePreview: { url: ({ data }) => previewUrl("blog", data?.slug) },
+    preview: (data) => previewUrl("blog", data?.slug),
   },
   access: {
     read: readPublishedOrLoggedIn,
@@ -32,10 +27,7 @@ export const Blog: CollectionConfig = {
     delete: isLoggedIn,
   },
   versions: {
-    drafts: {
-      autosave: { interval: 2000 },
-      schedulePublish: true,
-    },
+    drafts: true,
     maxPerDoc: 50,
   },
   fields: [
@@ -71,56 +63,13 @@ export const Blog: CollectionConfig = {
       hasMany: true,
       admin: { position: "sidebar" },
     },
-    {
-      name: "tags",
-      type: "relationship",
-      relationTo: "tags",
-      hasMany: true,
-      admin: { position: "sidebar" },
-    },
-    {
-      name: "publishedAt",
-      type: "date",
-      admin: {
-        position: "sidebar",
-        date: { pickerAppearance: "dayAndTime" },
-      },
-      hooks: {
-        beforeChange: [
-          ({ siblingData, value }) => {
-            if (siblingData._status === "published" && !value) {
-              return new Date().toISOString();
-            }
-            return value;
-          },
-        ],
-      },
-    },
+    publishedAtField(),
     {
       name: "content",
       type: "richText",
       required: true,
     },
-    {
-      name: "readingTime",
-      type: "number",
-      virtual: true,
-      admin: {
-        position: "sidebar",
-        description: "Estimated reading time in minutes, computed from the content.",
-        readOnly: true,
-      },
-      hooks: {
-        afterRead: [
-          ({ siblingData }) => {
-            const content = siblingData?.content as { root?: { children?: unknown } } | undefined;
-            if (!content) return 0;
-            const words = richTextToPlainText(content).split(/\s+/).filter(Boolean).length;
-            return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
-          },
-        ],
-      },
-    },
+    readingTimeField(),
     {
       name: "relatedPosts",
       type: "relationship",
@@ -129,6 +78,7 @@ export const Blog: CollectionConfig = {
       admin: { position: "sidebar" },
       filterOptions: ({ id }) => (id ? { id: { not_equals: id } } : true),
     },
+    faqField("Optional FAQ section rendered below the post content."),
   ],
   timestamps: true,
 };

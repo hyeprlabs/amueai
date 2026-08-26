@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 
-import { getCategories, getPublishedPostSlugs } from "@/lib/blog";
+import { getPublishedPostSlugs } from "@/lib/blog";
+import { getLatestChangelogUpdate } from "@/lib/changelog";
+import { getLatestCompetitorUpdate, getPublishedCompetitorSlugs } from "@/lib/competitors";
 import { getPublishedLegalPages } from "@/lib/legal-pages";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -14,67 +16,99 @@ const marketingRoutes = [
 ] as const;
 
 /**
- * Blog content lives in Payload, which is unreachable during builds that run
- * without a database. Falling back to the static routes keeps the sitemap valid
- * instead of failing the build outright.
+ * CMS content is unreachable during builds that run without a database, so
+ * every lookup falls back rather than failing the build outright. ISR fills the
+ * real entries in once the deploy is live.
  */
-async function getBlogRoutes(): Promise<MetadataRoute.Sitemap> {
+async function safely<T>(label: string, load: () => Promise<T>, fallback: T): Promise<T> {
   try {
-    const [posts, categories] = await Promise.all([getPublishedPostSlugs(), getCategories()]);
-
-    return [
-      ...posts.map((post) => ({
-        url: absoluteUrl(`/blog/${post.slug}`),
-        lastModified: new Date(post.updatedAt),
-        changeFrequency: "monthly" as const,
-        priority: 0.6,
-      })),
-      ...categories.map((category) => ({
-        url: absoluteUrl(`/blog/category/${category.slug}`),
-        changeFrequency: "weekly" as const,
-        priority: 0.4,
-      })),
-    ];
+    return await load();
   } catch (error) {
-    console.error("[sitemap] Skipping blog routes, Payload could not be reached:", error);
-
-    return [];
+    console.error(`[sitemap] Skipping ${label}, Payload could not be reached:`, error);
+    return fallback;
   }
 }
 
-/**
- * Legal pages live in Payload, which is unreachable during builds that run
- * without a database. Falling back to the static routes keeps the sitemap valid
- * instead of failing the build outright.
- */
+/** An index page whose `lastModified` is the newest timestamp among its entries. */
+async function indexRoute(
+  label: string,
+  pathname: string,
+  getLastModified: () => Promise<string | undefined>,
+  { changeFrequency, priority }: { changeFrequency: "weekly"; priority: number },
+): Promise<MetadataRoute.Sitemap> {
+  const lastModified = await safely(label, getLastModified, undefined);
+
+  return [
+    {
+      url: absoluteUrl(pathname),
+      ...(lastModified && { lastModified: new Date(lastModified) }),
+      changeFrequency,
+      priority,
+    },
+  ];
+}
+
+async function getBlogRoutes(): Promise<MetadataRoute.Sitemap> {
+  const posts = await safely("blog routes", getPublishedPostSlugs, []);
+
+  return posts.map((post) => ({
+    url: absoluteUrl(`/blog/${post.slug}`),
+    lastModified: new Date(post.updatedAt),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+}
+
+async function getCompetitorRoutes(): Promise<MetadataRoute.Sitemap> {
+  const competitors = await safely("competitor routes", getPublishedCompetitorSlugs, []);
+
+  return competitors.map((competitor) => ({
+    url: absoluteUrl(`/vs/${competitor.slug}`),
+    lastModified: new Date(competitor.updatedAt),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+}
+
 async function getLegalRoutes(): Promise<MetadataRoute.Sitemap> {
-  try {
-    const pages = await getPublishedLegalPages();
+  const pages = await safely("legal pages", getPublishedLegalPages, []);
 
-    return pages.map((page) => ({
-      url: absoluteUrl(`/legal/${page.slug}`),
-      lastModified: new Date(page.updatedAt),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    }));
-  } catch (error) {
-    console.error("[sitemap] Skipping legal pages, Payload could not be reached:", error);
-
-    return [];
-  }
+  return pages.map((page) => ({
+    url: absoluteUrl(`/legal/${page.slug}`),
+    lastModified: new Date(page.updatedAt),
+    changeFrequency: "yearly" as const,
+    priority: 0.3,
+  }));
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // No `lastModified` for the marketing routes: the only value available at
-  // request time is "now", which crawlers rightly ignore. Legal pages carry a
-  // real timestamp from the CMS.
+  // request time is "now", which crawlers rightly ignore. CMS-backed routes
+  // carry a real timestamp.
+  const [legal, posts, competitors, changelog, competitorsIndex] = await Promise.all([
+    getLegalRoutes(),
+    getBlogRoutes(),
+    getCompetitorRoutes(),
+    indexRoute("changelog", "/changelog", getLatestChangelogUpdate, {
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }),
+    indexRoute("competitors index", "/competitors", getLatestCompetitorUpdate, {
+      changeFrequency: "weekly",
+      priority: 0.8,
+    }),
+  ]);
+
   return [
     ...marketingRoutes.map(({ pathname, changeFrequency, priority }) => ({
       url: absoluteUrl(pathname),
       changeFrequency,
       priority,
     })),
-    ...(await getLegalRoutes()),
-    ...(await getBlogRoutes()),
+    ...competitorsIndex,
+    ...legal,
+    ...posts,
+    ...competitors,
+    ...changelog,
   ];
 }

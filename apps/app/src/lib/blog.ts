@@ -2,7 +2,7 @@ import config from "@payload-config";
 import { getPayload, type Where } from "payload";
 import { cache } from "react";
 
-import type { Author, Blog, Category, Tag } from "@/payload-types";
+import type { Category, Post } from "@/payload-types";
 
 const POSTS_PER_PAGE = 12;
 
@@ -11,9 +11,8 @@ const publishedOnly = { _status: { equals: "published" } };
 type PostListOptions = {
   page?: number;
   limit?: number;
+  /** Category slug. */
   category?: string;
-  tag?: string;
-  author?: string;
 };
 
 /** Parses a `?page=` search param into a safe, finite, positive integer, defaulting to 1. */
@@ -25,14 +24,14 @@ export function parsePageParam(value: string | string[] | undefined): number {
 }
 
 /**
- * Loads a single blog post by slug.
+ * Loads a single post by slug.
  *
  * Cached per request so the page body and its `generateMetadata` share one
  * query. Pass `draft: true` from a route with Draft Mode enabled to read the
  * latest unpublished revision instead.
  */
 export const getPostBySlug = cache(
-  async (slug: string, draft = false): Promise<Blog | undefined> => {
+  async (slug: string, { draft = false }: { draft?: boolean } = {}): Promise<Post | undefined> => {
     const payload = await getPayload({ config });
     const { docs } = await payload.find({
       collection: "blog",
@@ -48,20 +47,16 @@ export const getPostBySlug = cache(
   },
 );
 
-/** Paginated, published posts, newest first — optionally scoped to a category or tag. */
+/** Paginated, published posts, newest first — optionally scoped to a category slug. */
 export async function getPosts({
   page = 1,
   limit = POSTS_PER_PAGE,
   category,
-  tag,
-  author,
 }: PostListOptions = {}) {
   const payload = await getPayload({ config });
 
   const where: Where = { ...publishedOnly };
-  if (category) where.categories = { in: [category] };
-  if (tag) where.tags = { in: [tag] };
-  if (author) where.author = { equals: author };
+  if (category) where["categories.slug"] = { equals: category };
 
   const result = await payload.find({
     collection: "blog",
@@ -76,7 +71,7 @@ export async function getPosts({
 }
 
 /** Every published post slug, ordered by slug — used to build the sitemap. */
-export async function getPublishedPostSlugs(): Promise<Pick<Blog, "slug" | "updatedAt">[]> {
+export async function getPublishedPostSlugs(): Promise<Pick<Post, "slug" | "updatedAt">[]> {
   const payload = await getPayload({ config });
   const { docs } = await payload.find({
     collection: "blog",
@@ -87,15 +82,15 @@ export async function getPublishedPostSlugs(): Promise<Pick<Blog, "slug" | "upda
     select: { slug: true, updatedAt: true },
   });
 
-  return docs as Pick<Blog, "slug" | "updatedAt">[];
+  return docs as Pick<Post, "slug" | "updatedAt">[];
 }
 
 /** Related posts: the post's manually curated list, falling back to posts sharing a category. */
-export async function getRelatedPosts(post: Blog, limit = 3): Promise<Blog[]> {
+export async function getRelatedPosts(post: Post, limit = 3): Promise<Post[]> {
   const payload = await getPayload({ config });
 
   const curated = (post.relatedPosts ?? []).filter(
-    (related): related is Blog => typeof related === "object",
+    (related): related is Post => typeof related === "object",
   );
   if (curated.length > 0) return curated.slice(0, limit);
 
@@ -127,37 +122,4 @@ export const getCategories = cache(async (): Promise<Category[]> => {
   });
 
   return docs;
-});
-
-export const getCategoryBySlug = cache(async (slug: string): Promise<Category | undefined> => {
-  const payload = await getPayload({ config });
-  const { docs } = await payload.find({
-    collection: "categories",
-    where: { slug: { equals: slug } },
-    limit: 1,
-  });
-
-  return docs[0];
-});
-
-export const getTagBySlug = cache(async (slug: string): Promise<Tag | undefined> => {
-  const payload = await getPayload({ config });
-  const { docs } = await payload.find({
-    collection: "tags",
-    where: { slug: { equals: slug } },
-    limit: 1,
-  });
-
-  return docs[0];
-});
-
-export const getAuthorBySlug = cache(async (slug: string): Promise<Author | undefined> => {
-  const payload = await getPayload({ config });
-  const { docs } = await payload.find({
-    collection: "authors",
-    where: { slug: { equals: slug } },
-    limit: 1,
-  });
-
-  return docs[0];
 });

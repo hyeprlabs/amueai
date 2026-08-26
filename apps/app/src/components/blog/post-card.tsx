@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { resolveMedia } from "@/lib/media";
-import type { Blog, Category } from "@/payload-types";
+import type { Category, Post } from "@/payload-types";
 
-export function PostCard({ post }: { post: Blog }) {
+export function PostCard({ post }: { post: Post }) {
   const image = resolveMedia(post.featuredImage, "card");
   const categories = (post.categories ?? []).filter(
     (category): category is Category => typeof category === "object",
@@ -21,7 +21,7 @@ export function PostCard({ post }: { post: Blog }) {
               alt={image.alt}
               className="object-cover transition-transform duration-300 hover:scale-105"
               fill
-              sizes="(min-width: 768px) 33vw, 100vw"
+              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               src={image.src}
             />
           </div>

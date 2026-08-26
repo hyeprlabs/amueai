@@ -69,23 +69,20 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
-    blog: Blog;
+    blog: Post;
     categories: Category;
-    tags: Tag;
     authors: Author;
     "legal-pages": LegalPage;
+    changelog: Change;
+    competitors: Competitor;
     search: Search;
     "payload-kv": PayloadKv;
-    "payload-jobs": PayloadJob;
     "payload-locked-documents": PayloadLockedDocument;
     "payload-preferences": PayloadPreference;
     "payload-migrations": PayloadMigration;
   };
   collectionsJoins: {
     categories: {
-      posts: "blog";
-    };
-    tags: {
       posts: "blog";
     };
     authors: {
@@ -97,12 +94,12 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     blog: BlogSelect<false> | BlogSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
-    tags: TagsSelect<false> | TagsSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     "legal-pages": LegalPagesSelect<false> | LegalPagesSelect<true>;
+    changelog: ChangelogSelect<false> | ChangelogSelect<true>;
+    competitors: CompetitorsSelect<false> | CompetitorsSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
     "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
-    "payload-jobs": PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     "payload-locked-documents":
       | PayloadLockedDocumentsSelect<false>
       | PayloadLockedDocumentsSelect<true>;
@@ -121,13 +118,7 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: {
-      schedulePublish: TaskSchedulePublish;
-      inline: {
-        input: unknown;
-        output: unknown;
-      };
-    };
+    tasks: unknown;
     workflows: unknown;
   };
 }
@@ -223,7 +214,7 @@ export interface Media {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "blog".
  */
-export interface Blog {
+export interface Post {
   id: number;
   title: string;
   slug: string;
@@ -234,7 +225,6 @@ export interface Blog {
   featuredImage: number | Media;
   author: number | Author;
   categories?: (number | Category)[] | null;
-  tags?: (number | Tag)[] | null;
   publishedAt?: string | null;
   content: {
     root: {
@@ -255,7 +245,25 @@ export interface Blog {
    * Estimated reading time in minutes, computed from the content.
    */
   readingTime?: number | null;
-  relatedPosts?: (number | Blog)[] | null;
+  relatedPosts?: (number | Post)[] | null;
+  /**
+   * Optional FAQ section rendered below the post content.
+   */
+  faq?: {
+    /**
+     * Show a FAQ section on this page.
+     */
+    enabled?: boolean | null;
+    title?: string | null;
+    description?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -290,7 +298,7 @@ export interface Author {
       }[]
     | null;
   posts?: {
-    docs?: (number | Blog)[];
+    docs?: (number | Post)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -307,23 +315,7 @@ export interface Category {
   slug: string;
   description?: string | null;
   posts?: {
-    docs?: (number | Blog)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tags".
- */
-export interface Tag {
-  id: number;
-  title: string;
-  slug: string;
-  posts?: {
-    docs?: (number | Blog)[];
+    docs?: (number | Post)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -358,6 +350,173 @@ export interface LegalPage {
   _status?: ("draft" | "published") | null;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "changelog".
+ */
+export interface Change {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * One short line (max 140 characters). Shown in the app sidebar's latest-update widget and used as the default meta description.
+   */
+  shortDescription: string;
+  type: "feature" | "improvement" | "fix" | "breaking";
+  /**
+   * Optional version tag, e.g. v1.4.0
+   */
+  version?: string | null;
+  publishedAt?: string | null;
+  /**
+   * Optional image shown with this change and used as its social card.
+   */
+  featuredImage?: (number | null) | Media;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "competitors".
+ */
+export interface Competitor {
+  id: number;
+  /**
+   * The competitor's product name on its own, e.g. "Intercom". Drives the /vs/ URL and every "AmueAI vs. Intercom" heading.
+   */
+  name: string;
+  slug: string;
+  /**
+   * One or two sentences summarising the comparison. Shown on /competitors and used as the default meta description.
+   */
+  excerpt: string;
+  /**
+   * The short answer, rendered directly under the headline. Written to stand on its own so search engines and AI answers can quote it.
+   */
+  verdict: string;
+  /**
+   * Who this competitor suits best, e.g. "Large support teams with an existing helpdesk".
+   */
+  bestFor?: string | null;
+  /**
+   * The competitor's homepage. Used in the structured data describing them.
+   */
+  website?: string | null;
+  /**
+   * The competitor's logo.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * Social card for this comparison.
+   */
+  featuredImage: number | Media;
+  author: number | Author;
+  publishedAt?: string | null;
+  /**
+   * The side-by-side table rendered at the top of the page: one row per aspect. Use checkbox rows for features or string rows for metrics. Order rows to lead with what makes AmueAI win.
+   */
+  comparison?:
+    | {
+        /**
+         * The aspect being compared, e.g. "Live on WhatsApp" or "Seats".
+         */
+        label: string;
+        /**
+         * Does the competitor support this feature?
+         */
+        competitorSupported?: boolean | null;
+        /**
+         * Does AmueAI support this feature?
+         */
+        usSupported?: boolean | null;
+        /**
+         * For metrics (not features), the competitor value. E.g. '0' or 'Limited'. Leave empty for checkbox-style rows.
+         */
+        competitorValue?: string | null;
+        /**
+         * For metrics (not features), the AmueAI value. E.g. '10' or 'Full'. Leave empty for checkbox-style rows.
+         */
+        usValue?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The long-form comparison, rendered below the table.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Estimated reading time in minutes, computed from the content.
+   */
+  readingTime?: number | null;
+  relatedCompetitors?: (number | Competitor)[] | null;
+  /**
+   * Optional FAQ section rendered below the comparison, published as FAQ structured data.
+   */
+  faq?: {
+    /**
+     * Show a FAQ section on this page.
+     */
+    enabled?: boolean | null;
+    title?: string | null;
+    description?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
  * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -367,10 +526,19 @@ export interface Search {
   id: number;
   title?: string | null;
   priority?: number | null;
-  doc: {
-    relationTo: "blog";
-    value: number | Blog;
-  };
+  doc:
+    | {
+        relationTo: "blog";
+        value: number | Post;
+      }
+    | {
+        relationTo: "changelog";
+        value: number | Change;
+      }
+    | {
+        relationTo: "competitors";
+        value: number | Competitor;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -393,98 +561,6 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs".
- */
-export interface PayloadJob {
-  id: number;
-  /**
-   * Input data provided to the job
-   */
-  input?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  taskStatus?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  completedAt?: string | null;
-  totalTried?: number | null;
-  /**
-   * If hasError is true this job will not be retried
-   */
-  hasError?: boolean | null;
-  /**
-   * If hasError is true, this is the error that caused it
-   */
-  error?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  /**
-   * Task execution log
-   */
-  log?:
-    | {
-        executedAt: string;
-        completedAt: string;
-        taskSlug: "inline" | "schedulePublish";
-        taskID: string;
-        input?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        output?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        state: "failed" | "succeeded";
-        error?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        id?: string | null;
-      }[]
-    | null;
-  taskSlug?: ("inline" | "schedulePublish") | null;
-  queue?: string | null;
-  waitUntil?: string | null;
-  processing?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -500,15 +576,11 @@ export interface PayloadLockedDocument {
       } | null)
     | ({
         relationTo: "blog";
-        value: number | Blog;
+        value: number | Post;
       } | null)
     | ({
         relationTo: "categories";
         value: number | Category;
-      } | null)
-    | ({
-        relationTo: "tags";
-        value: number | Tag;
       } | null)
     | ({
         relationTo: "authors";
@@ -517,6 +589,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: "legal-pages";
         value: number | LegalPage;
+      } | null)
+    | ({
+        relationTo: "changelog";
+        value: number | Change;
+      } | null)
+    | ({
+        relationTo: "competitors";
+        value: number | Competitor;
       } | null)
     | ({
         relationTo: "search";
@@ -649,11 +729,24 @@ export interface BlogSelect<T extends boolean = true> {
   featuredImage?: T;
   author?: T;
   categories?: T;
-  tags?: T;
   publishedAt?: T;
   content?: T;
   readingTime?: T;
   relatedPosts?: T;
+  faq?:
+    | T
+    | {
+        enabled?: T;
+        title?: T;
+        description?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {
@@ -673,17 +766,6 @@ export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   description?: T;
-  posts?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tags_select".
- */
-export interface TagsSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
   posts?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -723,6 +805,83 @@ export interface LegalPagesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "changelog_select".
+ */
+export interface ChangelogSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  shortDescription?: T;
+  type?: T;
+  version?: T;
+  publishedAt?: T;
+  featuredImage?: T;
+  content?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "competitors_select".
+ */
+export interface CompetitorsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  excerpt?: T;
+  verdict?: T;
+  bestFor?: T;
+  website?: T;
+  logo?: T;
+  featuredImage?: T;
+  author?: T;
+  publishedAt?: T;
+  comparison?:
+    | T
+    | {
+        label?: T;
+        competitorSupported?: T;
+        usSupported?: T;
+        competitorValue?: T;
+        usValue?: T;
+        id?: T;
+      };
+  content?: T;
+  readingTime?: T;
+  relatedCompetitors?: T;
+  faq?:
+    | T
+    | {
+        enabled?: T;
+        title?: T;
+        description?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "search_select".
  */
 export interface SearchSelect<T extends boolean = true> {
@@ -739,37 +898,6 @@ export interface SearchSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs_select".
- */
-export interface PayloadJobsSelect<T extends boolean = true> {
-  input?: T;
-  taskStatus?: T;
-  completedAt?: T;
-  totalTried?: T;
-  hasError?: T;
-  error?: T;
-  log?:
-    | T
-    | {
-        executedAt?: T;
-        completedAt?: T;
-        taskSlug?: T;
-        taskID?: T;
-        input?: T;
-        output?: T;
-        state?: T;
-        error?: T;
-        id?: T;
-      };
-  taskSlug?: T;
-  queue?: T;
-  waitUntil?: T;
-  processing?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -812,23 +940,6 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: "full";
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskSchedulePublish".
- */
-export interface TaskSchedulePublish {
-  input: {
-    type?: ("publish" | "unpublish") | null;
-    locale?: string | null;
-    doc?: {
-      relationTo: "blog";
-      value: number | Blog;
-    } | null;
-    global?: string | null;
-    user?: (number | null) | User;
-  };
-  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

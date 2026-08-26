@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "tsx scripts/migrate.ts && next build",
+    "db:migrate": "tsx scripts/migrate.ts",
     "start": "next start",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
@@ -35,7 +36,9 @@
     "lucide-react": "^1.31.0",
     "motion": "^13.1.0",
     "next": "16.3.1",
+    "next-seo": "^7.3.0",
     "next-themes": "^0.4.6",
+    "nuqs": "^2.10.0",
     "payload": "^3.88.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -49,6 +52,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@next/env": "^16.3.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

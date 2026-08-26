@@ -1,31 +1,38 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-
-import { AuthorByline } from "@/components/blog/author-byline";
-import { PostGrid } from "@/components/blog/post-grid";
-import { JsonLd } from "@/components/json-ld";
-import { Badge } from "@/components/ui/badge";
-import { siteConfig } from "@/config/site";
-import { getPostBySlug, getRelatedPosts } from "@/lib/blog";
-import { resolveMedia } from "@/lib/media";
-import { createMetadata, truncateForDescription } from "@/lib/seo";
+import { ArrowLeftIcon } from "lucide-react";
 import {
-  articleSchema,
-  breadcrumbSchema,
-  organizationSchema,
-  structuredDataGraph,
-  webPageSchema,
-  websiteSchema,
-} from "@/lib/structured-data";
-import type { Author, Category, Tag } from "@/payload-types";
+  ArticleJsonLd,
+  BreadcrumbJsonLd,
+  FAQJsonLd,
+  JsonLdScript,
+  OrganizationJsonLd,
+} from "next-seo";
+
+import { AuthorInfo } from "@/components/marketing/author-info";
+import { CategoryDropdown } from "@/components/blog/category-dropdown";
+import { MarketingFaq } from "@/components/marketing-faq";
+import { PostGrid } from "@/components/blog/post-grid";
+import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
+import { getCategories, getPostBySlug, getRelatedPosts } from "@/lib/blog";
+import { resolveMedia } from "@/lib/media";
+import {
+  breadcrumbItems,
+  organizationJsonLdProps,
+  webPageJsonLd,
+  webSiteJsonLd,
+} from "@/lib/next-seo";
+import { absoluteUrl, createMetadata, truncateForDescription } from "@/lib/seo";
+import { cn } from "@/lib/utils";
+import type { Author, Category } from "@/payload-types";
 
 async function loadPost(slug: string) {
   const { isEnabled: draft } = await draftMode();
-  return { post: await getPostBySlug(slug, draft), draft };
+  return { post: await getPostBySlug(slug, { draft }), draft };
 }
 
 export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): Promise<Metadata> {
@@ -62,101 +69,99 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
   const categories = (post.categories ?? []).filter(
     (category): category is Category => typeof category === "object",
   );
-  const tags = (post.tags ?? []).filter((tag): tag is Tag => typeof tag === "object");
   const image = resolveMedia(post.featuredImage, "og");
   const summary = truncateForDescription(post.meta?.description || post.excerpt);
   const pathname = `/blog/${post.slug}`;
-  const relatedPosts = draft ? [] : await getRelatedPosts(post);
+  const [relatedPosts, allCategories] = await Promise.all([
+    draft ? Promise.resolve([]) : getRelatedPosts(post),
+    getCategories(),
+  ]);
+  const faqItems = post.faq?.enabled ? (post.faq.items ?? []) : [];
 
   return (
     <>
-      <JsonLd
-        data={structuredDataGraph(
-          organizationSchema(),
-          websiteSchema(),
-          webPageSchema({
-            name: post.title,
-            description: summary,
-            pathname,
-            datePublished: post.publishedAt ?? undefined,
-            dateModified: post.updatedAt,
-            breadcrumb: breadcrumbSchema([
-              { name: "Home", pathname: "/" },
-              { name: "Blog", pathname: "/blog" },
-              { name: post.title, pathname },
-            ]),
-          }),
-          articleSchema({
-            title: post.title,
-            description: summary,
-            pathname,
-            image: image?.src,
-            datePublished: post.publishedAt ?? undefined,
-            dateModified: post.updatedAt,
-            authorName: author?.name ?? siteConfig.publisher,
-            authorPathname: author ? `/blog/author/${author.slug}` : undefined,
-          }),
-        )}
+      <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
+      <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
+      <JsonLdScript
+        data={webPageJsonLd({
+          name: post.title,
+          description: summary,
+          pathname,
+          datePublished: post.publishedAt ?? undefined,
+          dateModified: post.updatedAt,
+        })}
+        scriptKey="webpage"
       />
+      <BreadcrumbJsonLd
+        items={breadcrumbItems([
+          { name: "Home", pathname: "/" },
+          { name: "Blog", pathname: "/blog" },
+          { name: post.title, pathname },
+        ])}
+        scriptKey="breadcrumb"
+      />
+      <ArticleJsonLd
+        type="BlogPosting"
+        headline={post.title}
+        description={summary}
+        url={absoluteUrl(pathname)}
+        author={{ "@type": "Person", name: author?.name ?? siteConfig.publisher }}
+        datePublished={post.publishedAt ?? undefined}
+        dateModified={post.updatedAt}
+        image={image?.src ? absoluteUrl(image.src) : undefined}
+        publisher={{ "@type": "Organization", name: siteConfig.name }}
+        mainEntityOfPage={absoluteUrl(pathname)}
+        scriptKey="article"
+      />
+      {faqItems.length > 0 && (
+        <FAQJsonLd
+          questions={faqItems.map((item) => ({ question: item.question, answer: item.answer }))}
+          scriptKey="faq"
+        />
+      )}
 
       <article className="my-12 lg:my-24">
-        <header className="flex flex-col gap-6 border-t p-4">
-          {categories.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {categories.map((category) => (
-                <Badge
-                  key={category.id}
-                  render={<Link href={`/blog/category/${category.slug}`} />}
-                  variant="secondary"
-                >
-                  {category.title}
-                </Badge>
-              ))}
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t p-4">
+          <Button className="w-fit" render={<Link href="/blog" />} size="sm" variant="outline">
+            <ArrowLeftIcon aria-hidden data-icon="inline-start" />
+            Back
+          </Button>
+          {allCategories.length > 0 && (
+            <CategoryDropdown activeSlug={categories[0]?.slug} categories={allCategories} />
           )}
+        </div>
+
+        <div className="flex flex-col gap-4 border-t p-4">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">{post.title}</h1>
           {author && (
-            <AuthorByline
+            <AuthorInfo
               author={author}
               publishedAt={post.publishedAt}
               readingTime={post.readingTime}
             />
           )}
-        </header>
+        </div>
 
-        {image && (
-          <div className="relative aspect-video w-full overflow-hidden border-y bg-muted">
-            <Image
-              alt={image.alt}
-              className="object-cover"
-              fill
-              priority
-              sizes="100vw"
-              src={image.src}
-            />
-          </div>
-        )}
-
-        <RichText className="border-b p-4" data={post.content} />
-
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 border-b p-4">
-            {tags.map((tag) => (
-              <Badge
-                key={tag.id}
-                render={<Link href={`/blog/tag/${tag.slug}`} />}
-                variant="outline"
-              >
-                #{tag.title}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <RichText
+          className={cn(
+            "richtext border-t p-4",
+            faqItems.length === 0 && relatedPosts.length === 0 && "border-b",
+          )}
+          data={post.content}
+        />
       </article>
+
+      {faqItems.length > 0 && (
+        <MarketingFaq
+          description={post.faq?.description}
+          items={faqItems}
+          title={post.faq?.title}
+        />
+      )}
 
       {relatedPosts.length > 0 && (
         <section className="mb-12 flex flex-col gap-6 border-t p-4 lg:mb-24">
-          <h2 className="text-xl font-semibold tracking-tight">Related posts</h2>
+          <h2 className="font-semibold text-xl tracking-tight">Related posts</h2>
           <PostGrid posts={relatedPosts} />
         </section>
       )}

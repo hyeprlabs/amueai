@@ -1,9 +1,14 @@
 import type { CollectionConfig } from "payload";
 
+import { isLoggedIn } from "@/access/is-logged-in";
+
 export const Media: CollectionConfig = {
   slug: "media",
   access: {
     read: () => true,
+    create: isLoggedIn,
+    update: isLoggedIn,
+    delete: isLoggedIn,
   },
   fields: [
     {
