@@ -41,7 +41,7 @@ export function Header({ waitlistEnabled }: { waitlistEnabled: boolean }) {
           <DesktopNav />
         </div>
         <HeaderActions waitlistEnabled={waitlistEnabled} />
-        <MobileNav />
+        <MobileNav waitlistEnabled={waitlistEnabled} />
       </nav>
     </header>
   );
