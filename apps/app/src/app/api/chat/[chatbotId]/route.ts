@@ -57,7 +57,30 @@ export async function POST(
     );
   }
 
-  if (!conversationId) {
+  if (conversationId) {
+    // The client (dashboard test-chat, widget) generates its own id up
+    // front so it can send it on the very first message - create the row
+    // on first use rather than requiring a separate "start conversation"
+    // round trip.
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .eq("chatbot_id", chatbot.id)
+      .single();
+
+    if (!existing) {
+      const { error: conversationError } = await supabase.from("conversations").insert({
+        id: conversationId,
+        org_id: chatbot.org_id,
+        chatbot_id: chatbot.id,
+        visitor_id: visitorId,
+      });
+      if (conversationError) {
+        return NextResponse.json({ error: "Failed to start conversation" }, { status: 500 });
+      }
+    }
+  } else {
     const { data: conversation, error: conversationError } = await supabase
       .from("conversations")
       .insert({ org_id: chatbot.org_id, chatbot_id: chatbot.id, visitor_id: visitorId })

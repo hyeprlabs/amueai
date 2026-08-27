@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateChatbot } from "../actions";
 import { AddTextSourceForm } from "./add-text-source-form";
+import { TestChat } from "./test-chat";
 
 export const metadata: Metadata = createMetadata({
   title: "Chatbot settings",
@@ -117,6 +118,16 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-base font-medium">Test chat</h2>
+          <p className="text-sm text-muted-foreground">
+            Calls the same API the public widget uses.
+          </p>
+        </div>
+        <TestChat chatbotId={chatbot.id} />
       </div>
     </div>
   );
