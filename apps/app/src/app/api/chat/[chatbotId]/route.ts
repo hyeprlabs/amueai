@@ -3,6 +3,7 @@ import { embed, streamText } from "ai";
 import { z } from "zod";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
+import { checkChatRateLimit } from "@/lib/rate-limit";
 
 // Public, unauthenticated route - the widget and the dashboard test-chat
 // panel both call this. No Clerk session, so RLS provides no protection
@@ -41,8 +42,11 @@ export async function POST(
     return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
   }
 
-  // TODO(Phase 10): rate-limit by IP + chatbotId via Upstash before this
-  // point - RLS provides no protection on this public route.
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const allowed = await checkChatRateLimit(ip, chatbot.id);
+  if (!allowed) {
+    return NextResponse.json({ error: "Too many messages - please slow down." }, { status: 429 });
+  }
 
   const { data: org } = await supabase
     .from("organizations")

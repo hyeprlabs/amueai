@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { runIngestion } from "@/lib/ingestion";
+// Type-only import so the ingestion task's code (pdf-parse, mammoth,
+// cheerio, embedMany) isn't bundled into this route handler.
+import type { ingestSource } from "@/trigger/ingest-source";
 
-// All four source types now run inline (Phase 10 moves this off the
-// request path into Trigger.dev). File uploads go to Storage client-side
-// first (RLS-scoped to the org's own folder) - this route just records
-// the storage_path and runs the pipeline against it.
+// File uploads go to Storage client-side first (RLS-scoped to the org's
+// own folder) - this route just records the storage_path and hands the
+// pipeline off to Trigger.dev.
 const createSourceSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("text"),
@@ -81,20 +83,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  try {
-    await runIngestion(supabase, source.id);
-  } catch (err) {
-    // Ingestion failure is recorded on the source row (status/error_message)
-    // by runIngestion itself - still return 201, the client should just
-    // reflect the failed status rather than treat the request as failed.
-    console.error(`Ingestion failed for source ${source.id}:`, err);
-  }
+  await tasks.trigger<typeof ingestSource>("ingest-source", { sourceId: source.id });
 
-  const { data: finalSource } = await supabase
-    .from("sources")
-    .select("id, label, type, status, error_message, created_at")
-    .eq("id", source.id)
-    .single();
-
-  return NextResponse.json({ source: finalSource ?? source }, { status: 201 });
+  return NextResponse.json({ source }, { status: 201 });
 }

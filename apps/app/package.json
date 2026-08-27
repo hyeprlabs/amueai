@@ -12,7 +12,9 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "generate:types": "payload generate:types"
+    "generate:types": "payload generate:types",
+    "dev:trigger": "trigger dev",
+    "deploy:trigger": "trigger deploy"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.86",
@@ -28,7 +30,10 @@
     "@payloadcms/richtext-lexical": "^3.88.0",
     "@payloadcms/storage-vercel-blob": "3.88.0",
     "@supabase/supabase-js": "^2.112.4",
+    "@trigger.dev/sdk": "^4.5.12",
     "@types/canvas-confetti": "^1.9.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.3",
     "ai": "^7.0.83",
     "canvas-confetti": "^1.9.4",
     "cheerio": "^1.2.0",
@@ -60,6 +65,7 @@
   "devDependencies": {
     "@next/env": "^16.3.3",
     "@tailwindcss/postcss": "^4",
+    "@trigger.dev/build": "^4.5.12",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -68,6 +74,7 @@
     "oxfmt": "^0.63.0",
     "oxlint": "^1.78.0",
     "tailwindcss": "^4",
+    "trigger.dev": "^4.5.12",
     "tsx": "4.22.4",
     "typescript": "^5"
   },
