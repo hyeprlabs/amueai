@@ -69,19 +69,36 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
-    blog: Blog;
+    blog: Post;
+    categories: Category;
+    authors: Author;
     "legal-pages": LegalPage;
+    changelog: Change;
+    competitors: Competitor;
+    search: Search;
     "payload-kv": PayloadKv;
     "payload-locked-documents": PayloadLockedDocument;
     "payload-preferences": PayloadPreference;
     "payload-migrations": PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    categories: {
+      posts: "blog";
+    };
+    authors: {
+      posts: "blog";
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     blog: BlogSelect<false> | BlogSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    authors: AuthorsSelect<false> | AuthorsSelect<true>;
     "legal-pages": LegalPagesSelect<false> | LegalPagesSelect<true>;
+    changelog: ChangelogSelect<false> | ChangelogSelect<true>;
+    competitors: CompetitorsSelect<false> | CompetitorsSelect<true>;
+    search: SearchSelect<false> | SearchSelect<true>;
     "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
     "payload-locked-documents":
       | PayloadLockedDocumentsSelect<false>
@@ -90,7 +107,7 @@ export interface Config {
     "payload-migrations": PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {};
@@ -128,7 +145,7 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -153,7 +170,7 @@ export interface User {
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
+  id: number;
   alt: string;
   updatedAt: string;
   createdAt: string;
@@ -166,20 +183,54 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    og?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "blog".
  */
-export interface Blog {
-  id: string;
+export interface Post {
+  id: number;
   title: string;
   slug: string;
+  /**
+   * Short summary shown on the blog index and used as the default meta description.
+   */
+  excerpt: string;
+  featuredImage: number | Media;
+  author: number | Author;
+  categories?: (number | Category)[] | null;
+  publishedAt?: string | null;
   content: {
     root: {
       type: string;
       children: {
-        type: string;
+        type: any;
         version: number;
         [k: string]: unknown;
       }[];
@@ -190,23 +241,100 @@ export interface Blog {
     };
     [k: string]: unknown;
   };
+  /**
+   * Estimated reading time in minutes, computed from the content.
+   */
+  readingTime?: number | null;
+  relatedPosts?: (number | Post)[] | null;
+  /**
+   * Optional FAQ section rendered below the post content.
+   */
+  faq?: {
+    /**
+     * Show a FAQ section on this page.
+     */
+    enabled?: boolean | null;
+    title?: string | null;
+    description?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ("draft" | "published") | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  name: string;
+  slug: string;
+  avatar?: (number | null) | Media;
+  /**
+   * e.g. Head of Marketing
+   */
+  title?: string | null;
+  bio?: string | null;
+  socialLinks?:
+    | {
+        platform: "x" | "linkedin" | "github" | "website";
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  posts?: {
+    docs?: (number | Post)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string | null;
+  posts?: {
+    docs?: (number | Post)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "legal-pages".
  */
 export interface LegalPage {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   content: {
     root: {
       type: string;
       children: {
-        type: string;
+        type: any;
         version: number;
         [k: string]: unknown;
       }[];
@@ -223,10 +351,203 @@ export interface LegalPage {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "changelog".
+ */
+export interface Change {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * One short line (max 140 characters). Shown in the app sidebar's latest-update widget and used as the default meta description.
+   */
+  shortDescription: string;
+  type: "feature" | "improvement" | "fix" | "breaking";
+  /**
+   * Optional version tag, e.g. v1.4.0
+   */
+  version?: string | null;
+  publishedAt?: string | null;
+  /**
+   * Optional image shown with this change and used as its social card.
+   */
+  featuredImage?: (number | null) | Media;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "competitors".
+ */
+export interface Competitor {
+  id: number;
+  /**
+   * The competitor's product name on its own, e.g. "Intercom". Drives the /vs/ URL and every "AmueAI vs. Intercom" heading.
+   */
+  name: string;
+  slug: string;
+  /**
+   * One or two sentences summarising the comparison. Shown on /competitors and used as the default meta description.
+   */
+  excerpt: string;
+  /**
+   * The short answer, rendered directly under the headline. Written to stand on its own so search engines and AI answers can quote it.
+   */
+  verdict: string;
+  /**
+   * Who this competitor suits best, e.g. "Large support teams with an existing helpdesk".
+   */
+  bestFor?: string | null;
+  /**
+   * The competitor's homepage. Used in the structured data describing them.
+   */
+  website?: string | null;
+  /**
+   * The competitor's logo.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * Social card for this comparison.
+   */
+  featuredImage: number | Media;
+  author: number | Author;
+  publishedAt?: string | null;
+  /**
+   * The side-by-side table rendered at the top of the page: one row per aspect. Use checkbox rows for features or string rows for metrics. Order rows to lead with what makes AmueAI win.
+   */
+  comparison?:
+    | {
+        /**
+         * The aspect being compared, e.g. "Live on WhatsApp" or "Seats".
+         */
+        label: string;
+        /**
+         * Does the competitor support this feature?
+         */
+        competitorSupported?: boolean | null;
+        /**
+         * Does AmueAI support this feature?
+         */
+        usSupported?: boolean | null;
+        /**
+         * For metrics (not features), the competitor value. E.g. '0' or 'Limited'. Leave empty for checkbox-style rows.
+         */
+        competitorValue?: string | null;
+        /**
+         * For metrics (not features), the AmueAI value. E.g. '10' or 'Full'. Leave empty for checkbox-style rows.
+         */
+        usValue?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The long-form comparison, rendered below the table.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Estimated reading time in minutes, computed from the content.
+   */
+  readingTime?: number | null;
+  relatedCompetitors?: (number | Competitor)[] | null;
+  /**
+   * Optional FAQ section rendered below the comparison, published as FAQ structured data.
+   */
+  faq?: {
+    /**
+     * Show a FAQ section on this page.
+     */
+    enabled?: boolean | null;
+    title?: string | null;
+    description?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
+ * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search".
+ */
+export interface Search {
+  id: number;
+  title?: string | null;
+  priority?: number | null;
+  doc:
+    | {
+        relationTo: "blog";
+        value: number | Post;
+      }
+    | {
+        relationTo: "changelog";
+        value: number | Change;
+      }
+    | {
+        relationTo: "competitors";
+        value: number | Competitor;
+      };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string;
+  id: number;
   key: string;
   data:
     | {
@@ -243,20 +564,48 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: "users";
-        value: string | User;
+        value: number | User;
       } | null)
     | ({
         relationTo: "media";
-        value: string | Media;
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: "blog";
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: "categories";
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: "authors";
+        value: number | Author;
+      } | null)
+    | ({
+        relationTo: "legal-pages";
+        value: number | LegalPage;
+      } | null)
+    | ({
+        relationTo: "changelog";
+        value: number | Change;
+      } | null)
+    | ({
+        relationTo: "competitors";
+        value: number | Competitor;
+      } | null)
+    | ({
+        relationTo: "search";
+        value: number | Search;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: "users";
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -266,10 +615,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: "users";
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -289,7 +638,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -334,6 +683,40 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        og?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -342,10 +725,71 @@ export interface MediaSelect<T extends boolean = true> {
 export interface BlogSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
+  excerpt?: T;
+  featuredImage?: T;
+  author?: T;
+  categories?: T;
+  publishedAt?: T;
   content?: T;
+  readingTime?: T;
+  relatedPosts?: T;
+  faq?:
+    | T
+    | {
+        enabled?: T;
+        title?: T;
+        description?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  posts?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors_select".
+ */
+export interface AuthorsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  avatar?: T;
+  title?: T;
+  bio?: T;
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  posts?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -358,6 +802,94 @@ export interface LegalPagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "changelog_select".
+ */
+export interface ChangelogSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  shortDescription?: T;
+  type?: T;
+  version?: T;
+  publishedAt?: T;
+  featuredImage?: T;
+  content?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "competitors_select".
+ */
+export interface CompetitorsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  excerpt?: T;
+  verdict?: T;
+  bestFor?: T;
+  website?: T;
+  logo?: T;
+  featuredImage?: T;
+  author?: T;
+  publishedAt?: T;
+  comparison?:
+    | T
+    | {
+        label?: T;
+        competitorSupported?: T;
+        usSupported?: T;
+        competitorValue?: T;
+        usValue?: T;
+        id?: T;
+      };
+  content?: T;
+  readingTime?: T;
+  relatedCompetitors?: T;
+  faq?:
+    | T
+    | {
+        enabled?: T;
+        title?: T;
+        description?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search_select".
+ */
+export interface SearchSelect<T extends boolean = true> {
+  title?: T;
+  priority?: T;
+  doc?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

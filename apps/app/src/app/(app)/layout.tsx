@@ -9,7 +9,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "@/components/ui/toast";
+import { PreviewBanner } from "@/components/preview-banner";
 
 // SEO
 import { siteConfig, siteTitle } from "@/config/site";
@@ -91,8 +93,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           <TooltipProvider>
             <ClerkProvider appearance={{ theme: shadcn }}>
-              {children}
-              <Toaster />
+              <NuqsAdapter>
+                <PreviewBanner />
+                {children}
+                <Toaster />
+              </NuqsAdapter>
             </ClerkProvider>
           </TooltipProvider>
         </ThemeProvider>
