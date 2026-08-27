@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-export function HeaderActions() {
+export function HeaderActions({ waitlistEnabled }: { waitlistEnabled: boolean }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -15,6 +15,20 @@ export function HeaderActions() {
 
   if (!mounted) {
     return null;
+  }
+
+  if (waitlistEnabled) {
+    return (
+      <ClerkLoaded>
+        <div className="hidden items-center gap-2 md:flex">
+          <div className="fade-in flex animate-in items-center gap-2 duration-300 ease-out">
+            <Button nativeButton={false} render={<Link href="/" />} size="sm">
+              Join Waitlist
+            </Button>
+          </div>
+        </div>
+      </ClerkLoaded>
+    );
   }
 
   return (

@@ -9,7 +9,7 @@ import { HeaderActions } from "@/components/header-actions";
 import { DesktopNav } from "@/components/desktop-nav";
 import { MobileNav } from "@/components/mobile-nav";
 
-export function Header() {
+export function Header({ waitlistEnabled }: { waitlistEnabled: boolean }) {
   const scrolled = useScroll(10);
 
   return (
@@ -40,8 +40,8 @@ export function Header() {
           </Link>
           <DesktopNav />
         </div>
-        <HeaderActions />
-        <MobileNav />
+        <HeaderActions waitlistEnabled={waitlistEnabled} />
+        <MobileNav waitlistEnabled={waitlistEnabled} />
       </nav>
     </header>
   );
