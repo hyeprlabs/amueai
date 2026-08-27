@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateChatbot } from "../actions";
-import { AddTextSourceForm } from "./add-text-source-form";
+import { AddSourceForm } from "./add-source-form";
 import { TestChat } from "./test-chat";
 
 export const metadata: Metadata = createMetadata({
@@ -97,11 +97,11 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
         <div>
           <h2 className="text-base font-medium">Data sources</h2>
           <p className="text-sm text-muted-foreground">
-            Plain text only for now — file, URL, and Q&amp;A sources land in a later phase.
+            Text, URL, Q&amp;A, or a file (.txt, .pdf, .docx).
           </p>
         </div>
 
-        <AddTextSourceForm chatbotId={chatbot.id} />
+        <AddSourceForm chatbotId={chatbot.id} />
 
         {sources && sources.length > 0 && (
           <ul className="divide-y rounded-lg border">

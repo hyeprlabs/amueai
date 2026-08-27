@@ -1,6 +1,9 @@
 import "server-only";
 
 import { embedMany } from "ai";
+import * as cheerio from "cheerio";
+import mammoth from "mammoth";
+import { PDFParse } from "pdf-parse";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Tables } from "@/types/supabase";
@@ -45,6 +48,7 @@ export function chunkText(text: string): string[] {
 
 /** Extracts the raw text to chunk for a source, branching on its type. */
 export async function extractText(
+  supabase: SupabaseClient<Database>,
   source: Pick<Source, "type" | "raw_content" | "storage_path">,
 ): Promise<string> {
   switch (source.type) {
@@ -55,12 +59,57 @@ export async function extractText(
       if (!source.raw_content) throw new Error("Q&A source has no content");
       return source.raw_content;
     case "file":
-      throw new Error("File extraction is not implemented yet (Phase 6)");
+      if (!source.storage_path) throw new Error("File source has no storage path");
+      return extractFileText(supabase, source.storage_path);
     case "url":
-      throw new Error("URL extraction is not implemented yet (Phase 6)");
+      if (!source.raw_content) throw new Error("URL source has no URL");
+      return extractUrlText(source.raw_content);
     default:
       throw new Error(`Unknown source type: ${source.type}`);
   }
+}
+
+async function extractFileText(
+  supabase: SupabaseClient<Database>,
+  storagePath: string,
+): Promise<string> {
+  const { data: blob, error } = await supabase.storage.from("sources").download(storagePath);
+  if (error || !blob) throw new Error(`Failed to download file: ${error?.message}`);
+
+  const buffer = Buffer.from(await blob.arrayBuffer());
+  const extension = storagePath.split(".").pop()?.toLowerCase();
+
+  if (extension === "pdf") {
+    const parser = new PDFParse({ data: buffer });
+    try {
+      const result = await parser.getText();
+      return result.text;
+    } finally {
+      await parser.destroy();
+    }
+  }
+
+  if (extension === "docx") {
+    const result = await mammoth.extractRawText({ buffer });
+    return result.value;
+  }
+
+  if (extension === "txt") {
+    return buffer.toString("utf-8");
+  }
+
+  throw new Error(`Unsupported file extension: ${extension}`);
+}
+
+async function extractUrlText(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+
+  const html = await res.text();
+  const $ = cheerio.load(html);
+  $("script, style, nav, footer, header").remove();
+
+  return $("body").text().replace(/\s+/g, " ").trim();
 }
 
 /** Batches embedding calls — never one request per chunk. */
@@ -103,7 +152,7 @@ export async function runIngestion(supabase: SupabaseClient<Database>, sourceId:
   await supabase.from("sources").update({ status: "processing" }).eq("id", sourceId);
 
   try {
-    const text = await extractText(source);
+    const text = await extractText(supabase, source);
     const chunks = chunkText(text);
 
     if (chunks.length === 0) {

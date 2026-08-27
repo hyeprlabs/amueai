@@ -5,13 +5,34 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { runIngestion } from "@/lib/ingestion";
 
-// Phase 3 only wires up the "text" source type inline. File/url/qa land
-// in Phase 6; Phase 10 moves this off the request path into Trigger.dev.
-const createSourceSchema = z.object({
-  type: z.literal("text"),
-  label: z.string().trim().min(1).max(200),
-  content: z.string().trim().min(1),
-});
+// All four source types now run inline (Phase 10 moves this off the
+// request path into Trigger.dev). File uploads go to Storage client-side
+// first (RLS-scoped to the org's own folder) - this route just records
+// the storage_path and runs the pipeline against it.
+const createSourceSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("text"),
+    label: z.string().trim().min(1).max(200),
+    content: z.string().trim().min(1),
+  }),
+  z.object({
+    type: z.literal("url"),
+    label: z.string().trim().min(1).max(200),
+    url: z.string().trim().url(),
+  }),
+  z.object({
+    type: z.literal("qa"),
+    label: z.string().trim().min(1).max(200),
+    pairs: z
+      .array(z.object({ question: z.string().trim().min(1), answer: z.string().trim().min(1) }))
+      .min(1),
+  }),
+  z.object({
+    type: z.literal("file"),
+    label: z.string().trim().min(1).max(200),
+    storagePath: z.string().trim().min(1),
+  }),
+]);
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { orgId } = await auth();
@@ -23,7 +44,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { type, label, content } = parsed.data;
+  const { type, label } = parsed.data;
 
   const supabase = await createServerSupabaseClient();
 
@@ -36,9 +57,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .single();
   if (!chatbot) return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
 
+  const raw_content =
+    parsed.data.type === "text"
+      ? parsed.data.content
+      : parsed.data.type === "url"
+        ? parsed.data.url
+        : parsed.data.type === "qa"
+          ? parsed.data.pairs.map((pair) => `Q: ${pair.question}\nA: ${pair.answer}`).join("\n\n")
+          : null;
+
+  const storage_path = parsed.data.type === "file" ? parsed.data.storagePath : null;
+
   const { data: source, error: insertError } = await supabase
     .from("sources")
-    .insert({ org_id: orgId, chatbot_id: chatbotId, type, label, raw_content: content })
+    .insert({ org_id: orgId, chatbot_id: chatbotId, type, label, raw_content, storage_path })
     .select("id, label, type, status, created_at")
     .single();
 
