@@ -16,7 +16,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { footerNavLinks, navGroups } from "@/components/dashboard/app-shared";
 import { LatestChange } from "@/components/dashboard/latest-change";
-import { ProductUsage } from "@/components/dashboard/product-usage";
 import { NavGroup } from "@/components/dashboard/nav-group";
 import type { Change } from "@/payload-types";
 
@@ -50,7 +49,6 @@ export function AppSidebar({ latestChange }: { latestChange?: Change }) {
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0">
         <LatestChange change={latestChange} />
-        <ProductUsage />
         <SidebarMenu className="border-t p-2">
           {footerNavLinks.map((item) => (
             <SidebarMenuItem key={item.title}>

@@ -121,7 +121,6 @@ export type Database = {
           content: string;
           conversation_id: string;
           created_at: string;
-          credits_charged: number;
           id: string;
           org_id: string;
           role: string;
@@ -131,7 +130,6 @@ export type Database = {
           content: string;
           conversation_id: string;
           created_at?: string;
-          credits_charged?: number;
           id?: string;
           org_id: string;
           role: string;
@@ -141,7 +139,6 @@ export type Database = {
           content?: string;
           conversation_id?: string;
           created_at?: string;
-          credits_charged?: number;
           id?: string;
           org_id?: string;
           role?: string;
@@ -213,60 +210,12 @@ export type Database = {
           },
         ];
       };
-      webhook_events: {
-        Row: {
-          error: string | null;
-          id: string;
-          payload: Json;
-          processed_at: string | null;
-          provider: string;
-          received_at: string;
-          type: string;
-        };
-        Insert: {
-          error?: string | null;
-          id: string;
-          payload: Json;
-          processed_at?: string | null;
-          provider: string;
-          received_at?: string;
-          type: string;
-        };
-        Update: {
-          error?: string | null;
-          id?: string;
-          payload?: Json;
-          processed_at?: string | null;
-          provider?: string;
-          received_at?: string;
-          type?: string;
-        };
-        Relationships: [];
-      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      add_topup_credits: {
-        Args: { p_amount: number; p_org_id: string };
-        Returns: number;
-      };
-      claim_credit_alert: {
-        Args: { p_level: number; p_org_id: string };
-        Returns: boolean;
-      };
-      claim_webhook_event: {
-        Args: {
-          p_id: string;
-          p_payload: Json;
-          p_provider: string;
-          p_type: string;
-        };
-        Returns: boolean;
-      };
       clerk_org_id: { Args: never; Returns: string };
-      grant_monthly_credits: { Args: never; Returns: number };
       match_chunks: {
         Args: {
           match_agent_id: string;
@@ -278,10 +227,6 @@ export type Database = {
           similarity: number;
           source_id: string;
         }[];
-      };
-      spend_credits: {
-        Args: { p_amount: number; p_org_id: string };
-        Returns: number;
       };
     };
     Enums: {
