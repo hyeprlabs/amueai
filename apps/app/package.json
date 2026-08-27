@@ -26,6 +26,7 @@
     "@payloadcms/plugin-seo": "3.88.0",
     "@payloadcms/richtext-lexical": "^3.88.0",
     "@payloadcms/storage-vercel-blob": "3.88.0",
+    "@supabase/supabase-js": "^2.112.4",
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",

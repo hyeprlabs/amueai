@@ -3,6 +3,7 @@ import {
   LayoutGridIcon,
   BarChart3Icon,
   BriefcaseIcon,
+  BotIcon,
   UsersIcon,
   PlugIcon,
   KeyRoundIcon,
@@ -34,6 +35,11 @@ export const navGroups: SidebarNavGroup[] = [
         path: "#/overview",
         icon: <LayoutGridIcon />,
         isActive: true,
+      },
+      {
+        title: "Chatbots",
+        path: "/chatbots",
+        icon: <BotIcon />,
       },
       {
         title: "Analytics",
