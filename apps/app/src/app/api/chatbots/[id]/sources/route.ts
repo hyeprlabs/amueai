@@ -11,28 +11,40 @@ import type { ingestSource } from "@/trigger/ingest-source";
 // File uploads go to Storage client-side first (RLS-scoped to the org's
 // own folder) - this route just records the storage_path and hands the
 // pipeline off to Trigger.dev.
+// Content caps aren't just tidiness - embedding cost scales with input
+// size, and this route runs under a live Clerk session with no other
+// throttle in front of it (Upstash only guards the public chat route).
+const MAX_TEXT_CONTENT_LENGTH = 200_000;
+const MAX_QA_PAIRS = 50;
+
 const createSourceSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("text"),
     label: z.string().trim().min(1).max(200),
-    content: z.string().trim().min(1),
+    content: z.string().trim().min(1).max(MAX_TEXT_CONTENT_LENGTH),
   }),
   z.object({
     type: z.literal("url"),
     label: z.string().trim().min(1).max(200),
-    url: z.string().trim().url(),
+    url: z.string().trim().url().max(2048),
   }),
   z.object({
     type: z.literal("qa"),
     label: z.string().trim().min(1).max(200),
     pairs: z
-      .array(z.object({ question: z.string().trim().min(1), answer: z.string().trim().min(1) }))
-      .min(1),
+      .array(
+        z.object({
+          question: z.string().trim().min(1).max(2000),
+          answer: z.string().trim().min(1).max(10_000),
+        }),
+      )
+      .min(1)
+      .max(MAX_QA_PAIRS),
   }),
   z.object({
     type: z.literal("file"),
     label: z.string().trim().min(1).max(200),
-    storagePath: z.string().trim().min(1),
+    storagePath: z.string().trim().min(1).max(1024),
   }),
 ]);
 

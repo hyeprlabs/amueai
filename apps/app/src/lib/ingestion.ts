@@ -1,5 +1,7 @@
 import "server-only";
 
+import { lookup as dnsLookup } from "node:dns/promises";
+import { isIPv4, isIPv6 } from "node:net";
 import { embedMany } from "ai";
 import * as cheerio from "cheerio";
 import mammoth from "mammoth";
@@ -12,6 +14,9 @@ const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const CHUNK_SIZE = 4000;
 const CHUNK_OVERLAP = 400;
 const EMBED_BATCH_SIZE = 100;
+const URL_FETCH_TIMEOUT_MS = 15_000;
+const URL_MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10MB
+const URL_MAX_REDIRECTS = 5;
 
 type Source = Tables<"sources">;
 
@@ -101,15 +106,96 @@ async function extractFileText(
   throw new Error(`Unsupported file extension: ${extension}`);
 }
 
+/**
+ * Blocks loopback, link-local, private (RFC1918/ULA), and unspecified
+ * addresses - including the cloud metadata endpoint (169.254.169.254) -
+ * so a URL source can't be used as an SSRF vector against internal
+ * services. Checked against the *resolved* IP, not just the hostname
+ * string, since "http://localhost" and "http://2130706433" (decimal
+ * 127.0.0.1) both need to be caught too.
+ */
+function isPrivateOrReservedIp(ip: string): boolean {
+  if (isIPv4(ip)) {
+    const [a, b] = ip.split(".").map(Number);
+    return (
+      a === 127 || // loopback
+      a === 10 || // RFC1918
+      a === 0 || // "this" network
+      (a === 169 && b === 254) || // link-local + cloud metadata
+      (a === 172 && b >= 16 && b <= 31) || // RFC1918
+      (a === 192 && b === 168) || // RFC1918
+      (a === 100 && b >= 64 && b <= 127) // carrier-grade NAT
+    );
+  }
+
+  if (isIPv6(ip)) {
+    const normalized = ip.toLowerCase();
+    return (
+      normalized === "::1" ||
+      normalized === "::" ||
+      normalized.startsWith("fe80:") || // link-local
+      normalized.startsWith("fc") || // unique local
+      normalized.startsWith("fd") || // unique local
+      normalized.startsWith("::ffff:127.") || // IPv4-mapped loopback
+      normalized.startsWith("::ffff:169.254.")
+    );
+  }
+
+  return true; // couldn't classify it - fail closed
+}
+
+async function assertPublicUrl(url: string): Promise<void> {
+  const parsed = new URL(url);
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
+  }
+
+  const { address } = await dnsLookup(parsed.hostname);
+  if (isPrivateOrReservedIp(address)) {
+    throw new Error(`Refusing to fetch a private/internal address: ${parsed.hostname}`);
+  }
+}
+
 async function extractUrlText(url: string): Promise<string> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+  let currentUrl = url;
 
-  const html = await res.text();
-  const $ = cheerio.load(html);
-  $("script, style, nav, footer, header").remove();
+  for (let redirectCount = 0; ; redirectCount++) {
+    await assertPublicUrl(currentUrl);
 
-  return $("body").text().replace(/\s+/g, " ").trim();
+    const res = await fetch(currentUrl, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(URL_FETCH_TIMEOUT_MS),
+    });
+
+    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
+      if (redirectCount >= URL_MAX_REDIRECTS) {
+        throw new Error(`Too many redirects fetching ${url}`);
+      }
+      // Re-validated against the redirect target on the next loop
+      // iteration - a malicious server can't 302 its way into an
+      // internal address after passing the initial check.
+      currentUrl = new URL(res.headers.get("location")!, currentUrl).toString();
+      continue;
+    }
+
+    if (!res.ok) throw new Error(`Failed to fetch ${currentUrl}: ${res.status}`);
+
+    const contentLength = Number(res.headers.get("content-length") ?? 0);
+    if (contentLength > URL_MAX_RESPONSE_BYTES) {
+      throw new Error(`Response too large: ${contentLength} bytes`);
+    }
+
+    const buffer = await res.arrayBuffer();
+    if (buffer.byteLength > URL_MAX_RESPONSE_BYTES) {
+      throw new Error(`Response too large: ${buffer.byteLength} bytes`);
+    }
+
+    const html = new TextDecoder("utf-8").decode(buffer);
+    const $ = cheerio.load(html);
+    $("script, style, nav, footer, header").remove();
+
+    return $("body").text().replace(/\s+/g, " ").trim();
+  }
 }
 
 /** Batches embedding calls — never one request per chunk. */

@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type SourceType = "text" | "url" | "qa" | "file";
 
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // matches the "sources" bucket's file_size_limit
+
 export function AddSourceForm({ chatbotId }: { chatbotId: string }) {
   const router = useRouter();
   const supabase = useSupabaseClient();
@@ -56,6 +58,9 @@ export function AddSourceForm({ chatbotId }: { chatbotId: string }) {
         await createSource({ type: "qa", label, pairs: [{ question, answer }] });
       } else if (type === "file") {
         if (!file || !organization) throw new Error("Pick a file first");
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          throw new Error("File is too large (20MB limit)");
+        }
 
         const storagePath = `${organization.id}/${chatbotId}/${Date.now()}-${file.name}`;
         const { error: uploadError } = await supabase.storage
