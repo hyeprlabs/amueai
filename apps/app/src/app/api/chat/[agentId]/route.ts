@@ -45,19 +45,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     return NextResponse.json({ error: "Too many messages - please slow down." }, { status: 429 });
   }
 
-  const { data: org } = await supabase
-    .from("organizations")
-    .select("messages_used, message_limit")
-    .eq("clerk_org_id", agent.org_id)
-    .single();
-
-  if (org && org.messages_used >= org.message_limit) {
-    return NextResponse.json(
-      { error: "This agent has reached its message limit for now." },
-      { status: 429 },
-    );
-  }
-
   if (conversationId) {
     // The client (dashboard test-chat, widget) generates its own id up
     // front so it can send it on the very first message - create the row
@@ -139,8 +126,6 @@ Answer the user's question using only the context above. Never use outside knowl
           content: text,
         },
       ]);
-
-      await supabase.rpc("increment_message_usage", { p_org_id: agent.org_id });
     },
   });
 

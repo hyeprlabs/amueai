@@ -5,6 +5,8 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.17";
   };
@@ -47,15 +49,7 @@ export type Database = {
           system_prompt?: string;
           temperature?: number;
         };
-        Relationships: [
-          {
-            foreignKeyName: "agents_org_id_fkey";
-            columns: ["org_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["clerk_org_id"];
-          },
-        ];
+        Relationships: [];
       };
       chunks: {
         Row: {
@@ -167,80 +161,7 @@ export type Database = {
             referencedRelation: "conversations";
             referencedColumns: ["id"];
           },
-          {
-            foreignKeyName: "messages_org_id_fkey";
-            columns: ["org_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["clerk_org_id"];
-          },
         ];
-      };
-      organizations: {
-        Row: {
-          billing_email: string | null;
-          cancel_at_period_end: boolean;
-          clerk_org_id: string;
-          created_at: string;
-          credit_alert_level: number;
-          credits_period: string | null;
-          deleted_at: string | null;
-          message_limit: number;
-          messages_used: number;
-          name: string;
-          period_end: string | null;
-          plan: string;
-          plan_credits: number;
-          polar_customer_id: string | null;
-          polar_subscription_id: string | null;
-          status: string;
-          topup_credits: number;
-          usage_period_start: string;
-          vat_id: string | null;
-        };
-        Insert: {
-          billing_email?: string | null;
-          cancel_at_period_end?: boolean;
-          clerk_org_id: string;
-          created_at?: string;
-          credit_alert_level?: number;
-          credits_period?: string | null;
-          deleted_at?: string | null;
-          message_limit?: number;
-          messages_used?: number;
-          name: string;
-          period_end?: string | null;
-          plan?: string;
-          plan_credits?: number;
-          polar_customer_id?: string | null;
-          polar_subscription_id?: string | null;
-          status?: string;
-          topup_credits?: number;
-          usage_period_start?: string;
-          vat_id?: string | null;
-        };
-        Update: {
-          billing_email?: string | null;
-          cancel_at_period_end?: boolean;
-          clerk_org_id?: string;
-          created_at?: string;
-          credit_alert_level?: number;
-          credits_period?: string | null;
-          deleted_at?: string | null;
-          message_limit?: number;
-          messages_used?: number;
-          name?: string;
-          period_end?: string | null;
-          plan?: string;
-          plan_credits?: number;
-          polar_customer_id?: string | null;
-          polar_subscription_id?: string | null;
-          status?: string;
-          topup_credits?: number;
-          usage_period_start?: string;
-          vat_id?: string | null;
-        };
-        Relationships: [];
       };
       sources: {
         Row: {
@@ -344,8 +265,8 @@ export type Database = {
         };
         Returns: boolean;
       };
+      clerk_org_id: { Args: never; Returns: string };
       grant_monthly_credits: { Args: never; Returns: number };
-      increment_message_usage: { Args: { p_org_id: string }; Returns: boolean };
       match_chunks: {
         Args: {
           match_agent_id: string;

@@ -5,20 +5,18 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ensureOrganizationRow } from "@/lib/organizations";
 
 const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
 });
 
 export async function createAgent(formData: FormData) {
-  const { orgId, orgSlug } = await auth();
+  const { orgId } = await auth();
   if (!orgId) throw new Error("No active organization");
 
   const { name } = createAgentSchema.parse({ name: formData.get("name") });
 
   const supabase = await createServerSupabaseClient();
-  await ensureOrganizationRow(supabase, orgId, orgSlug ?? orgId);
 
   const { data, error } = await supabase
     .from("agents")
