@@ -8,9 +8,13 @@
       "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"],
       "env": [
         "BLOB_READ_WRITE_TOKEN",
+        "BLOB_STORE_ID",
+        "BLOB_WEBHOOK_PUBLIC_KEY",
+        "BLOG_AGENT_TOKEN",
         "CLERK_SECRET_KEY",
         "CLERK_WEBHOOK_SECRET",
         "DATABASE_URL",
+        "FLAGS_SECRET",
         "PAYLOAD_SECRET",
         "PAYLOAD_PREVIEW_SECRET",
         "SUPABASE_SECRET_KEY",
@@ -24,7 +28,16 @@
         "POLAR_PRODUCT_TOPUP_SMALL",
         "POLAR_PRODUCT_TOPUP_MEDIUM",
         "POLAR_PRODUCT_TOPUP_LARGE",
-        "RESEND_API_KEY"
+        "RESEND_API_KEY",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "AI_GATEWAY_API_KEY",
+        "TRIGGER_SECRET_KEY",
+        "KV_REST_API_URL",
+        "KV_REST_API_TOKEN",
+        "KV_REST_API_READ_ONLY_TOKEN",
+        "KV_URL",
+        "REDIS_URL"
       ]
     },
     "lint": {

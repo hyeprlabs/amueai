@@ -15,17 +15,17 @@ import { Response } from "@/components/ai-elements/response";
 
 /**
  * The chat UI both the dashboard test-chat panel and the public widget
- * render, wired to the same `/api/chat/[chatbotId]` endpoint. The caller
+ * render, wired to the same `/api/chat/[agentId]` endpoint. The caller
  * owns where conversationId/visitorId come from (a fresh id per session
  * for the dashboard, localStorage for the widget).
  */
 export function ChatPanel({
-  chatbotId,
+  agentId,
   conversationId,
   visitorId,
-  emptyState = "Try asking this chatbot something from its sources.",
+  emptyState = "Try asking this agent something from its sources.",
 }: {
-  chatbotId: string;
+  agentId: string;
   conversationId: string;
   visitorId: string;
   emptyState?: string;
@@ -34,7 +34,7 @@ export function ChatPanel({
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
-      api: `/api/chat/${chatbotId}`,
+      api: `/api/chat/${agentId}`,
       prepareSendMessagesRequest: ({ messages }) => {
         const lastMessage = messages.at(-1);
         const text = lastMessage?.parts.find((part) => part.type === "text")?.text ?? "";

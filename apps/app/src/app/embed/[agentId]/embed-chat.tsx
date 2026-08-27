@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { ChatPanel } from "@/components/chat-panel";
 
 /** conversationId/visitorId persist in this iframe's own localStorage. */
-function useWidgetSession(chatbotId: string) {
+function useWidgetSession(agentId: string) {
   const [ids, setIds] = useState<{ conversationId: string; visitorId: string } | null>(null);
 
   useEffect(() => {
     const visitorKey = "amueai_visitor_id";
-    const conversationKey = `amueai_conversation_${chatbotId}`;
+    const conversationKey = `amueai_conversation_${agentId}`;
 
     let visitorId = localStorage.getItem(visitorKey);
     if (!visitorId) {
@@ -25,19 +25,19 @@ function useWidgetSession(chatbotId: string) {
     }
 
     setIds({ conversationId, visitorId });
-  }, [chatbotId]);
+  }, [agentId]);
 
   return ids;
 }
 
-export function EmbedChat({ chatbotId }: { chatbotId: string }) {
-  const session = useWidgetSession(chatbotId);
+export function EmbedChat({ agentId }: { agentId: string }) {
+  const session = useWidgetSession(agentId);
 
   if (!session) return null;
 
   return (
     <ChatPanel
-      chatbotId={chatbotId}
+      agentId={agentId}
       conversationId={session.conversationId}
       visitorId={session.visitorId}
       emptyState="Ask me anything!"

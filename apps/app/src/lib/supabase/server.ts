@@ -8,7 +8,7 @@ import type { Database } from "@/types/supabase";
 /**
  * Authenticated dashboard routes only. RLS evaluates `auth.jwt()->>'org_id'`
  * from the Clerk session token, so this is the tenant boundary — never
- * swap in the service-role key here for convenience.
+ * swap in the secret key here for convenience.
  */
 export function createServerSupabaseClient() {
   return createClient<Database>(
@@ -24,14 +24,17 @@ export function createServerSupabaseClient() {
 
 /**
  * Bypasses RLS entirely. Reserved for the two documented exceptions: the
- * public `/api/chat/[chatbotId]` route and the ingestion task — neither
+ * public `/api/chat/[agentId]` route and the ingestion task — neither
  * runs under a live Clerk session. Every other route must use
  * `createServerSupabaseClient`.
+ *
+ * Uses Supabase's new secret key (`sb_secret_...`), not the legacy
+ * service_role JWT.
  */
 export function createServiceRoleSupabaseClient() {
   return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.SUPABASE_SECRET_KEY!,
     { auth: { persistSession: false } },
   );
 }

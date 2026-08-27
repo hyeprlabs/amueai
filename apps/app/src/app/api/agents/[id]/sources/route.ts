@@ -52,7 +52,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { orgId } = await auth();
   if (!orgId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const { id: chatbotId } = await params;
+  const { id: agentId } = await params;
 
   const parsed = createSourceSchema.safeParse(await request.json());
   if (!parsed.success) {
@@ -63,13 +63,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const supabase = await createServerSupabaseClient();
 
   // RLS already scopes this to the active org; a miss means either the
-  // chatbot doesn't exist or belongs to another org - either way, 404.
-  const { data: chatbot } = await supabase
-    .from("chatbots")
-    .select("id")
-    .eq("id", chatbotId)
-    .single();
-  if (!chatbot) return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
+  // agent doesn't exist or belongs to another org - either way, 404.
+  const { data: agent } = await supabase.from("agents").select("id").eq("id", agentId).single();
+  if (!agent) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
 
   const raw_content =
     parsed.data.type === "text"
@@ -84,7 +80,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: source, error: insertError } = await supabase
     .from("sources")
-    .insert({ org_id: orgId, chatbot_id: chatbotId, type, label, raw_content, storage_path })
+    .insert({ org_id: orgId, agent_id: agentId, type, label, raw_content, storage_path })
     .select("id, label, type, status, created_at")
     .single();
 

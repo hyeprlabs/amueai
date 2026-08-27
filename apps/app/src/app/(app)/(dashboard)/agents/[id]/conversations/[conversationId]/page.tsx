@@ -9,13 +9,13 @@ import { Response } from "@/components/ai-elements/response";
 export const metadata: Metadata = createMetadata({
   title: "Conversation",
   description: "A single conversation's messages.",
-  pathname: "/chatbots",
+  pathname: "/agents",
   noIndex: true,
 });
 
 export default async function ConversationPage({
   params,
-}: PageProps<"/chatbots/[id]/conversations/[conversationId]">) {
+}: PageProps<"/agents/[id]/conversations/[conversationId]">) {
   const { conversationId } = await params;
 
   const supabase = await createServerSupabaseClient();

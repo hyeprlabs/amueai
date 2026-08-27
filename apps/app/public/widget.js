@@ -4,9 +4,9 @@
   var currentScript = document.currentScript;
   if (!currentScript) return;
 
-  var chatbotId = currentScript.getAttribute("data-chatbot-id");
-  if (!chatbotId) {
-    console.error("[AmueAI widget] missing data-chatbot-id attribute");
+  var agentId = currentScript.getAttribute("data-agent-id");
+  if (!agentId) {
+    console.error("[AmueAI widget] missing data-agent-id attribute");
     return;
   }
 
@@ -32,7 +32,7 @@
   bubble.textContent = "💬";
 
   var frame = document.createElement("iframe");
-  frame.src = origin + "/embed/" + encodeURIComponent(chatbotId);
+  frame.src = origin + "/embed/" + encodeURIComponent(agentId);
   frame.title = "Chat";
   frame.style.cssText = [
     "position:fixed",

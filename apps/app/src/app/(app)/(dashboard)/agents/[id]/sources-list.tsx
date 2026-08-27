@@ -13,10 +13,10 @@ type SourceRow = Pick<
 
 /** Live queued/processing/ready/failed status via Supabase Realtime. */
 export function SourcesList({
-  chatbotId,
+  agentId,
   initialSources,
 }: {
-  chatbotId: string;
+  agentId: string;
   initialSources: SourceRow[];
 }) {
   const supabase = useSupabaseClient();
@@ -24,10 +24,10 @@ export function SourcesList({
 
   useEffect(() => {
     const channel = supabase
-      .channel(`sources:${chatbotId}`)
+      .channel(`sources:${agentId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "sources", filter: `chatbot_id=eq.${chatbotId}` },
+        { event: "*", schema: "public", table: "sources", filter: `agent_id=eq.${agentId}` },
         (payload) => {
           setSources((current) => {
             if (payload.eventType === "DELETE") {
@@ -48,7 +48,7 @@ export function SourcesList({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, chatbotId]);
+  }, [supabase, agentId]);
 
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -57,13 +57,13 @@ export function SourcesList({
     setSources((current) =>
       current.map((s) => (s.id === sourceId ? { ...s, status: "processing" } : s)),
     );
-    await fetch(`/api/chatbots/${chatbotId}/sources/${sourceId}/retrain`, { method: "POST" });
+    await fetch(`/api/agents/${agentId}/sources/${sourceId}/retrain`, { method: "POST" });
     setPendingId(null);
   }
 
   async function remove(sourceId: string) {
     setPendingId(sourceId);
-    const res = await fetch(`/api/chatbots/${chatbotId}/sources/${sourceId}`, {
+    const res = await fetch(`/api/agents/${agentId}/sources/${sourceId}`, {
       method: "DELETE",
     });
     if (res.ok) {

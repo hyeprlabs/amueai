@@ -8,9 +8,11 @@ import { runIngestion } from "@/lib/ingestion";
  * throughout - the source/chunk rows are already stamped with org_id
  * explicitly (see lib/ingestion.ts), not defaulted from a JWT.
  *
- * PLACEHOLDER task id/config - re-verify against the real Trigger.dev
- * project once the MCP connector or CLI login is available (see the
- * build summary). Retries come from trigger.config.ts's defaults.
+ * trigger.config.ts points at the real project (proj_bhfgpttdkwfmnqrkslup).
+ * This task still needs `npx trigger.dev@latest deploy` (or the GitHub
+ * integration) before POST /sources' tasks.trigger() call has a worker to
+ * hand off to - deferred for now. Retries come from trigger.config.ts's
+ * defaults.
  */
 export const ingestSource = task({
   id: "ingest-source",

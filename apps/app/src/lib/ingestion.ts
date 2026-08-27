@@ -218,7 +218,7 @@ export async function embedChunks(chunks: string[]): Promise<number[][]> {
  * Runs the full extract -> chunk -> embed -> store pipeline for one
  * source, flipping its status as it goes. Never leaves a source `ready`
  * on partial success, and never touches prior chunks until the new run
- * fully succeeds (so a failed retrain doesn't blank out a working bot).
+ * fully succeeds (so a failed retrain doesn't blank out a working agent).
  *
  * Takes whatever Supabase client the caller is authorized with: the
  * Clerk-token client for Phase 1-3's inline route, the service-role

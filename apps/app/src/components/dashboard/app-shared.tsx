@@ -37,8 +37,8 @@ export const navGroups: SidebarNavGroup[] = [
         isActive: true,
       },
       {
-        title: "Chatbots",
-        path: "/chatbots",
+        title: "Agents",
+        path: "/agents",
         icon: <BotIcon />,
       },
       {

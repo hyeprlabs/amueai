@@ -7,36 +7,32 @@ import { createMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
   title: "Conversations",
-  description: "Every widget and test-chat conversation for this chatbot.",
-  pathname: "/chatbots",
+  description: "Every widget and test-chat conversation for this agent.",
+  pathname: "/agents",
   noIndex: true,
 });
 
 export default async function ConversationsPage({
   params,
-}: PageProps<"/chatbots/[id]/conversations">) {
+}: PageProps<"/agents/[id]/conversations">) {
   const { id } = await params;
 
   const supabase = await createServerSupabaseClient();
-  const { data: chatbot } = await supabase
-    .from("chatbots")
-    .select("id, name")
-    .eq("id", id)
-    .single();
-  if (!chatbot) notFound();
+  const { data: agent } = await supabase.from("agents").select("id, name").eq("id", id).single();
+  if (!agent) notFound();
 
   const { data: conversations } = await supabase
     .from("conversations")
     .select("id, visitor_id, created_at")
-    .eq("chatbot_id", id)
+    .eq("agent_id", id)
     .order("created_at", { ascending: false });
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <div>
-        <h1 className="text-lg font-medium">Conversations — {chatbot.name}</h1>
+        <h1 className="text-lg font-medium">Conversations — {agent.name}</h1>
         <p className="text-sm text-muted-foreground">
-          Every widget and test-chat conversation for this chatbot.
+          Every widget and test-chat conversation for this agent.
         </p>
       </div>
 
@@ -49,7 +45,7 @@ export default async function ConversationsPage({
           {conversations.map((conversation) => (
             <li key={conversation.id}>
               <Link
-                href={`/chatbots/${id}/conversations/${conversation.id}`}
+                href={`/agents/${id}/conversations/${conversation.id}`}
                 className="flex items-center justify-between px-4 py-3 hover:bg-muted/50"
               >
                 <span className="font-mono text-xs text-muted-foreground">

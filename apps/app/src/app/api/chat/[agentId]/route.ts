@@ -7,7 +7,7 @@ import { checkChatRateLimit } from "@/lib/rate-limit";
 
 // Public, unauthenticated route - the widget and the dashboard test-chat
 // panel both call this. No Clerk session, so RLS provides no protection
-// here: every query below does its own explicit org_id/chatbot_id
+// here: every query below does its own explicit org_id/agent_id
 // matching against the service-role client.
 const chatRequestSchema = z.object({
   message: z.string().trim().min(1).max(4000),
@@ -17,11 +17,8 @@ const chatRequestSchema = z.object({
 
 const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ chatbotId: string }> },
-) {
-  const { chatbotId } = await params;
+export async function POST(request: Request, { params }: { params: Promise<{ agentId: string }> }) {
+  const { agentId } = await params;
 
   const parsed = chatRequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -32,18 +29,18 @@ export async function POST(
 
   const supabase = createServiceRoleSupabaseClient();
 
-  const { data: chatbot } = await supabase
-    .from("chatbots")
+  const { data: agent } = await supabase
+    .from("agents")
     .select("id, org_id, system_prompt, model, temperature, fallback_message")
-    .eq("id", chatbotId)
+    .eq("id", agentId)
     .single();
 
-  if (!chatbot) {
-    return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
+  if (!agent) {
+    return NextResponse.json({ error: "Agent not found" }, { status: 404 });
   }
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const allowed = await checkChatRateLimit(ip, chatbot.id);
+  const allowed = await checkChatRateLimit(ip, agent.id);
   if (!allowed) {
     return NextResponse.json({ error: "Too many messages - please slow down." }, { status: 429 });
   }
@@ -51,12 +48,12 @@ export async function POST(
   const { data: org } = await supabase
     .from("organizations")
     .select("messages_used, message_limit")
-    .eq("clerk_org_id", chatbot.org_id)
+    .eq("clerk_org_id", agent.org_id)
     .single();
 
   if (org && org.messages_used >= org.message_limit) {
     return NextResponse.json(
-      { error: "This chatbot has reached its message limit for now." },
+      { error: "This agent has reached its message limit for now." },
       { status: 429 },
     );
   }
@@ -70,14 +67,14 @@ export async function POST(
       .from("conversations")
       .select("id")
       .eq("id", conversationId)
-      .eq("chatbot_id", chatbot.id)
+      .eq("agent_id", agent.id)
       .single();
 
     if (!existing) {
       const { error: conversationError } = await supabase.from("conversations").insert({
         id: conversationId,
-        org_id: chatbot.org_id,
-        chatbot_id: chatbot.id,
+        org_id: agent.org_id,
+        agent_id: agent.id,
         visitor_id: visitorId,
       });
       if (conversationError) {
@@ -87,7 +84,7 @@ export async function POST(
   } else {
     const { data: conversation, error: conversationError } = await supabase
       .from("conversations")
-      .insert({ org_id: chatbot.org_id, chatbot_id: chatbot.id, visitor_id: visitorId })
+      .insert({ org_id: agent.org_id, agent_id: agent.id, visitor_id: visitorId })
       .select("id")
       .single();
 
@@ -101,13 +98,13 @@ export async function POST(
 
   const { data: chunks } = await supabase.rpc("match_chunks", {
     query_embedding: JSON.stringify(embedding),
-    match_chatbot_id: chatbot.id,
+    match_agent_id: agent.id,
     match_count: 6,
   });
 
   const context = (chunks ?? []).map((chunk) => chunk.content).join("\n---\n");
 
-  const system = `${chatbot.system_prompt}
+  const system = `${agent.system_prompt}
 
 Context:
 ---
@@ -119,31 +116,31 @@ Answer the user's question using only the context above. Never use outside knowl
   const conversationIdForClosure = conversationId;
 
   const result = streamText({
-    model: chatbot.model,
-    temperature: chatbot.temperature,
+    model: agent.model,
+    temperature: agent.temperature,
     system,
     prompt: message,
     // Ties Gateway usage/cost back to the org for observability.
-    providerOptions: { gateway: { quotaEntityId: chatbot.org_id } },
+    providerOptions: { gateway: { quotaEntityId: agent.org_id } },
     onFinish: async ({ text }) => {
       await supabase.from("messages").insert([
         {
-          org_id: chatbot.org_id,
-          chatbot_id: chatbot.id,
+          org_id: agent.org_id,
+          agent_id: agent.id,
           conversation_id: conversationIdForClosure,
           role: "user",
           content: message,
         },
         {
-          org_id: chatbot.org_id,
-          chatbot_id: chatbot.id,
+          org_id: agent.org_id,
+          agent_id: agent.id,
           conversation_id: conversationIdForClosure,
           role: "assistant",
           content: text,
         },
       ]);
 
-      await supabase.rpc("increment_message_usage", { p_org_id: chatbot.org_id });
+      await supabase.rpc("increment_message_usage", { p_org_id: agent.org_id });
     },
   });
 

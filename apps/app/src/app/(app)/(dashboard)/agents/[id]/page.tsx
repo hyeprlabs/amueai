@@ -9,56 +9,56 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { updateChatbot } from "../actions";
+import { updateAgent } from "../actions";
 import { AddSourceForm } from "./add-source-form";
 import { SourcesList } from "./sources-list";
 import { TestChat } from "./test-chat";
 
 export const metadata: Metadata = createMetadata({
-  title: "Chatbot settings",
-  description: "Configure how this chatbot answers.",
-  pathname: "/chatbots",
+  title: "Agent settings",
+  description: "Configure how this agent answers.",
+  pathname: "/agents",
   noIndex: true,
 });
 
-export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbots/[id]">) {
+export default async function AgentSettingsPage({ params }: PageProps<"/agents/[id]">) {
   const { id } = await params;
 
   const supabase = await createServerSupabaseClient();
-  const { data: chatbot } = await supabase
-    .from("chatbots")
+  const { data: agent } = await supabase
+    .from("agents")
     .select("id, name, system_prompt, model, temperature")
     .eq("id", id)
     .single();
 
-  if (!chatbot) notFound();
+  if (!agent) notFound();
 
   const { data: sources } = await supabase
     .from("sources")
     .select("id, label, type, status, error_message, created_at")
-    .eq("chatbot_id", id)
+    .eq("agent_id", id)
     .order("created_at", { ascending: false });
 
-  const updateChatbotWithId = updateChatbot.bind(null, chatbot.id);
+  const updateAgentWithId = updateAgent.bind(null, agent.id);
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-lg font-medium">{chatbot.name}</h1>
+          <h1 className="text-lg font-medium">{agent.name}</h1>
           <p className="text-sm text-muted-foreground">
-            Base instructions, model, and temperature for this chatbot.
+            Base instructions, model, and temperature for this agent.
           </p>
         </div>
-        <Link href={`/chatbots/${chatbot.id}/conversations`} className="text-sm underline">
+        <Link href={`/agents/${agent.id}/conversations`} className="text-sm underline">
           View conversations
         </Link>
       </div>
 
-      <form action={updateChatbotWithId} className="flex flex-col gap-4">
+      <form action={updateAgentWithId} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" defaultValue={chatbot.name} required maxLength={200} />
+          <Input id="name" name="name" defaultValue={agent.name} required maxLength={200} />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -66,7 +66,7 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
           <Textarea
             id="system_prompt"
             name="system_prompt"
-            defaultValue={chatbot.system_prompt}
+            defaultValue={agent.system_prompt}
             required
             rows={6}
             maxLength={4000}
@@ -75,7 +75,7 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="model">Model</Label>
-          <Input id="model" name="model" defaultValue={chatbot.model} required />
+          <Input id="model" name="model" defaultValue={agent.model} required />
           <p className="text-xs text-muted-foreground">
             An AI Gateway model string, e.g. <code>openai/gpt-4o-mini</code>.
           </p>
@@ -90,7 +90,7 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
             min={0}
             max={2}
             step={0.1}
-            defaultValue={chatbot.temperature}
+            defaultValue={agent.temperature}
             required
             className="max-w-24"
           />
@@ -109,9 +109,9 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
           </p>
         </div>
 
-        <AddSourceForm chatbotId={chatbot.id} />
+        <AddSourceForm agentId={agent.id} />
 
-        <SourcesList chatbotId={chatbot.id} initialSources={sources ?? []} />
+        <SourcesList agentId={agent.id} initialSources={sources ?? []} />
       </div>
 
       <div className="flex flex-col gap-3">
@@ -121,7 +121,7 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
             Calls the same API the public widget uses.
           </p>
         </div>
-        <TestChat chatbotId={chatbot.id} />
+        <TestChat agentId={agent.id} />
       </div>
 
       <div className="flex flex-col gap-3">
@@ -133,7 +133,7 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
           </p>
         </div>
         <pre className="overflow-x-auto rounded-lg border bg-muted p-4 text-xs">
-          {`<script src="${siteConfig.url}/widget.js" data-chatbot-id="${chatbot.id}" async></script>`}
+          {`<script src="${siteConfig.url}/widget.js" data-agent-id="${agent.id}" async></script>`}
         </pre>
       </div>
     </div>

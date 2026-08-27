@@ -10,7 +10,7 @@ export type Database = {
   };
   public: {
     Tables: {
-      chatbots: {
+      agents: {
         Row: {
           allowed_origins: string[];
           created_at: string;
@@ -49,7 +49,7 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "chatbots_org_id_fkey";
+            foreignKeyName: "agents_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -91,21 +91,21 @@ export type Database = {
       };
       conversations: {
         Row: {
-          chatbot_id: string;
+          agent_id: string;
           created_at: string;
           id: string;
           org_id: string;
           visitor_id: string;
         };
         Insert: {
-          chatbot_id: string;
+          agent_id: string;
           created_at?: string;
           id?: string;
           org_id: string;
           visitor_id: string;
         };
         Update: {
-          chatbot_id?: string;
+          agent_id?: string;
           created_at?: string;
           id?: string;
           org_id?: string;
@@ -113,17 +113,17 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "conversations_chatbot_id_fkey";
-            columns: ["chatbot_id"];
+            foreignKeyName: "conversations_agent_id_fkey";
+            columns: ["agent_id"];
             isOneToOne: false;
-            referencedRelation: "chatbots";
+            referencedRelation: "agents";
             referencedColumns: ["id"];
           },
         ];
       };
       messages: {
         Row: {
-          chatbot_id: string;
+          agent_id: string;
           content: string;
           conversation_id: string;
           created_at: string;
@@ -133,7 +133,7 @@ export type Database = {
           role: string;
         };
         Insert: {
-          chatbot_id: string;
+          agent_id: string;
           content: string;
           conversation_id: string;
           created_at?: string;
@@ -143,7 +143,7 @@ export type Database = {
           role: string;
         };
         Update: {
-          chatbot_id?: string;
+          agent_id?: string;
           content?: string;
           conversation_id?: string;
           created_at?: string;
@@ -154,10 +154,10 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "messages_chatbot_id_fkey";
-            columns: ["chatbot_id"];
+            foreignKeyName: "messages_agent_id_fkey";
+            columns: ["agent_id"];
             isOneToOne: false;
-            referencedRelation: "chatbots";
+            referencedRelation: "agents";
             referencedColumns: ["id"];
           },
           {
@@ -244,7 +244,7 @@ export type Database = {
       };
       sources: {
         Row: {
-          chatbot_id: string;
+          agent_id: string;
           created_at: string;
           error_message: string | null;
           id: string;
@@ -257,7 +257,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          chatbot_id: string;
+          agent_id: string;
           created_at?: string;
           error_message?: string | null;
           id?: string;
@@ -270,7 +270,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          chatbot_id?: string;
+          agent_id?: string;
           created_at?: string;
           error_message?: string | null;
           id?: string;
@@ -284,10 +284,10 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "sources_chatbot_id_fkey";
-            columns: ["chatbot_id"];
+            foreignKeyName: "sources_agent_id_fkey";
+            columns: ["agent_id"];
             isOneToOne: false;
-            referencedRelation: "chatbots";
+            referencedRelation: "agents";
             referencedColumns: ["id"];
           },
         ];
@@ -348,7 +348,7 @@ export type Database = {
       increment_message_usage: { Args: { p_org_id: string }; Returns: boolean };
       match_chunks: {
         Args: {
-          match_chatbot_id: string;
+          match_agent_id: string;
           match_count?: number;
           query_embedding: string;
         };

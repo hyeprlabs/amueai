@@ -14,7 +14,7 @@ type SourceType = "text" | "url" | "qa" | "file";
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // matches the "sources" bucket's file_size_limit
 
-export function AddSourceForm({ chatbotId }: { chatbotId: string }) {
+export function AddSourceForm({ agentId }: { agentId: string }) {
   const router = useRouter();
   const supabase = useSupabaseClient();
   const { organization } = useOrganization();
@@ -30,7 +30,7 @@ export function AddSourceForm({ chatbotId }: { chatbotId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   async function createSource(body: Record<string, unknown>) {
-    const res = await fetch(`/api/chatbots/${chatbotId}/sources`, {
+    const res = await fetch(`/api/agents/${agentId}/sources`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -62,7 +62,7 @@ export function AddSourceForm({ chatbotId }: { chatbotId: string }) {
           throw new Error("File is too large (20MB limit)");
         }
 
-        const storagePath = `${organization.id}/${chatbotId}/${Date.now()}-${file.name}`;
+        const storagePath = `${organization.id}/${agentId}/${Date.now()}-${file.name}`;
         const { error: uploadError } = await supabase.storage
           .from("sources")
           .upload(storagePath, file);
