@@ -89,27 +89,68 @@ export type Database = {
           },
         ];
       };
-      messages: {
+      conversations: {
         Row: {
           chatbot_id: string;
           created_at: string;
-          credits_charged: number;
           id: string;
           org_id: string;
+          visitor_id: string;
         };
         Insert: {
           chatbot_id: string;
           created_at?: string;
-          credits_charged: number;
           id?: string;
           org_id: string;
+          visitor_id: string;
         };
         Update: {
           chatbot_id?: string;
           created_at?: string;
+          id?: string;
+          org_id?: string;
+          visitor_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conversations_chatbot_id_fkey";
+            columns: ["chatbot_id"];
+            isOneToOne: false;
+            referencedRelation: "chatbots";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      messages: {
+        Row: {
+          chatbot_id: string;
+          content: string;
+          conversation_id: string;
+          created_at: string;
+          credits_charged: number;
+          id: string;
+          org_id: string;
+          role: string;
+        };
+        Insert: {
+          chatbot_id: string;
+          content: string;
+          conversation_id: string;
+          created_at?: string;
+          credits_charged?: number;
+          id?: string;
+          org_id: string;
+          role: string;
+        };
+        Update: {
+          chatbot_id?: string;
+          content?: string;
+          conversation_id?: string;
+          created_at?: string;
           credits_charged?: number;
           id?: string;
           org_id?: string;
+          role?: string;
         };
         Relationships: [
           {
@@ -117,6 +158,13 @@ export type Database = {
             columns: ["chatbot_id"];
             isOneToOne: false;
             referencedRelation: "chatbots";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
             referencedColumns: ["id"];
           },
           {
@@ -137,6 +185,8 @@ export type Database = {
           credit_alert_level: number;
           credits_period: string | null;
           deleted_at: string | null;
+          message_limit: number;
+          messages_used: number;
           name: string;
           period_end: string | null;
           plan: string;
@@ -145,6 +195,7 @@ export type Database = {
           polar_subscription_id: string | null;
           status: string;
           topup_credits: number;
+          usage_period_start: string;
           vat_id: string | null;
         };
         Insert: {
@@ -155,6 +206,8 @@ export type Database = {
           credit_alert_level?: number;
           credits_period?: string | null;
           deleted_at?: string | null;
+          message_limit?: number;
+          messages_used?: number;
           name: string;
           period_end?: string | null;
           plan?: string;
@@ -163,6 +216,7 @@ export type Database = {
           polar_subscription_id?: string | null;
           status?: string;
           topup_credits?: number;
+          usage_period_start?: string;
           vat_id?: string | null;
         };
         Update: {
@@ -173,6 +227,8 @@ export type Database = {
           credit_alert_level?: number;
           credits_period?: string | null;
           deleted_at?: string | null;
+          message_limit?: number;
+          messages_used?: number;
           name?: string;
           period_end?: string | null;
           plan?: string;
@@ -181,6 +237,7 @@ export type Database = {
           polar_subscription_id?: string | null;
           status?: string;
           topup_credits?: number;
+          usage_period_start?: string;
           vat_id?: string | null;
         };
         Relationships: [];
@@ -288,6 +345,7 @@ export type Database = {
         Returns: boolean;
       };
       grant_monthly_credits: { Args: never; Returns: number };
+      increment_message_usage: { Args: { p_org_id: string }; Returns: boolean };
       match_chunks: {
         Args: {
           match_chatbot_id: string;
