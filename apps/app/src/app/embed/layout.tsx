@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import "../globals.css";
+import "../(app)/globals.css";
 
 // The widget iframe is its own top-level route segment (sibling to the
 // (app) dashboard, not nested inside it), so it needs its own root
