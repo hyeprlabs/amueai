@@ -57,6 +57,38 @@ export type Database = {
           },
         ];
       };
+      chunks: {
+        Row: {
+          content: string;
+          embedding: string | null;
+          id: string;
+          org_id: string;
+          source_id: string;
+        };
+        Insert: {
+          content: string;
+          embedding?: string | null;
+          id?: string;
+          org_id: string;
+          source_id: string;
+        };
+        Update: {
+          content?: string;
+          embedding?: string | null;
+          id?: string;
+          org_id?: string;
+          source_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chunks_source_id_fkey";
+            columns: ["source_id"];
+            isOneToOne: false;
+            referencedRelation: "sources";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       messages: {
         Row: {
           chatbot_id: string;
@@ -153,6 +185,56 @@ export type Database = {
         };
         Relationships: [];
       };
+      sources: {
+        Row: {
+          chatbot_id: string;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          label: string;
+          org_id: string;
+          raw_content: string | null;
+          status: string;
+          storage_path: string | null;
+          type: string;
+          updated_at: string;
+        };
+        Insert: {
+          chatbot_id: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          label: string;
+          org_id: string;
+          raw_content?: string | null;
+          status?: string;
+          storage_path?: string | null;
+          type: string;
+          updated_at?: string;
+        };
+        Update: {
+          chatbot_id?: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          label?: string;
+          org_id?: string;
+          raw_content?: string | null;
+          status?: string;
+          storage_path?: string | null;
+          type?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sources_chatbot_id_fkey";
+            columns: ["chatbot_id"];
+            isOneToOne: false;
+            referencedRelation: "chatbots";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       webhook_events: {
         Row: {
           error: string | null;
@@ -206,6 +288,18 @@ export type Database = {
         Returns: boolean;
       };
       grant_monthly_credits: { Args: never; Returns: number };
+      match_chunks: {
+        Args: {
+          match_chatbot_id: string;
+          match_count?: number;
+          query_embedding: string;
+        };
+        Returns: {
+          content: string;
+          similarity: number;
+          source_id: string;
+        }[];
+      };
       spend_credits: {
         Args: { p_amount: number; p_org_id: string };
         Returns: number;
