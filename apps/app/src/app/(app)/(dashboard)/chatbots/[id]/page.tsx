@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateChatbot } from "../actions";
 import { AddSourceForm } from "./add-source-form";
+import { SourcesList } from "./sources-list";
 import { TestChat } from "./test-chat";
 
 export const metadata: Metadata = createMetadata({
@@ -41,11 +43,16 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <div>
-        <h1 className="text-lg font-medium">{chatbot.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          Base instructions, model, and temperature for this chatbot.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-lg font-medium">{chatbot.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            Base instructions, model, and temperature for this chatbot.
+          </p>
+        </div>
+        <Link href={`/chatbots/${chatbot.id}/conversations`} className="text-sm underline">
+          View conversations
+        </Link>
       </div>
 
       <form action={updateChatbotWithId} className="flex flex-col gap-4">
@@ -104,21 +111,7 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
 
         <AddSourceForm chatbotId={chatbot.id} />
 
-        {sources && sources.length > 0 && (
-          <ul className="divide-y rounded-lg border">
-            {sources.map((source) => (
-              <li key={source.id} className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="font-medium">{source.label}</p>
-                  {source.status === "failed" && source.error_message && (
-                    <p className="text-xs text-destructive">{source.error_message}</p>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground capitalize">{source.status}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <SourcesList chatbotId={chatbot.id} initialSources={sources ?? []} />
       </div>
 
       <div className="flex flex-col gap-3">
