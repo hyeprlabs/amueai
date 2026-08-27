@@ -55,6 +55,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
       .select("id")
       .eq("id", conversationId)
       .eq("agent_id", agent.id)
+      .eq("visitor_id", visitorId)
       .single();
 
     if (!existing) {

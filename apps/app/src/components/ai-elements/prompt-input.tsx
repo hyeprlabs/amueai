@@ -27,6 +27,7 @@ export function PromptInputTextarea({
       className={cn("min-h-10 flex-1 resize-none", className)}
       rows={1}
       onKeyDown={(e) => {
+        if (e.nativeEvent.isComposing) return;
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           e.currentTarget.form?.requestSubmit();

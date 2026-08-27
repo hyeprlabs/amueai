@@ -55,6 +55,14 @@
     bubble.textContent = open ? "✕" : "💬";
   });
 
-  document.body.appendChild(frame);
-  document.body.appendChild(bubble);
+  function mount() {
+    document.body.appendChild(frame);
+    document.body.appendChild(bubble);
+  }
+
+  if (document.body) {
+    mount();
+  } else {
+    document.addEventListener("DOMContentLoaded", mount);
+  }
 })();

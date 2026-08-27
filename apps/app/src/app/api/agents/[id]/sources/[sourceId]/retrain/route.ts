@@ -12,10 +12,15 @@ export async function POST(
   const { orgId } = await auth();
   if (!orgId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const { sourceId } = await params;
+  const { id: agentId, sourceId } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const { data: source } = await supabase.from("sources").select("id").eq("id", sourceId).single();
+  const { data: source } = await supabase
+    .from("sources")
+    .select("id")
+    .eq("id", sourceId)
+    .eq("agent_id", agentId)
+    .single();
   if (!source) return NextResponse.json({ error: "Source not found" }, { status: 404 });
 
   // ingestSource never flips status to ready on partial success, and keeps

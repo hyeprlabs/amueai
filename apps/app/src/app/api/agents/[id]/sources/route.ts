@@ -76,6 +76,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           ? parsed.data.pairs.map((pair) => `Q: ${pair.question}\nA: ${pair.answer}`).join("\n\n")
           : null;
 
+  if (parsed.data.type === "file") {
+    // The ingestion pipeline downloads this path with the service-role
+    // client, which bypasses Storage RLS entirely - without this check a
+    // member could point storagePath at another org's uploaded file and
+    // have it embedded into their own agent. Storage RLS already confines
+    // uploads to `${orgId}/...`, so requiring that same prefix here ties
+    // the path back to an object this org could actually have uploaded.
+    if (!parsed.data.storagePath.startsWith(`${orgId}/`)) {
+      return NextResponse.json({ error: "Invalid storage path" }, { status: 400 });
+    }
+  }
+
   const storage_path = parsed.data.type === "file" ? parsed.data.storagePath : null;
 
   const { data: source, error: insertError } = await supabase

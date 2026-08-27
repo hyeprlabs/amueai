@@ -57,19 +57,34 @@ export function SourcesList({
     setSources((current) =>
       current.map((s) => (s.id === sourceId ? { ...s, status: "processing" } : s)),
     );
-    await fetch(`/api/agents/${agentId}/sources/${sourceId}/retrain`, { method: "POST" });
-    setPendingId(null);
+    try {
+      const res = await fetch(`/api/agents/${agentId}/sources/${sourceId}/retrain`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        // Request never kicked off a retrain, so the optimistic
+        // "processing" status is never going to resolve on its own.
+        setSources((current) =>
+          current.map((s) => (s.id === sourceId ? { ...s, status: "failed" } : s)),
+        );
+      }
+    } finally {
+      setPendingId(null);
+    }
   }
 
   async function remove(sourceId: string) {
     setPendingId(sourceId);
-    const res = await fetch(`/api/agents/${agentId}/sources/${sourceId}`, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      setSources((current) => current.filter((s) => s.id !== sourceId));
+    try {
+      const res = await fetch(`/api/agents/${agentId}/sources/${sourceId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setSources((current) => current.filter((s) => s.id !== sourceId));
+      }
+    } finally {
+      setPendingId(null);
     }
-    setPendingId(null);
   }
 
   if (sources.length === 0) return null;

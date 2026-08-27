@@ -55,7 +55,12 @@ export function AddSourceForm({ agentId }: { agentId: string }) {
       } else if (type === "url") {
         await createSource({ type: "url", label, url });
       } else if (type === "qa") {
-        await createSource({ type: "qa", label, pairs: [{ question, answer }] });
+        if (!question.trim()) throw new Error("Question is required");
+        await createSource({
+          type: "qa",
+          label: question.trim().slice(0, 200),
+          pairs: [{ question, answer }],
+        });
       } else if (type === "file") {
         if (!file || !organization) throw new Error("Pick a file first");
         if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -68,7 +73,14 @@ export function AddSourceForm({ agentId }: { agentId: string }) {
           .upload(storagePath, file);
         if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-        await createSource({ type: "file", label: label || file.name, storagePath });
+        try {
+          await createSource({ type: "file", label: label || file.name, storagePath });
+        } catch (err) {
+          // Don't leave an orphaned blob behind when the source row never
+          // gets created.
+          await supabase.storage.from("sources").remove([storagePath]);
+          throw err;
+        }
       }
 
       setLabel("");

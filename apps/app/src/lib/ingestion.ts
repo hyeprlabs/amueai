@@ -1,12 +1,13 @@
 import "server-only";
 
-import { lookup as dnsLookup } from "node:dns/promises";
-import { isIPv4, isIPv6 } from "node:net";
+import { lookup as dnsLookup, type LookupAddress } from "node:dns";
+import { isIPv4, isIPv6, type LookupFunction } from "node:net";
 import { embedMany } from "ai";
 import * as cheerio from "cheerio";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { Agent } from "undici";
 
 import type { Database, Tables } from "@/types/supabase";
 
@@ -144,27 +145,55 @@ function isPrivateOrReservedIp(ip: string): boolean {
   return true; // couldn't classify it - fail closed
 }
 
-async function assertPublicUrl(url: string): Promise<void> {
-  const parsed = new URL(url);
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
-  }
+/**
+ * A plain pre-fetch DNS check (resolve, then separately connect) leaves a
+ * TOCTOU/DNS-rebinding gap: the name can resolve to a public IP for the
+ * check and a private one by the time the socket actually connects. This
+ * overrides the connector's own lookup so the private/reserved check runs
+ * at the exact moment a connection is made - on the initial request and
+ * on every redirect hop alike, since each is a fresh connection.
+ */
+const secureLookup: LookupFunction = (hostname, options, callback) => {
+  dnsLookup(hostname, { all: true }, (err, addresses) => {
+    if (err) return callback(err, "", 0);
 
-  const { address } = await dnsLookup(parsed.hostname);
-  if (isPrivateOrReservedIp(address)) {
-    throw new Error(`Refusing to fetch a private/internal address: ${parsed.hostname}`);
-  }
-}
+    const results = addresses as LookupAddress[];
+    const blocked = results.find((entry) => isPrivateOrReservedIp(entry.address));
+    if (blocked) {
+      return callback(
+        new Error(`Refusing to connect to a private/internal address: ${hostname}`),
+        "",
+        0,
+      );
+    }
+    if (results.length === 0) {
+      return callback(new Error(`Could not resolve ${hostname}`), "", 0);
+    }
+
+    if (options.all) {
+      callback(null, results, 0);
+    } else {
+      callback(null, results[0].address, results[0].family);
+    }
+  });
+};
+
+const secureDispatcher = new Agent({ connect: { lookup: secureLookup } });
 
 async function extractUrlText(url: string): Promise<string> {
   let currentUrl = url;
 
   for (let redirectCount = 0; ; redirectCount++) {
-    await assertPublicUrl(currentUrl);
+    const parsed = new URL(currentUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
+    }
 
     const res = await fetch(currentUrl, {
       redirect: "manual",
       signal: AbortSignal.timeout(URL_FETCH_TIMEOUT_MS),
+      // @ts-expect-error -- Node's fetch forwards this undici-specific option
+      dispatcher: secureDispatcher,
     });
 
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
@@ -235,7 +264,24 @@ export async function runIngestion(supabase: SupabaseClient<Database>, sourceId:
     throw new Error(`Source ${sourceId} not found: ${fetchError?.message}`);
   }
 
-  await supabase.from("sources").update({ status: "processing" }).eq("id", sourceId);
+  // Claims the source for this run: only flips to "processing" if it
+  // isn't already there. Without this, two overlapping runs (a
+  // double-clicked Retrain, a retried trigger) would each snapshot the
+  // same "previous chunks" and only delete that snapshot, leaving both
+  // runs' new chunk sets coexisting - duplicated context at retrieval
+  // time. A row that stays stuck in "processing" (e.g. a crashed run)
+  // needs a manual retrain to clear; that's an accepted tradeoff for
+  // keeping this a status flag instead of a leased/versioned column.
+  const { data: claimed } = await supabase
+    .from("sources")
+    .update({ status: "processing" })
+    .eq("id", sourceId)
+    .neq("status", "processing")
+    .select("id");
+
+  if (!claimed || claimed.length === 0) {
+    throw new Error(`Source ${sourceId} is already being processed`);
+  }
 
   try {
     const text = await extractText(supabase, source);
