@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { OrganizationSwitcher } from "@clerk/nextjs";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { createChatbot } from "./actions";
 
 export const metadata: Metadata = createMetadata({
   title: "Chatbots",
@@ -53,6 +57,11 @@ export default async function ChatbotsPage() {
         </p>
       </div>
 
+      <form action={createChatbot} className="flex items-center gap-2">
+        <Input name="name" placeholder="e.g. Acme Support" required className="max-w-xs" />
+        <Button type="submit">New chatbot</Button>
+      </form>
+
       {chatbots.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-sm text-muted-foreground">
           No chatbots yet.
@@ -60,11 +69,16 @@ export default async function ChatbotsPage() {
       ) : (
         <ul className="divide-y rounded-lg border">
           {chatbots.map((chatbot) => (
-            <li key={chatbot.id} className="flex items-center justify-between px-4 py-3">
-              <span className="font-medium">{chatbot.name}</span>
-              <span className="text-xs text-muted-foreground">
-                {new Date(chatbot.created_at).toLocaleDateString()}
-              </span>
+            <li key={chatbot.id}>
+              <Link
+                href={`/chatbots/${chatbot.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-muted/50"
+              >
+                <span className="font-medium">{chatbot.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(chatbot.created_at).toLocaleDateString()}
+                </span>
+              </Link>
             </li>
           ))}
         </ul>
