@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
+import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,6 +129,19 @@ export default async function ChatbotSettingsPage({ params }: PageProps<"/chatbo
           </p>
         </div>
         <TestChat chatbotId={chatbot.id} />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-base font-medium">Embed on your site</h2>
+          <p className="text-sm text-muted-foreground">
+            Paste this before <code>&lt;/body&gt;</code> on any page — no login required for
+            visitors.
+          </p>
+        </div>
+        <pre className="overflow-x-auto rounded-lg border bg-muted p-4 text-xs">
+          {`<script src="${siteConfig.url}/widget.js" data-chatbot-id="${chatbot.id}" async></script>`}
+        </pre>
       </div>
     </div>
   );
