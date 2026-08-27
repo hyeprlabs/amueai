@@ -32,9 +32,8 @@ export const navGroups: SidebarNavGroup[] = [
     items: [
       {
         title: "Overview",
-        path: "#/overview",
+        path: "/overview",
         icon: <LayoutGridIcon />,
-        isActive: true,
       },
       {
         title: "Agents",
@@ -78,7 +77,7 @@ export const navGroups: SidebarNavGroup[] = [
     items: [
       {
         title: "Settings",
-        path: "#/settings",
+        path: "/settings",
         icon: <SettingsIcon />,
       },
       {
@@ -109,3 +108,35 @@ export const navLinks: SidebarNavItem[] = [
   ),
   ...footerNavLinks,
 ];
+
+/**
+ * Real nav paths only ("#/foo" entries are stubs with no page behind them
+ * yet, so they can never be "active"). Matches the item's own route or
+ * anything nested under it (e.g. "/agents" stays active on "/agents/123").
+ */
+export function isNavItemActive(itemPath: string | undefined, pathname: string): boolean {
+  if (!itemPath || itemPath.startsWith("#")) return false;
+  return pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+}
+
+/** The most specific nav item whose path matches the current route, for the sidebar highlight and header title. */
+export function findActiveNavItem(pathname: string): SidebarNavItem | undefined {
+  return navLinks
+    .filter((item) => isNavItemActive(item.path, pathname))
+    .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))[0];
+}
+
+/**
+ * Falls back to a title derived from the URL for dashboard pages that
+ * aren't in the sidebar nav (e.g. the Clerk-hosted /profile route), so
+ * the header always names the page instead of going blank.
+ */
+export function headerPageTitle(pathname: string): SidebarNavItem | undefined {
+  const activeItem = findActiveNavItem(pathname);
+  if (activeItem) return activeItem;
+
+  const firstSegment = pathname.split("/").find(Boolean);
+  if (!firstSegment) return undefined;
+
+  return { title: firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1) };
+}

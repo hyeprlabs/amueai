@@ -17,14 +17,18 @@ export function LatestChange({ change }: { change?: Change }) {
     <div
       className={cn(
         "group/latest-change min-w-(--sidebar-width) size-full min-h-27 justify-center border-t",
-        "relative flex size-full flex-col gap-1 overflow-hidden px-4 pt-3 pb-1 *:text-nowrap",
+        "relative flex size-full flex-col gap-1 overflow-hidden px-4 pt-3 pb-1",
         !isOpen && "pointer-events-none opacity-0",
         "will-change-[opacity] transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0",
       )}
     >
-      <span className="font-light font-mono text-[10px] text-muted-foreground">CHANGELOG</span>
-      <p className="font-medium text-xs">{change.title}</p>
-      <span className="text-[10px] text-muted-foreground">{change.shortDescription}</span>
+      <span className="text-nowrap font-light font-mono text-[10px] text-muted-foreground">
+        CHANGELOG
+      </span>
+      <p className="truncate text-nowrap font-medium text-xs">{change.title}</p>
+      <span className="line-clamp-2 text-wrap text-[10px] text-muted-foreground">
+        {change.shortDescription}
+      </span>
       <Button
         className="w-max px-0 font-light text-xs"
         nativeButton={false}

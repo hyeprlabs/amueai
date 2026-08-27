@@ -22,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { PanelLeftIcon } from "lucide-react";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
+const SIDEBAR_COOKIE_DATE_NAME = "sidebar_state_date";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
@@ -78,8 +79,12 @@ function SidebarProvider({
         _setOpen(openState);
       }
 
-      // This sets the cookie to keep the sidebar state.
+      // Keeps the sidebar state across page loads, stamped with the day it
+      // was set so a closed sidebar only stays closed for that day - see
+      // AppShell, which reads these cookies and ignores a stale date.
+      const today = new Date().toISOString().slice(0, 10);
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      document.cookie = `${SIDEBAR_COOKIE_DATE_NAME}=${today}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
     [setOpenProp, open],
   );
