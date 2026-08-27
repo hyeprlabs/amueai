@@ -1,14 +1,17 @@
 import { cn } from "@/lib/utils";
+import { waitlistFlag } from "@/lib/flags";
 import { Header } from "@/components/marketing/header"; // @efferd/header-2
 import { Footer } from "@/components/footer";
 import { Background } from "@/components/ui/bg";
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({ children }: { children: React.ReactNode }) {
+  const waitlistEnabled = await waitlistFlag();
+
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden px-4 supports-[overflow:clip]:overflow-clip">
       <Background />
 
-      <Header />
+      <Header waitlistEnabled={waitlistEnabled} />
       <div
         className={cn(
           "relative mx-auto flex w-full max-w-4xl grow flex-col",

@@ -9,7 +9,7 @@ import { companyLinks, companyLinks2, featureLinks } from "@/components/nav-link
 import { LinkItem } from "@/components/sheard";
 import { XIcon, MenuIcon } from "lucide-react";
 
-export function MobileNav() {
+export function MobileNav({ waitlistEnabled }: { waitlistEnabled: boolean }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -70,44 +70,57 @@ export function MobileNav() {
                 />
               ))}
             </div>
-            <ClerkLoaded>
+            {waitlistEnabled ? (
               <div className="mt-5 flex flex-col gap-2">
-                <Show when="signed-out">
-                  <Button
-                    className="w-full"
-                    nativeButton={false}
-                    onClick={() => setOpen(false)}
-                    render={<Link href="/sign-in" />}
-                    variant="outline"
-                  >
-                    Sign In
-                  </Button>
-                  <Button
-                    className="w-full"
-                    nativeButton={false}
-                    onClick={() => setOpen(false)}
-                    render={<Link href="/sign-up" />}
-                  >
-                    Get Started
-                  </Button>
-                </Show>
-
-                <Show when="signed-in">
-                  <div className="flex items-center gap-2">
+                <Button
+                  className="w-full"
+                  nativeButton={false}
+                  onClick={() => setOpen(false)}
+                  render={<Link href="/" />}
+                >
+                  Join Waitlist
+                </Button>
+              </div>
+            ) : (
+              <ClerkLoaded>
+                <div className="mt-5 flex flex-col gap-2">
+                  <Show when="signed-out">
                     <Button
                       className="w-full"
                       nativeButton={false}
                       onClick={() => setOpen(false)}
-                      render={<Link href="/overview" />}
+                      render={<Link href="/sign-in" />}
                       variant="outline"
                     >
-                      Dashboard
+                      Sign In
                     </Button>
-                    <UserButton />
-                  </div>
-                </Show>
-              </div>
-            </ClerkLoaded>
+                    <Button
+                      className="w-full"
+                      nativeButton={false}
+                      onClick={() => setOpen(false)}
+                      render={<Link href="/sign-up" />}
+                    >
+                      Get Started
+                    </Button>
+                  </Show>
+
+                  <Show when="signed-in">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        className="w-full"
+                        nativeButton={false}
+                        onClick={() => setOpen(false)}
+                        render={<Link href="/overview" />}
+                        variant="outline"
+                      >
+                        Dashboard
+                      </Button>
+                      <UserButton />
+                    </div>
+                  </Show>
+                </div>
+              </ClerkLoaded>
+            )}
           </div>
         </Portal>
       )}
