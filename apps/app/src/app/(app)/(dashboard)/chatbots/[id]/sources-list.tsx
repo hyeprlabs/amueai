@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client";
+import { Button } from "@/components/ui/button";
 import type { Tables } from "@/types/supabase";
 
 type SourceRow = Pick<
@@ -49,19 +50,61 @@ export function SourcesList({
     };
   }, [supabase, chatbotId]);
 
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  async function retrain(sourceId: string) {
+    setPendingId(sourceId);
+    setSources((current) =>
+      current.map((s) => (s.id === sourceId ? { ...s, status: "processing" } : s)),
+    );
+    await fetch(`/api/chatbots/${chatbotId}/sources/${sourceId}/retrain`, { method: "POST" });
+    setPendingId(null);
+  }
+
+  async function remove(sourceId: string) {
+    setPendingId(sourceId);
+    const res = await fetch(`/api/chatbots/${chatbotId}/sources/${sourceId}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      setSources((current) => current.filter((s) => s.id !== sourceId));
+    }
+    setPendingId(null);
+  }
+
   if (sources.length === 0) return null;
 
   return (
     <ul className="divide-y rounded-lg border">
       {sources.map((source) => (
-        <li key={source.id} className="flex items-center justify-between px-4 py-3">
-          <div>
-            <p className="font-medium">{source.label}</p>
+        <li key={source.id} className="flex items-center justify-between gap-4 px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate font-medium">{source.label}</p>
             {source.status === "failed" && source.error_message && (
-              <p className="text-xs text-destructive">{source.error_message}</p>
+              <p className="truncate text-xs text-destructive">{source.error_message}</p>
             )}
           </div>
-          <span className="text-xs text-muted-foreground capitalize">{source.status}</span>
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="text-xs text-muted-foreground capitalize">{source.status}</span>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              disabled={pendingId === source.id}
+              onClick={() => retrain(source.id)}
+            >
+              Retrain
+            </Button>
+            <Button
+              type="button"
+              size="xs"
+              variant="destructive"
+              disabled={pendingId === source.id}
+              onClick={() => remove(source.id)}
+            >
+              Delete
+            </Button>
+          </div>
         </li>
       ))}
     </ul>
