@@ -58,7 +58,16 @@ export function ChatPanel({
               </MessageContent>
             </Message>
           ))}
-          {error && <p className="text-sm text-destructive">{error.message}</p>}
+          {status === "submitted" && (
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              Thinking…
+            </p>
+          )}
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error.message}
+            </p>
+          )}
         </ConversationContent>
       </Conversation>
 

@@ -23,6 +23,7 @@ export function PromptInputTextarea({
 }: React.ComponentProps<typeof Textarea>) {
   return (
     <Textarea
+      aria-label="Message"
       className={cn("min-h-10 flex-1 resize-none", className)}
       rows={1}
       onKeyDown={(e) => {
@@ -44,7 +45,12 @@ export function PromptInputSubmit({
   status?: "submitted" | "streaming" | "ready" | "error";
 }) {
   return (
-    <Button type="submit" size="icon" disabled={disabled || status === "streaming"}>
+    <Button
+      type="submit"
+      size="icon"
+      aria-label="Send message"
+      disabled={disabled || status === "streaming"}
+    >
       <SendIcon />
     </Button>
   );

@@ -12,7 +12,12 @@ import { cn } from "@/lib/utils";
 
 export function Conversation({ className, children, ...props }: React.ComponentProps<"div">) {
   return (
-    <div className={cn("relative flex-1 overflow-y-auto", className)} {...props}>
+    <div
+      role="log"
+      aria-live="polite"
+      className={cn("relative flex-1 overflow-y-auto", className)}
+      {...props}
+    >
       {children}
     </div>
   );

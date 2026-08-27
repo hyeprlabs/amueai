@@ -114,7 +114,7 @@ Context:
 ${context || "(no matching context found)"}
 ---
 
-Answer the user's question using only the context above. If the context doesn't contain the answer, say you don't have that information.`;
+Answer the user's question using only the context above. Never use outside knowledge, even if you're confident it's correct. If the context doesn't contain the answer, say plainly that you don't have that information - don't guess, and don't apologize at length.`;
 
   const conversationIdForClosure = conversationId;
 
@@ -123,6 +123,8 @@ Answer the user's question using only the context above. If the context doesn't 
     temperature: chatbot.temperature,
     system,
     prompt: message,
+    // Ties Gateway usage/cost back to the org for observability.
+    providerOptions: { gateway: { quotaEntityId: chatbot.org_id } },
     onFinish: async ({ text }) => {
       await supabase.from("messages").insert([
         {
