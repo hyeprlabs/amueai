@@ -103,7 +103,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  await tasks.trigger<typeof ingestSource>("ingest-source", { sourceId: source.id });
+  await tasks.trigger<typeof ingestSource>(
+    "ingest-source",
+    { sourceId: source.id },
+    { tags: [`org:${orgId}`, `agent:${agentId}`, `source:${source.id}`] },
+  );
 
   return NextResponse.json({ source }, { status: 201 });
 }

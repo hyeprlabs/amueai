@@ -26,7 +26,11 @@ export async function POST(
   // ingestSource never flips status to ready on partial success, and keeps
   // this source's existing chunks in place until the new run's insert
   // succeeds - a failed retrain doesn't blank out a working agent.
-  await tasks.trigger<typeof ingestSource>("ingest-source", { sourceId });
+  await tasks.trigger<typeof ingestSource>(
+    "ingest-source",
+    { sourceId },
+    { tags: [`org:${orgId}`, `agent:${agentId}`, `source:${sourceId}`] },
+  );
 
   return NextResponse.json({ ok: true });
 }

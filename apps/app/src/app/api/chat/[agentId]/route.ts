@@ -108,8 +108,13 @@ Answer the user's question using only the context above. Never use outside knowl
     temperature: agent.temperature,
     system,
     prompt: message,
-    // Ties Gateway usage/cost back to the org for observability.
-    providerOptions: { gateway: { quotaEntityId: agent.org_id } },
+    // Ties Gateway usage/cost back to the org for observability via `user`
+    // (end-user identifier for spend tracking) and `tags`, not
+    // `quotaEntityId` - that requires a quota entity pre-provisioned in the
+    // Vercel dashboard, and sending an arbitrary Clerk org_id that was never
+    // registered there makes the Gateway 400 every request with
+    // "Quota entity ... was provided but no quota exists."
+    providerOptions: { gateway: { user: agent.org_id, tags: [`org:${agent.org_id}`] } },
     onFinish: async ({ text }) => {
       await supabase.from("messages").insert([
         {

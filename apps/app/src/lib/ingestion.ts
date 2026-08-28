@@ -1,13 +1,10 @@
 import "server-only";
 
-import { lookup as dnsLookup, type LookupAddress } from "node:dns";
-import { isIPv4, isIPv6, type LookupFunction } from "node:net";
 import { embedMany } from "ai";
-import * as cheerio from "cheerio";
+import Firecrawl from "@mendable/firecrawl-js";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Agent } from "undici";
 
 import type { Database, Tables } from "@/types/supabase";
 
@@ -15,9 +12,24 @@ const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const CHUNK_SIZE = 4000;
 const CHUNK_OVERLAP = 400;
 const EMBED_BATCH_SIZE = 100;
-const URL_FETCH_TIMEOUT_MS = 15_000;
-const URL_MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10MB
-const URL_MAX_REDIRECTS = 5;
+const URL_FETCH_TIMEOUT_MS = 30_000;
+
+let firecrawlClient: Firecrawl | undefined;
+
+/**
+ * Firecrawl fetches the target URL from its own infrastructure, not ours,
+ * so it also owns SSRF protection, JS rendering, and anti-bot handling for
+ * every URL source - replacing the hand-rolled fetch+cheerio+DNS-pinning
+ * crawler that used to live here.
+ */
+function getFirecrawlClient(): Firecrawl {
+  if (!firecrawlClient) {
+    const apiKey = process.env.FIRECRAWL_API_KEY;
+    if (!apiKey) throw new Error("FIRECRAWL_API_KEY is not configured");
+    firecrawlClient = new Firecrawl({ apiKey });
+  }
+  return firecrawlClient;
+}
 
 type Source = Tables<"sources">;
 
@@ -107,124 +119,23 @@ async function extractFileText(
   throw new Error(`Unsupported file extension: ${extension}`);
 }
 
-/**
- * Blocks loopback, link-local, private (RFC1918/ULA), and unspecified
- * addresses - including the cloud metadata endpoint (169.254.169.254) -
- * so a URL source can't be used as an SSRF vector against internal
- * services. Checked against the *resolved* IP, not just the hostname
- * string, since "http://localhost" and "http://2130706433" (decimal
- * 127.0.0.1) both need to be caught too.
- */
-function isPrivateOrReservedIp(ip: string): boolean {
-  if (isIPv4(ip)) {
-    const [a, b] = ip.split(".").map(Number);
-    return (
-      a === 127 || // loopback
-      a === 10 || // RFC1918
-      a === 0 || // "this" network
-      (a === 169 && b === 254) || // link-local + cloud metadata
-      (a === 172 && b >= 16 && b <= 31) || // RFC1918
-      (a === 192 && b === 168) || // RFC1918
-      (a === 100 && b >= 64 && b <= 127) // carrier-grade NAT
-    );
-  }
-
-  if (isIPv6(ip)) {
-    const normalized = ip.toLowerCase();
-    return (
-      normalized === "::1" ||
-      normalized === "::" ||
-      normalized.startsWith("fe80:") || // link-local
-      normalized.startsWith("fc") || // unique local
-      normalized.startsWith("fd") || // unique local
-      normalized.startsWith("::ffff:127.") || // IPv4-mapped loopback
-      normalized.startsWith("::ffff:169.254.")
-    );
-  }
-
-  return true; // couldn't classify it - fail closed
-}
-
-/**
- * A plain pre-fetch DNS check (resolve, then separately connect) leaves a
- * TOCTOU/DNS-rebinding gap: the name can resolve to a public IP for the
- * check and a private one by the time the socket actually connects. This
- * overrides the connector's own lookup so the private/reserved check runs
- * at the exact moment a connection is made - on the initial request and
- * on every redirect hop alike, since each is a fresh connection.
- */
-const secureLookup: LookupFunction = (hostname, options, callback) => {
-  dnsLookup(hostname, { all: true }, (err, addresses) => {
-    if (err) return callback(err, "", 0);
-
-    const results = addresses as LookupAddress[];
-    const blocked = results.find((entry) => isPrivateOrReservedIp(entry.address));
-    if (blocked) {
-      return callback(
-        new Error(`Refusing to connect to a private/internal address: ${hostname}`),
-        "",
-        0,
-      );
-    }
-    if (results.length === 0) {
-      return callback(new Error(`Could not resolve ${hostname}`), "", 0);
-    }
-
-    if (options.all) {
-      callback(null, results, 0);
-    } else {
-      callback(null, results[0].address, results[0].family);
-    }
-  });
-};
-
-const secureDispatcher = new Agent({ connect: { lookup: secureLookup } });
-
 async function extractUrlText(url: string): Promise<string> {
-  let currentUrl = url;
-
-  for (let redirectCount = 0; ; redirectCount++) {
-    const parsed = new URL(currentUrl);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
-    }
-
-    const res = await fetch(currentUrl, {
-      redirect: "manual",
-      signal: AbortSignal.timeout(URL_FETCH_TIMEOUT_MS),
-      // @ts-expect-error -- Node's fetch forwards this undici-specific option
-      dispatcher: secureDispatcher,
-    });
-
-    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
-      if (redirectCount >= URL_MAX_REDIRECTS) {
-        throw new Error(`Too many redirects fetching ${url}`);
-      }
-      // Re-validated against the redirect target on the next loop
-      // iteration - a malicious server can't 302 its way into an
-      // internal address after passing the initial check.
-      currentUrl = new URL(res.headers.get("location")!, currentUrl).toString();
-      continue;
-    }
-
-    if (!res.ok) throw new Error(`Failed to fetch ${currentUrl}: ${res.status}`);
-
-    const contentLength = Number(res.headers.get("content-length") ?? 0);
-    if (contentLength > URL_MAX_RESPONSE_BYTES) {
-      throw new Error(`Response too large: ${contentLength} bytes`);
-    }
-
-    const buffer = await res.arrayBuffer();
-    if (buffer.byteLength > URL_MAX_RESPONSE_BYTES) {
-      throw new Error(`Response too large: ${buffer.byteLength} bytes`);
-    }
-
-    const html = new TextDecoder("utf-8").decode(buffer);
-    const $ = cheerio.load(html);
-    $("script, style, nav, footer, header").remove();
-
-    return $("body").text().replace(/\s+/g, " ").trim();
+  const parsed = new URL(url);
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
   }
+
+  const document = await getFirecrawlClient().scrape(url, {
+    formats: ["markdown"],
+    timeout: URL_FETCH_TIMEOUT_MS,
+    onlyMainContent: true,
+  });
+
+  if (!document.markdown) {
+    throw new Error(`Firecrawl returned no content for ${url}`);
+  }
+
+  return document.markdown.trim();
 }
 
 /** Batches embedding calls — never one request per chunk. */

@@ -16,10 +16,24 @@ import { runIngestion } from "@/lib/ingestion";
  */
 export const ingestSource = task({
   id: "ingest-source",
-  run: async (payload: { sourceId: string }) => {
-    logger.log("Ingesting source", { sourceId: payload.sourceId });
+  run: async (payload: { sourceId: string }, { ctx }) => {
+    logger.log("Ingesting source", { sourceId: payload.sourceId, attempt: ctx.attempt.number });
 
     const supabase = createServiceRoleSupabaseClient();
-    await runIngestion(supabase, payload.sourceId);
+
+    try {
+      await runIngestion(supabase, payload.sourceId);
+      logger.log("Source ingested", { sourceId: payload.sourceId });
+    } catch (err) {
+      // runIngestion already flips the source to `failed` with
+      // error_message before rethrowing - this log just gets the failure
+      // into the Trigger.dev run view alongside the retry it triggers.
+      logger.error("Source ingestion failed", {
+        sourceId: payload.sourceId,
+        attempt: ctx.attempt.number,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
   },
 });
