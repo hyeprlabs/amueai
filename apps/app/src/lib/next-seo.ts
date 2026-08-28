@@ -13,6 +13,7 @@ export function organizationJsonLdProps(): OrganizationJsonLdProps {
     email: siteConfig.email,
     sameAs: Object.values(siteConfig.links),
     contactPoint: { contactType: "customer support", email: siteConfig.email },
+    ...(siteConfig.address && { address: siteConfig.address }),
   };
 }
 
@@ -134,9 +135,7 @@ export type FaqPageJsonLd = {
  * `{ question, answer }` pairs rendered by `<MarketingFaq>` so the page and
  * the markup never diverge.
  */
-export function faqPageJsonLd(
-  items: { question: string; answer: string }[],
-): FaqPageJsonLd {
+export function faqPageJsonLd(items: { question: string; answer: string }[]): FaqPageJsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",

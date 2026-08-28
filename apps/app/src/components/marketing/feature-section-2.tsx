@@ -36,6 +36,15 @@ const features = [
 export function FeatureSection2() {
   return (
     <div className="mb-12 lg:mb-24 relative mx-auto grid w-full grid-cols-1 border-y sm:grid-cols-2 md:grid-cols-6">
+      {/*
+        The cards below are titled with h3s. Without a heading here to sit
+        above them, those h3s would nest under whichever h2 happens to
+        precede this section in the DOM — an accidentally flat, incorrect
+        hierarchy for anything parsing structure from the raw HTML (crawlers,
+        AI agents, screen readers). Visually hidden because the section
+        doesn't have room for another visible title in the design.
+      */}
+      <h2 className="sr-only">Everything you need to run an AI agent</h2>
       {features.map((feature) => (
         <FeatureCard className={feature.className} key={feature.id}>
           {feature.children}

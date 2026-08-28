@@ -14,6 +14,35 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/vs", destination: "/competitors", permanent: true }];
   },
+  // Every page below has a markdown rendition served via Accept negotiation
+  // (see `src/proxy.ts` and `src/lib/markdown-render.ts`). `Vary: Accept`
+  // must be declared here — not only set from the proxy — because Next's own
+  // RSC-negotiation logic recomputes the `Vary` header on the way out and
+  // silently drops anything the proxy set that it doesn't already know about.
+  // The config-level `headers()` merge point runs after that and survives it.
+  async headers() {
+    const negotiableSources = [
+      "/",
+      "/about",
+      "/pricing",
+      "/contact",
+      "/developers",
+      "/features/agent",
+      "/features/channels",
+      "/blog",
+      "/blog/:slug",
+      "/changelog",
+      "/competitors",
+      "/vs/:slug",
+      "/legal",
+      "/legal/:slug",
+    ];
+
+    return negotiableSources.map((source) => ({
+      source,
+      headers: [{ key: "Vary", value: "Accept, Accept-Encoding" }],
+    }));
+  },
   images: {
     // Serve modern formats so Largest Contentful Paint stays cheap.
     formats: ["image/avif", "image/webp"],
