@@ -1,15 +1,16 @@
 import {
   CpuIcon,
+  FlaskConicalIcon,
   LanguagesIcon,
   PencilIcon,
   PlugIcon,
   ShieldCheckIcon,
   UserPlusIcon,
   ZapIcon,
-  FlaskConicalIcon,
 } from "lucide-react";
 
-import { GridPattern } from "@/components/ui/grid-pattern";
+import { DecorIcon } from "@/components/decor-icon";
+import { FullWidthDivider } from "@/components/full-width-divider";
 
 /** Deliberately label-only: the bands above already made the argument. */
 const capabilities = [
@@ -25,26 +26,34 @@ const capabilities = [
 
 export function AgentCapabilities() {
   return (
-    <div className="relative overflow-hidden">
-      <div className="mask-[radial-gradient(farthest-side_at_top,white,transparent)] pointer-events-none absolute inset-0">
-        <GridPattern
-          className="absolute inset-0 size-full stroke-foreground/20 opacity-70"
-          height={40}
-          width={40}
-        />
+    <section className="mb-12 lg:mb-24">
+      <div className="mx-auto max-w-3xl px-4 py-6 text-center">
+        <h2 className="text-balance font-medium text-2xl md:text-4xl">And everything else</h2>
+        <p className="mt-4 text-balance text-muted-foreground text-sm md:text-base">
+          The rest of what your agent can do, out of the box.
+        </p>
       </div>
 
-      <ul className="relative grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-4">
-        {capabilities.map((capability) => (
-          <li
-            className="flex items-center gap-2.5 bg-background p-4 sm:p-5 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-foreground/75"
-            key={capability.label}
-          >
-            {capability.icon}
-            <span className="text-balance text-xs sm:text-sm">{capability.label}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+      <div className="relative">
+        <DecorIcon className="size-4" position="top-left" />
+        <DecorIcon className="size-4" position="top-right" />
+        <DecorIcon className="size-4" position="bottom-left" />
+        <DecorIcon className="size-4" position="bottom-right" />
+
+        <FullWidthDivider className="-top-px" />
+        <ul className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-4">
+          {capabilities.map((capability) => (
+            <li
+              className="flex items-center gap-2.5 bg-background p-4 md:p-6 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-foreground/75"
+              key={capability.label}
+            >
+              {capability.icon}
+              <span className="text-balance text-xs md:text-sm">{capability.label}</span>
+            </li>
+          ))}
+        </ul>
+        <FullWidthDivider className="-bottom-px" />
+      </div>
+    </section>
   );
 }

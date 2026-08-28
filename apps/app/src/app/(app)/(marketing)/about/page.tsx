@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
 import { CallToAction } from "@/components/cta";
+import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { Badge } from "@/components/ui/badge";
+import { PageHero } from "@/components/marketing/page-hero";
 import { siteConfig } from "@/config/site";
 import {
   breadcrumbItems,
@@ -66,20 +67,14 @@ export default function AboutPage() {
         scriptKey="breadcrumb"
       />
 
-      {/* Hero */}
-      <section className="px-4 py-12 sm:py-14 lg:py-16">
-        <Badge variant="outline">About</Badge>
-        <h1 className="mt-4 max-w-2xl text-balance font-medium text-3xl sm:text-4xl md:text-5xl">
-          Your best support agent is already written down.
-        </h1>
-        <p className="mt-4 max-w-xl text-balance text-muted-foreground text-sm sm:text-base">
-          {siteConfig.name} turns the content you already have — help articles, policies, product
-          docs — into an agent that answers your customers the moment they ask.
-        </p>
-      </section>
+      <PageHero
+        badge="About"
+        description={`${siteConfig.name} turns the content you already have — help articles, policies, product docs — into an agent that answers your customers the moment they ask.`}
+        title="Your best support agent is already written down."
+      />
 
       <AboutSection label="Our mission">
-        <div className="space-y-4 text-muted-foreground text-sm sm:text-base">
+        <div className="space-y-4 text-muted-foreground text-sm md:text-base">
           <p>
             Most support questions have already been answered somewhere — in a help center article,
             a shipping policy, a spec sheet. That knowledge just sits there while a person retypes
@@ -96,11 +91,11 @@ export default function AboutPage() {
       </AboutSection>
 
       <AboutSection label="What we believe">
-        <dl className="grid gap-5 sm:grid-cols-2 sm:gap-x-8">
+        <dl className="grid gap-6 sm:grid-cols-2 sm:gap-x-8">
           {principles.map((principle) => (
             <div key={principle.title}>
-              <dt className="font-medium text-sm sm:text-base">{principle.title}</dt>
-              <dd className="mt-1.5 text-balance text-muted-foreground text-sm">
+              <dt className="font-medium text-sm md:text-base">{principle.title}</dt>
+              <dd className="mt-2 text-balance font-light text-muted-foreground text-sm">
                 {principle.description}
               </dd>
             </div>
@@ -109,27 +104,36 @@ export default function AboutPage() {
       </AboutSection>
 
       <AboutSection label="The company">
-        <dl className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {facts.map((fact) => (
             <div key={fact.label}>
               <dt className="text-muted-foreground text-xs">{fact.label}</dt>
-              <dd className="mt-1 font-medium text-sm">{fact.value}</dd>
+              <dd className="mt-1 font-medium text-sm md:text-base">{fact.value}</dd>
             </div>
           ))}
         </dl>
       </AboutSection>
 
-      <div className="pt-12 sm:pt-14 lg:pt-16">
-        <CallToAction />
+      <div className="relative mb-12 lg:mb-24">
+        <DecorIcon className="size-4" position="top-left" />
+        <DecorIcon className="size-4" position="top-right" />
+        <FullWidthDivider className="-top-px" />
       </div>
+
+      <CallToAction />
     </>
   );
 }
 
-/** Label in a narrow left column, content in the wide one; stacked on mobile. */
+/**
+ * Label in a narrow left column, content in the wide one; stacked on mobile.
+ *
+ * The label is the section's `h2` rather than decorative text, so the page
+ * outline reads Mission / Beliefs / Company under the `h1`.
+ */
 function AboutSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <section className="relative px-4 py-10 sm:py-12">
+    <section className="relative px-4 py-10 md:py-12">
       <FullWidthDivider className="-top-px" />
       <div className="grid gap-4 md:grid-cols-[minmax(0,11rem)_minmax(0,1fr)] md:gap-10">
         <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">

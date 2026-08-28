@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId } from "react";
+import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -92,6 +93,22 @@ export function ContactForm() {
       <Button className="w-full" type="submit">
         Send message
       </Button>
+
+      {/*
+        A notice rather than a consent checkbox: submitting opens the visitor's
+        own mail client, so nothing is transmitted to or stored by us until
+        they send the message themselves. The link still has to be here.
+      */}
+      <p className="font-light text-muted-foreground text-xs leading-relaxed">
+        This opens your email client so you can send the message yourself. See our{" "}
+        <Link
+          className="font-medium text-foreground underline underline-offset-2"
+          href="/legal/privacy-policy"
+        >
+          Privacy Policy
+        </Link>{" "}
+        for how we handle your message once we receive it.
+      </p>
     </form>
   );
 }

@@ -4,10 +4,12 @@ import { BriefcaseIcon, LifeBuoyIcon, MailIcon, ScaleIcon, ShieldCheckIcon } fro
 
 import { ContactForm } from "@/components/contact-form";
 import { CallToAction } from "@/components/cta";
+import { DecorIcon } from "@/components/decor-icon";
+import { FullWidthDivider } from "@/components/full-width-divider";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { XIcon } from "@/components/icons/x-icon";
-import { Badge } from "@/components/ui/badge";
+import { PageHero } from "@/components/marketing/page-hero";
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { siteConfig } from "@/config/site";
@@ -91,91 +93,103 @@ export default function ContactPage() {
         scriptKey="contactpage"
       />
 
-      {/* Hero */}
-      <section className="px-4 py-12 sm:py-16 lg:py-20">
-        <Badge variant="outline">Contact</Badge>
-        <h1 className="mt-4 max-w-2xl text-balance font-medium text-3xl sm:text-4xl md:text-5xl">
-          Talk to the people building {siteConfig.name}
-        </h1>
-        <p className="mt-4 max-w-xl text-balance text-muted-foreground text-sm sm:text-base">
-          Questions about the product, a bug you've hit, or a rollout you're planning — send it over
-          and someone on the team will get back to you.
-        </p>
-      </section>
+      <PageHero
+        badge="Contact"
+        description="Questions about the product, a bug you've hit, or a rollout you're planning — send it over and someone on the team will get back to you."
+        title={`Talk to the people building ${siteConfig.name}`}
+      />
 
-      {/* Form + details */}
-      <section className="grid grid-cols-1 gap-px border-y bg-border md:grid-cols-2">
-        <div className="bg-background p-5 sm:p-8 lg:p-10">
-          <h2 className="font-medium text-lg">Send us a message</h2>
-          <p className="mt-1 text-muted-foreground text-sm">
-            Fill this in and we'll pick it up from there.
-          </p>
-          <div className="mt-6">
-            <ContactForm />
-          </div>
-        </div>
+      <div className="relative mb-12 lg:mb-24">
+        <DecorIcon className="size-4" position="top-left" />
+        <DecorIcon className="size-4" position="top-right" />
+        <DecorIcon className="size-4" position="bottom-left" />
+        <DecorIcon className="size-4" position="bottom-right" />
 
-        <div className="flex flex-col gap-8 bg-background p-5 sm:p-8 lg:p-10 dark:bg-[radial-gradient(60%_80%_at_75%_0%,--theme(--color-foreground/.07),transparent)]">
-          <div>
-            <h2 className="font-medium text-lg">Prefer email?</h2>
-            <p className="mt-1 text-muted-foreground text-sm">
-              Everything reaches the same inbox, and we read all of it.
+        <FullWidthDivider className="-top-px" />
+        <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-2">
+          <section className="bg-background p-6 md:p-8">
+            <h2 className="font-medium text-lg md:text-xl">Send us a message</h2>
+            <p className="mt-2 font-light text-muted-foreground text-sm">
+              Fill this in and we'll pick it up from there.
             </p>
-            <a
-              className="mt-4 flex w-max max-w-full items-center gap-2 break-all font-medium text-sm hover:underline"
-              href={`mailto:${siteConfig.email}`}
-            >
-              <MailIcon className="size-4 shrink-0" />
-              {siteConfig.email}
-            </a>
-          </div>
-
-          <div>
-            <h3 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-              What we can help with
-            </h3>
-            <dl className="mt-4 space-y-5">
-              {routes.map((route) => (
-                <div className="flex items-start gap-3" key={route.label}>
-                  <IconTile size="sm" variant="frame">
-                    {route.icon}
-                  </IconTile>
-                  <div className="min-w-0">
-                    <dt className="font-medium text-sm">{route.label}</dt>
-                    <dd className="mt-0.5 text-balance text-muted-foreground text-xs">
-                      {route.description}
-                    </dd>
-                  </div>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          <div>
-            <h3 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-              Elsewhere
-            </h3>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {socials.map((social) => (
-                <Button
-                  aria-label={`${siteConfig.name} on ${social.label}`}
-                  key={social.label}
-                  nativeButton={false}
-                  render={<a href={social.link} rel="noopener noreferrer" target="_blank" />}
-                  size="icon"
-                  variant="outline"
-                >
-                  {social.icon}
-                </Button>
-              ))}
+            <div className="mt-6">
+              <ContactForm />
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <div className="pt-12 sm:pt-16 lg:pt-20">
-        <CallToAction />
+          {/*
+            One `h2` for the column, with the three blocks under it as `h3`s —
+            "What we can help with" is a sibling of the email block, not a
+            subsection of it.
+          */}
+          <section className="flex flex-col gap-8 bg-background p-6 md:p-8 dark:bg-[radial-gradient(60%_80%_at_75%_0%,--theme(--color-foreground/.07),transparent)]">
+            <div>
+              <h2 className="font-medium text-lg md:text-xl">Other ways to reach us</h2>
+              <p className="mt-2 font-light text-muted-foreground text-sm">
+                Everything reaches the same inbox, and we read all of it.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
+                Email
+              </h3>
+              <a
+                className="mt-4 flex w-max max-w-full items-center gap-2 break-all font-medium text-sm hover:underline"
+                href={`mailto:${siteConfig.email}`}
+              >
+                <MailIcon aria-hidden="true" className="size-4 shrink-0" />
+                {siteConfig.email}
+              </a>
+            </div>
+
+            <div>
+              <h3 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
+                What we can help with
+              </h3>
+              <dl className="mt-4 space-y-5">
+                {routes.map((route) => (
+                  <div className="flex items-start gap-3" key={route.label}>
+                    <IconTile aria-hidden="true" size="sm" variant="frame">
+                      {route.icon}
+                    </IconTile>
+                    <div className="min-w-0">
+                      <dt className="font-medium text-sm">{route.label}</dt>
+                      <dd className="mt-1 text-balance font-light text-muted-foreground text-xs">
+                        {route.description}
+                      </dd>
+                    </div>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div>
+              <h3 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
+                Elsewhere
+              </h3>
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {socials.map((social) => (
+                  <li key={social.label}>
+                    <Button
+                      aria-label={`${siteConfig.name} on ${social.label}`}
+                      nativeButton={false}
+                      render={<a href={social.link} rel="noopener noreferrer" target="_blank" />}
+                      size="icon"
+                      variant="outline"
+                    >
+                      {social.icon}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        </div>
+        <FullWidthDivider className="-bottom-px" />
       </div>
+
+      <CallToAction />
     </>
   );
 }

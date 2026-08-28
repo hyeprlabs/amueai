@@ -1,22 +1,34 @@
 "use client";
 
 import { useEffect, useId } from "react";
+import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useWaitlist } from "@clerk/nextjs";
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { AlertCircleIcon, LoaderCircleIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
+import { siteConfig } from "@/config/site";
 import { fireConfetti } from "@/lib/confetti";
 import { cn } from "@/lib/utils";
 
+/**
+ * Consent is a required, separately-refused field rather than an implied
+ * "by joining you agree" line: GDPR Art. 7 and the German TDDDG want an
+ * unambiguous, affirmative action, so the box starts unchecked and the form
+ * refuses to submit without it.
+ */
 const whitelistSchema = z.object({
   emailAddress: z.string().trim().min(1, "Please enter your email address"),
+  acceptedTerms: z
+    .boolean()
+    .refine((accepted) => accepted, "Please accept the Terms of Service and Privacy Policy"),
 });
 
 type WhitelistFormValues = z.infer<typeof whitelistSchema>;
@@ -27,9 +39,11 @@ function showError(description: string) {
 
 export function WhitelistForm() {
   const emailId = useId();
+  const termsId = useId();
   const errorId = useId();
   const { waitlist, fetchStatus } = useWaitlist();
   const {
+    control,
     register,
     handleSubmit,
     setError,
@@ -38,7 +52,7 @@ export function WhitelistForm() {
     formState: { errors, isSubmitting, isSubmitSuccessful },
   } = useForm<WhitelistFormValues>({
     resolver: zodResolver(whitelistSchema),
-    defaultValues: { emailAddress: "" },
+    defaultValues: { emailAddress: "", acceptedTerms: false },
   });
 
   useEffect(() => {
@@ -46,6 +60,7 @@ export function WhitelistForm() {
   }, [isSubmitSuccessful, reset]);
 
   const fieldError = errors.emailAddress;
+  const termsError = errors.acceptedTerms;
   const isLoading = isSubmitting || fetchStatus === "fetching";
 
   const onSubmit = async ({ emailAddress }: WhitelistFormValues) => {
@@ -134,6 +149,61 @@ export function WhitelistForm() {
           )}
         </FieldError>
       </div>
+
+      <Field className="mt-3 text-left" data-invalid={termsError ? true : undefined}>
+        <Controller
+          control={control}
+          name="acceptedTerms"
+          render={({ field }) => (
+            <div className="flex items-start gap-2">
+              <Checkbox
+                aria-invalid={!!termsError}
+                checked={field.value}
+                disabled={isLoading}
+                id={termsId}
+                inputRef={field.ref}
+                name={field.name}
+                onBlur={field.onBlur}
+                // Base UI passes `(checked, eventDetails)`; forward only the value.
+                onCheckedChange={(checked) => field.onChange(checked)}
+                // Nudged down so the box aligns with the first line of a label
+                // that wraps to two lines on narrow viewports.
+                className="mt-0.5"
+              />
+              <label
+                className="text-left font-normal text-muted-foreground text-xs leading-relaxed"
+                htmlFor={termsId}
+              >
+                I agree to the{" "}
+                <Link
+                  className="font-medium text-foreground underline underline-offset-2"
+                  href="/legal/terms-of-service"
+                >
+                  Terms of Service
+                </Link>{" "}
+                and the{" "}
+                <Link
+                  className="font-medium text-foreground underline underline-offset-2"
+                  href="/legal/privacy-policy"
+                >
+                  Privacy Policy
+                </Link>
+                , and to {siteConfig.name} storing my email address so it can contact me about early
+                access.
+              </label>
+            </div>
+          )}
+        />
+
+        <div aria-live="polite">
+          {termsError && (
+            <FieldError className="flex items-center gap-1 text-xs">
+              <AlertCircleIcon className="size-3.5 shrink-0" />
+              {termsError.message}
+            </FieldError>
+          )}
+        </div>
+      </Field>
     </form>
   );
 }
