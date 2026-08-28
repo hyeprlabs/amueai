@@ -12,6 +12,18 @@ export type LinkItemType = {
   isComingSoon?: boolean;
 };
 
+/** Tiny marker for nav entries whose page isn't live yet. */
+export function ComingSoonBadge({ className }: { className?: string }) {
+  return (
+    <Badge
+      className={cn("h-4 rounded-md px-1 py-0 font-normal text-[10px] leading-none", className)}
+      variant="outline"
+    >
+      Soon
+    </Badge>
+  );
+}
+
 export function LinkItem({
   label,
   description,
@@ -33,7 +45,7 @@ export function LinkItem({
         <div className="flex flex-col items-start justify-center">
           <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
             {label}
-            <Badge variant="outline">Soon</Badge>
+            <ComingSoonBadge />
           </span>
           <span className="line-clamp-2 text-muted-foreground text-xs">{description}</span>
         </div>

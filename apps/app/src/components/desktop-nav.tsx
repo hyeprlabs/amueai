@@ -7,8 +7,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { companyLinks, companyLinks2, featureLinks } from "@/components/nav-links";
-import { LinkItem } from "@/components/sheard";
-import { Badge } from "@/components/ui/badge";
+import { ComingSoonBadge, LinkItem } from "@/components/sheard";
 
 export function DesktopNav() {
   return (
@@ -61,7 +60,7 @@ export function DesktopNav() {
                     >
                       {item.icon}
                       {item.label}
-                      <Badge variant="outline">Soon</Badge>
+                      <ComingSoonBadge />
                     </div>
                   ) : (
                     <NavigationMenuLink href={item.href} key={`item-${item.label}-${i}`}>

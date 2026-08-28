@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
-import { TargetIcon, HeartHandshakeIcon, RocketIcon, ShieldCheckIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 
-import { FeatureCard } from "@/components/feature-section-1";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FullWidthDivider } from "@/components/full-width-divider";
 import { siteConfig } from "@/config/site";
 import {
   breadcrumbItems,
@@ -20,30 +21,34 @@ const pathname = "/about";
 
 export const metadata: Metadata = createMetadata({ title, description, pathname });
 
-const values = [
+const principles = [
   {
-    title: "Answers you can trust",
-    icon: <TargetIcon />,
+    title: "Grounded, not guessing",
     description:
-      "Our agents only ever answer from the content you give them — no guessing, no made-up answers.",
+      "An agent that invents an answer is worse than no agent at all. Ours answer from your content or admit they don't know.",
   },
   {
-    title: "Built for support teams",
-    icon: <HeartHandshakeIcon />,
+    title: "Minutes, not quarters",
     description:
-      "We design every feature around the people who actually field customer questions all day.",
+      "Adding a source and going live should take an afternoon. Every decision we make is measured against that.",
   },
   {
-    title: "Ship fast, iterate often",
-    icon: <RocketIcon />,
-    description: "A new agent should go from idea to live on your site in minutes, not weeks.",
-  },
-  {
-    title: "Privacy by default",
-    icon: <ShieldCheckIcon />,
+    title: "Built for the people on the front line",
     description:
-      "Your data trains your agent and nothing else. It's never used to train shared models.",
+      "We design for the person answering the same question for the hundredth time, not for the org chart above them.",
   },
+  {
+    title: "Your data stays yours",
+    description:
+      "Your content trains your agent and nothing else. It is never folded into a shared model.",
+  },
+];
+
+const facts = [
+  { label: "Built by", value: siteConfig.publisher },
+  { label: "Founded", value: "2025" },
+  { label: "Where", value: "Remote" },
+  { label: "Focus", value: "Support automation" },
 ];
 
 export default function AboutPage() {
@@ -63,46 +68,98 @@ export default function AboutPage() {
         scriptKey="breadcrumb"
       />
 
-      <article className="my-12 lg:my-24">
-        <div className="border-t p-4">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            About {siteConfig.name}
-          </h1>
-          <p className="mt-4 max-w-2xl text-balance text-muted-foreground text-sm md:text-base">
-            {siteConfig.name} helps businesses turn their existing content — docs, websites, and
-            files — into a custom AI agent that answers questions, captures leads, and supports
-            customers around the clock.
-          </p>
-        </div>
+      {/* Hero */}
+      <section className="px-4 py-16 lg:py-24">
+        <Badge variant="outline">About</Badge>
+        <h1 className="mt-5 max-w-2xl text-balance font-medium text-3xl md:text-5xl">
+          We think your best support agent is already written down.
+        </h1>
+        <p className="mt-6 max-w-xl text-balance text-muted-foreground text-sm sm:text-lg">
+          {siteConfig.name} turns the content you already have — help articles, policies, product
+          docs — into an agent that answers your customers the moment they ask.
+        </p>
+      </section>
 
-        <div className="border-y p-4">
-          <h2 className="font-medium text-lg">Our mission</h2>
-          <p className="mt-2 max-w-2xl text-muted-foreground text-sm md:text-base">
-            Most support questions have already been answered somewhere — in a help center article,
-            a policy page, a spec sheet. We built {siteConfig.name} so that knowledge doesn't have
-            to sit unused. Point an agent at your content, and it becomes a teammate that never
-            sleeps, never forgets, and never makes something up.
-          </p>
+      {/* Mission */}
+      <section className="relative px-4 py-16 lg:py-24">
+        <FullWidthDivider className="-top-px" />
+        <div className="grid gap-10 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-16">
+          <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
+            Our mission
+          </h2>
+          <div className="max-w-xl space-y-6 text-muted-foreground text-sm sm:text-base">
+            <p>
+              Most support questions have already been answered somewhere — in a help center
+              article, a shipping policy, a spec sheet. That knowledge just sits there, waiting for
+              someone to find it, while a person retypes the same reply for the hundredth time.
+            </p>
+            <p className="text-foreground">
+              We built {siteConfig.name} so that knowledge answers for itself.
+            </p>
+            <p>
+              Point an agent at your content and it becomes a teammate that never sleeps, never
+              forgets, and never makes something up. When it doesn't know, it says so — and hands
+              the conversation to someone who does.
+            </p>
+          </div>
         </div>
+      </section>
 
-        <div className="overflow-hidden border-b">
-          <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2">
-            {values.map((value) => (
-              <FeatureCard feature={value} key={value.title} />
+      {/* Principles */}
+      <section className="relative px-4 py-16 lg:py-24">
+        <FullWidthDivider className="-top-px" />
+        <div className="grid gap-10 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-16">
+          <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
+            What we believe
+          </h2>
+          <dl className="max-w-xl space-y-8">
+            {principles.map((principle) => (
+              <div key={principle.title}>
+                <dt className="font-medium text-base">{principle.title}</dt>
+                <dd className="mt-2 text-muted-foreground text-sm sm:text-base">
+                  {principle.description}
+                </dd>
+              </div>
             ))}
-          </div>
+          </dl>
         </div>
+      </section>
 
-        <div className="flex flex-col items-start gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-medium text-lg">Want to get in touch?</h2>
-            <p className="mt-1 text-muted-foreground text-sm">We'd love to hear from you.</p>
-          </div>
+      {/* Facts */}
+      <section className="relative px-4 py-16 lg:py-24">
+        <FullWidthDivider className="-top-px" />
+        <div className="grid gap-10 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-16">
+          <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
+            The company
+          </h2>
+          <dl className="grid max-w-xl grid-cols-2 gap-8 sm:grid-cols-4">
+            {facts.map((fact) => (
+              <div key={fact.label}>
+                <dt className="text-muted-foreground text-xs">{fact.label}</dt>
+                <dd className="mt-1 font-medium text-sm">{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* Closing */}
+      <section className="relative flex flex-col items-start gap-4 px-4 py-16 sm:flex-row sm:items-center sm:justify-between lg:py-24">
+        <FullWidthDivider className="-top-px" />
+        <div>
+          <h2 className="text-balance font-medium text-xl md:text-2xl">Want to talk it through?</h2>
+          <p className="mt-2 text-muted-foreground text-sm">We read every message that comes in.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <Button nativeButton={false} render={<Link href="/contact" />}>
             Contact us
+            <ArrowRightIcon data-icon="inline-end" />
+          </Button>
+          <Button nativeButton={false} render={<Link href="/features/agent" />} variant="outline">
+            See how it works
           </Button>
         </div>
-      </article>
+      </section>
     </>
   );
 }
