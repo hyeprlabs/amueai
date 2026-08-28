@@ -45,7 +45,7 @@ export function ChannelsFeatures() {
         title="One agent, every channel"
       />
 
-      <div className="relative bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.04),transparent)] dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
+      <div className="relative dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
         <FullWidthDivider className="-top-px" />
         <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
           {channels.map((channel) => (

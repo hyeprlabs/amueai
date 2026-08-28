@@ -15,7 +15,7 @@ const columnsForCount: Record<number, string> = {
 /** The framed stat row directly under a feature page's hero. */
 export function StatStrip({ stats }: { stats: { value: string; label: string }[] }) {
   return (
-    <div className="relative mb-12 lg:mb-24 bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.04),transparent)] dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
+    <div className="relative mb-12 lg:mb-24 dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
       <FullWidthDivider className="-top-px" />
       <dl className={cn("grid grid-cols-2 gap-px bg-border", columnsForCount[stats.length])}>
         {stats.map((stat) => (
