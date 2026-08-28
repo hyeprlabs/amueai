@@ -25,12 +25,22 @@ function groupByProvider(models: GatewayChatModel[]) {
   return groups;
 }
 
+/**
+ * Fully controlled - wired up to react-hook-form by ModelField
+ * (model-field.tsx), not a native <select>. Base UI's Select passes the
+ * raw value straight to onValueChange (no event object), which is exactly
+ * the shape field.onChange expects.
+ */
 export function ModelSelect({
   models,
-  defaultValue,
+  value,
+  onValueChange,
+  onBlur,
 }: {
   models: GatewayChatModel[];
-  defaultValue: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  onBlur?: () => void;
 }) {
   const groups = groupByProvider(models);
   // Lets <SelectValue> show the model's display name in the trigger
@@ -38,7 +48,17 @@ export function ModelSelect({
   const items = Object.fromEntries(models.map((model) => [model.id, model.name]));
 
   return (
-    <Select name="model" defaultValue={defaultValue} items={items}>
+    <Select
+      value={value}
+      // The Select wrapper's Root.Props<unknown> erases the item type, so
+      // the callback must accept unknown at this boundary - every item's
+      // value is one of this component's own string model ids either way.
+      onValueChange={(next: unknown) => onValueChange(next as string)}
+      onOpenChange={(open) => {
+        if (!open) onBlur?.();
+      }}
+      items={items}
+    >
       <SelectTrigger id="model" className="w-full">
         <SelectValue placeholder="Select a model" />
       </SelectTrigger>

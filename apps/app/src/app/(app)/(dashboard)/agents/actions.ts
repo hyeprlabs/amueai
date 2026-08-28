@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getGatewayChatModels } from "@/lib/gateway-models";
+import { agentSettingsSchema } from "./[id]/agent-settings-schema";
 
 const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -30,31 +31,27 @@ export async function createAgent(formData: FormData) {
   redirect(`/agents/${data.id}`);
 }
 
-const updateAgentSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
-  system_prompt: z.string().trim().min(1, "System prompt is required").max(4000),
-  model: z.string().trim().min(1),
-  temperature: z.coerce.number().min(0).max(2),
-});
-
-export async function updateAgent(agentId: string, formData: FormData) {
+/**
+ * Called directly (not via a <form action>) from the client RHF form in
+ * agent-settings-form.tsx, which already validated `input` against the
+ * same agentSettingsSchema - re-validating here isn't for a better client
+ * error, it's because this is the actual trust boundary: a Server Action
+ * is a public RPC endpoint, and the shape/model-id checks below still
+ * matter even though a real client always sends valid data.
+ */
+export async function updateAgent(agentId: string, input: unknown) {
   const { orgId } = await auth();
   if (!orgId) throw new Error("No active organization");
 
-  const values = updateAgentSchema.parse({
-    name: formData.get("name"),
-    system_prompt: formData.get("system_prompt"),
-    model: formData.get("model"),
-    temperature: formData.get("temperature"),
-  });
+  const values = agentSettingsSchema.parse(input);
 
   const supabase = await createServerSupabaseClient();
 
   // The dashboard only ever renders the Gateway's own model list (plus the
   // agent's current model, in case it's since been deprecated there) as
-  // <select> options, but a form POST can be forged with any string - only
-  // trust a submitted model id that's either live in the Gateway catalog or
-  // already this agent's stored model.
+  // <select> options, but this action can still be called directly with
+  // any string - only trust a submitted model id that's either live in
+  // the Gateway catalog or already this agent's stored model.
   const { data: current } = await supabase
     .from("agents")
     .select("model")
@@ -71,7 +68,9 @@ export async function updateAgent(agentId: string, formData: FormData) {
 
   if (error) throw new Error(`Failed to update agent: ${error.message}`);
 
-  redirect(`/agents/${agentId}`);
+  // Returned (not redirected) - the form stays mounted and rebases its own
+  // baseline with resetDefaultValues once this resolves.
+  return values;
 }
 
 export async function deleteAgent(agentId: string) {

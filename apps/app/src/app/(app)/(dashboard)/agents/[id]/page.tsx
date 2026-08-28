@@ -17,15 +17,10 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { updateAgent } from "../actions";
 import { AddSourceDialog } from "./add-source-form";
+import { AgentSettingsForm } from "./agent-settings-form";
 import { DeleteAgentButton } from "./delete-agent-button";
-import { ModelSelect } from "./model-select";
-import { SaveButton } from "./save-button";
 import { SourcesList } from "./sources-list";
 import { TestChat } from "./test-chat";
 
@@ -61,8 +56,6 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
     .select("id, label, type, status, error_message, created_at")
     .eq("agent_id", id)
     .order("created_at", { ascending: false });
-
-  const updateAgentWithId = updateAgent.bind(null, agent.id);
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
@@ -138,65 +131,16 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
               <CardDescription>Base instructions, model, and temperature.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form action={updateAgentWithId}>
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="name">Name</FieldLabel>
-                    <Input
-                      id="name"
-                      name="name"
-                      defaultValue={agent.name}
-                      required
-                      maxLength={200}
-                    />
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="system_prompt">System instructions</FieldLabel>
-                    <Textarea
-                      id="system_prompt"
-                      name="system_prompt"
-                      defaultValue={agent.system_prompt}
-                      required
-                      rows={6}
-                      maxLength={4000}
-                    />
-                    <FieldDescription>
-                      Tell it who it is and what it should refuse to answer.
-                    </FieldDescription>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="model">Model</FieldLabel>
-                    <ModelSelect models={models} defaultValue={agent.model} />
-                    <FieldDescription>
-                      Any chat model currently available through the Vercel AI Gateway.
-                    </FieldDescription>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="temperature">Temperature</FieldLabel>
-                    <Input
-                      id="temperature"
-                      name="temperature"
-                      type="number"
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      defaultValue={agent.temperature}
-                      required
-                      className="max-w-24"
-                    />
-                    <FieldDescription>
-                      Lower is more focused and repeatable, higher is more varied.
-                    </FieldDescription>
-                  </Field>
-                </FieldGroup>
-
-                <div className="mt-6">
-                  <SaveButton />
-                </div>
-              </form>
+              <AgentSettingsForm
+                agentId={agent.id}
+                defaultValues={{
+                  name: agent.name,
+                  system_prompt: agent.system_prompt,
+                  model: agent.model,
+                  temperature: agent.temperature,
+                }}
+                models={models}
+              />
             </CardContent>
           </Card>
 
