@@ -24,7 +24,7 @@ export function AgentFeatures() {
         title="How your agent works"
       />
 
-      <div className="relative dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
+      <div className="relative">
         <FullWidthDivider className="-top-px" />
         <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-6">
           <FeatureGridCard

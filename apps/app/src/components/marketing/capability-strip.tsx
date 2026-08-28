@@ -19,7 +19,7 @@ export function CapabilityStrip({
     <section className="mb-12 lg:mb-24">
       <SectionHeading description={description} title={title} />
 
-      <div className="relative dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
+      <div className="relative">
         <FullWidthDivider className="-top-px" />
         <ul className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item) => (

@@ -74,7 +74,7 @@ export default function AboutPage() {
       />
 
       {/* Facts */}
-      <div className="relative mb-12 lg:mb-24 dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
+      <div className="relative mb-12 lg:mb-24">
         <FullWidthDivider className="-top-px" />
         <dl className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
           {facts.map((fact) => (
@@ -90,7 +90,7 @@ export default function AboutPage() {
       {/* Mission */}
       <section className="mb-12 lg:mb-24">
         <SectionHeading title="Our mission" />
-        <div className="relative dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
+        <div className="relative">
           <FullWidthDivider className="-top-px" />
           <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-3">
             <p className="bg-background p-6 font-light text-muted-foreground text-sm md:p-8">
@@ -112,7 +112,7 @@ export default function AboutPage() {
       {/* Principles */}
       <section className="mb-12 lg:mb-24">
         <SectionHeading title="What we believe" />
-        <div className="relative dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
+        <div className="relative">
           <FullWidthDivider className="-top-px" />
           <dl className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
             {principles.map((principle) => (
