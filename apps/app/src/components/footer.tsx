@@ -47,9 +47,9 @@ export function Footer() {
           <span className="text-muted-foreground text-xs">Resources</span>
           <div className="mt-2 flex flex-col gap-2">
             {resources.map(({ href, title }) => (
-              <a className="w-max text-sm hover:underline" href={href} key={title}>
+              <Link className="w-max text-sm hover:underline" href={href} key={title}>
                 {title}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -57,9 +57,9 @@ export function Footer() {
           <span className="text-muted-foreground text-xs">Company</span>
           <div className="mt-2 flex flex-col gap-2">
             {company.map(({ href, title }) => (
-              <a className="w-max text-sm hover:underline" href={href} key={title}>
+              <Link className="w-max text-sm hover:underline" href={href} key={title}>
                 {title}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -74,41 +74,38 @@ export function Footer() {
   );
 }
 
+// Only pages that actually exist today — sorted alphabetically within each column.
 const company = [
   {
     title: "About Us",
-    href: "#",
+    href: "/about",
   },
   {
-    title: "Careers",
-    href: "#",
+    title: "Contact",
+    href: "/contact",
   },
   {
-    title: "Brand assets",
-    href: "#",
+    title: "Pricing",
+    href: "/pricing",
   },
 ];
 
 const resources = [
   {
+    title: "Agent",
+    href: "/features/agent",
+  },
+  {
     title: "Blog",
-    href: "#",
+    href: "/blog",
   },
   {
-    title: "Help Center",
-    href: "#",
+    title: "Changelog",
+    href: "/changelog",
   },
   {
-    title: "Contact Support",
-    href: "#",
-  },
-  {
-    title: "Community",
-    href: "#",
-  },
-  {
-    title: "Security",
-    href: "#",
+    title: "Competitors",
+    href: "/competitors",
   },
 ];
 

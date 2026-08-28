@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { companyLinks, companyLinks2, featureLinks } from "@/components/nav-links";
 import { LinkItem } from "@/components/sheard";
+import { Badge } from "@/components/ui/badge";
 
 export function DesktopNav() {
   return (
@@ -29,9 +30,9 @@ export function DesktopNav() {
             <div className="p-2">
               <p className="text-muted-foreground text-sm">
                 Interested?{" "}
-                <a className="font-medium text-foreground hover:underline" href="/demo">
-                  Schedule a demo
-                </a>
+                <span aria-disabled="true" className="cursor-not-allowed font-medium opacity-50">
+                  Schedule a demo (soon)
+                </span>
               </p>
             </div>
           </NavigationMenuContent>
@@ -51,12 +52,24 @@ export function DesktopNav() {
                 ))}
               </div>
               <div className="space-y-2 p-3">
-                {companyLinks2.map((item, i) => (
-                  <NavigationMenuLink href={item.href} key={`item-${item.label}-${i}`}>
-                    {item.icon}
-                    {item.label}
-                  </NavigationMenuLink>
-                ))}
+                {companyLinks2.map((item, i) =>
+                  item.isComingSoon ? (
+                    <div
+                      aria-disabled="true"
+                      className="flex cursor-not-allowed items-center gap-2 text-muted-foreground opacity-50"
+                      key={`item-${item.label}-${i}`}
+                    >
+                      {item.icon}
+                      {item.label}
+                      <Badge variant="outline">Soon</Badge>
+                    </div>
+                  ) : (
+                    <NavigationMenuLink href={item.href} key={`item-${item.label}-${i}`}>
+                      {item.icon}
+                      {item.label}
+                    </NavigationMenuLink>
+                  ),
+                )}
               </div>
             </div>
           </NavigationMenuContent>
