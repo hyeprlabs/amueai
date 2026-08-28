@@ -6,7 +6,9 @@ import { FileTextIcon, SparklesIcon } from "lucide-react";
 import { accents } from "@/components/agent/accent";
 import { cn } from "@/lib/utils";
 
-/** One full replay: question, agent thinking, cited answer, hold, restart. */
+const accent = accents.blue;
+
+/** One full replay: question, retrieval, cited answer, hold, restart. */
 const LOOP = 6;
 const at = (seconds: number) => seconds / LOOP;
 
@@ -38,13 +40,13 @@ export function GroundedChat() {
         Do you ship to Germany?
       </motion.p>
 
-      {/* Retrieval step: the agent is reading a source, and says which one. */}
+      {/* Retrieval step: the agent names the source it is reading. */}
       <motion.span
         className={cn(
           "flex w-max items-center gap-1.5 rounded-md border px-1.5 py-1 font-mono text-[10px]",
-          accents.blue.tint,
-          accents.blue.border,
-          accents.blue.text,
+          accent.tint,
+          accent.border,
+          accent.text,
         )}
         initial={false}
         {...step(1.1)}
@@ -56,7 +58,7 @@ export function GroundedChat() {
             {[0, 1, 2].map((dot) => (
               <motion.span
                 animate={{ opacity: [0.25, 1, 0.25] }}
-                className={cn("block size-1 rounded-full", accents.blue.fill)}
+                className={cn("block size-1 rounded-full", accent.fill)}
                 key={dot}
                 transition={{
                   duration: 0.9,
@@ -75,9 +77,9 @@ export function GroundedChat() {
         <span
           className={cn(
             "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border",
-            accents.violet.tint,
-            accents.violet.border,
-            accents.violet.text,
+            accent.tint,
+            accent.border,
+            accent.text,
           )}
         >
           <SparklesIcon className="size-3" />

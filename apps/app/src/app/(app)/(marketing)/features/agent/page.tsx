@@ -62,7 +62,6 @@ export default function AgentFeaturePage() {
       />
 
       <PageHero
-        badge="Agent"
         description="Add your content. Get an agent that answers from it, and nothing else."
         title="An AI agent that only knows your business"
       >

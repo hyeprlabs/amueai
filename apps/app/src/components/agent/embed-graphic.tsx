@@ -6,9 +6,12 @@ import { MessageCircleIcon } from "lucide-react";
 import { accents } from "@/components/agent/accent";
 import { cn } from "@/lib/utils";
 
+const accent = accents.violet;
+
 /**
- * The snippet, syntax-coloured, and the launcher it drops onto the page. A
- * caret runs along the code as if it were being pasted, then the bubble pops in.
+ * The snippet, and the launcher it drops onto the page, both in one accent
+ * colour. A sweep runs across the code as if it were being pasted, then the
+ * bubble pops in and rings.
  */
 export function EmbedGraphic() {
   const reduced = useReducedMotion();
@@ -18,10 +21,9 @@ export function EmbedGraphic() {
       <div className="relative w-full overflow-hidden rounded-lg border bg-card px-2.5 py-2 shadow-xs">
         <pre className="whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed">
           <code>
-            <span className={accents.violet.text}>&lt;script</span>{" "}
-            <span className={accents.blue.text}>src</span>=
-            <span className={accents.emerald.text}>&quot;…/widget.js&quot;</span>
-            <span className={accents.violet.text}>&gt;&lt;/script&gt;</span>
+            <span className="text-muted-foreground">&lt;script src=</span>
+            <span className={accent.text}>&quot;…/widget.js&quot;</span>
+            <span className="text-muted-foreground">&gt;&lt;/script&gt;</span>
           </code>
         </pre>
 
@@ -41,7 +43,7 @@ export function EmbedGraphic() {
         {!reduced && (
           <motion.span
             animate={{ scale: [0.8, 1.6], opacity: [0.5, 0] }}
-            className="absolute inset-0 rounded-full border border-blue-500/50"
+            className={cn("absolute inset-0 rounded-full border", accent.border)}
             transition={{
               duration: 2,
               repeat: Number.POSITIVE_INFINITY,
@@ -54,7 +56,7 @@ export function EmbedGraphic() {
           animate={reduced ? undefined : { scale: [0.85, 1, 1, 1] }}
           className={cn(
             "flex size-11 items-center justify-center rounded-full text-white shadow-lg",
-            accents.blue.fill,
+            accent.fill,
           )}
           transition={
             reduced

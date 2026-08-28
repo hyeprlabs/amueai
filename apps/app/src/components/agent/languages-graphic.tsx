@@ -2,17 +2,18 @@
 
 import { motion, useReducedMotion } from "motion/react";
 
-import { accents, type AccentName } from "@/components/agent/accent";
+import { accents } from "@/components/agent/accent";
 import { cn } from "@/lib/utils";
 
 /** The same question, cycling through languages in place. */
-const phrasings: { text: string; accent: AccentName }[] = [
-  { text: "Do you ship to Germany?", accent: "blue" },
-  { text: "Liefert ihr nach Deutschland?", accent: "amber" },
-  { text: "¿Envían a Alemania?", accent: "rose" },
-  { text: "Vous livrez en Allemagne ?", accent: "emerald" },
+const phrasings = [
+  "Do you ship to Germany?",
+  "Liefert ihr nach Deutschland?",
+  "¿Envían a Alemania?",
+  "Vous livrez en Allemagne ?",
 ];
 
+const accent = accents.amber;
 const LOOP = phrasings.length * 1.8;
 
 export function LanguagesGraphic() {
@@ -23,7 +24,6 @@ export function LanguagesGraphic() {
       {/* Each phrasing occupies the same cell, so they swap rather than stack. */}
       <div className="grid w-full place-items-center">
         {phrasings.map((phrasing, index) => {
-          const accent = accents[phrasing.accent];
           const start = index / phrasings.length;
 
           return (
@@ -40,7 +40,7 @@ export function LanguagesGraphic() {
                 accent.text,
               )}
               initial={false}
-              key={phrasing.text}
+              key={phrasing}
               transition={
                 reduced
                   ? { duration: 0 }
@@ -52,7 +52,7 @@ export function LanguagesGraphic() {
                     }
               }
             >
-              {phrasing.text}
+              {phrasing}
             </motion.span>
           );
         })}

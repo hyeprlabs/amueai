@@ -94,7 +94,6 @@ export default function ContactPage() {
       />
 
       <PageHero
-        badge="Contact"
         description="Questions about the product, a bug you've hit, or a rollout you're planning. Send it over and someone on the team will get back to you."
         title={`Talk to the people building ${siteConfig.name}`}
       />

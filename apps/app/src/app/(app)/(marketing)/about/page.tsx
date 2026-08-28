@@ -70,7 +70,6 @@ export default function AboutPage() {
       />
 
       <PageHero
-        badge="About"
         description={`${siteConfig.name} turns the content you already have into an agent that answers your customers the moment they ask.`}
         title="Your best support agent is already written down"
       />
