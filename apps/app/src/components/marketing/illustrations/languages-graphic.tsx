@@ -18,12 +18,6 @@ const phrasings = [
 const accent = accents.amber;
 const HOLD_MS = 2200;
 
-/**
- * Cycles through the same question in four languages via a stepped index and
- * `AnimatePresence`, so exactly one phrase is ever mounted, never a
- * fraction-of-a-loop gap between them. The flag is the actual point: a visitor
- * recognises their own language's flag faster than they read the words.
- */
 export function LanguagesGraphic() {
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);

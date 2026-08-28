@@ -8,11 +8,6 @@ import { cn } from "@/lib/utils";
 
 const accent = accents.violet;
 
-/**
- * The snippet, and the launcher it drops onto the page, both in one accent
- * colour. A sweep runs across the code as if it were being pasted, then the
- * bubble pops in and rings.
- */
 export function EmbedGraphic() {
   const reduced = useReducedMotion();
 
@@ -27,7 +22,6 @@ export function EmbedGraphic() {
           </code>
         </pre>
 
-        {/* Sweep, reading as the snippet being pasted in. */}
         {!reduced && (
           <motion.span
             animate={{ x: ["-30%", "130%"] }}

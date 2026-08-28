@@ -9,12 +9,6 @@ import { cn } from "@/lib/utils";
 
 const accent = accents.blue;
 
-/**
- * Phases of one replay. Driven by a `setInterval`-stepped index rather than a
- * single shared Motion timeline: each phase mounts and unmounts through
- * `AnimatePresence`, so what's on screen is exactly what React last rendered,
- * with no keyframe-fraction arithmetic that can silently leave a gap.
- */
 const phases = ["question", "retrieving", "answered"] as const;
 type Phase = (typeof phases)[number];
 

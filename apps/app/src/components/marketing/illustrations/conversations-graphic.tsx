@@ -5,7 +5,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { accents } from "./accent";
 import { cn } from "@/lib/utils";
 
-/** Answered vs unanswered, per day. The gap is the point: it shrinks. */
 const days = [
   { answered: 0.45, gap: 0.3 },
   { answered: 0.6, gap: 0.24 },
@@ -21,19 +20,6 @@ export function ConversationsGraphic() {
 
   return (
     <div className="flex w-full max-w-[15rem] flex-col gap-3 sm:max-w-[17rem]">
-      {/*
-        Columns stretch to the track's full height (no `items-end`), so the
-        percentage bar heights below have something to resolve against;
-        `justify-end` is what seats the bars on the baseline.
-      */}
-      {/*
-        Columns stretch to the track's full height (no `items-end`), so the
-        percentage bar heights below have something to resolve against.
-
-        The whole column is what animates, not each segment: `scaleY` moves
-        paint but not layout, so scaling the two bars independently would let
-        the stacked pair drift apart mid-grow.
-      */}
       <div className="flex h-24 gap-1.5">
         {days.map((day, index) => (
           <motion.div
