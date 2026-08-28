@@ -4,7 +4,6 @@ import { BriefcaseIcon, LifeBuoyIcon, MailIcon, ScaleIcon, ShieldCheckIcon } fro
 
 import { ContactForm } from "@/components/contact-form";
 import { CallToAction } from "@/components/cta";
-import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
@@ -98,12 +97,7 @@ export default function ContactPage() {
         title={`Talk to the people building ${siteConfig.name}`}
       />
 
-      <div className="relative mb-12 lg:mb-24">
-        <DecorIcon className="size-4" position="top-left" />
-        <DecorIcon className="size-4" position="top-right" />
-        <DecorIcon className="size-4" position="bottom-left" />
-        <DecorIcon className="size-4" position="bottom-right" />
-
+      <div className="relative mb-12 lg:mb-24 bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.04),transparent)] dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
         <FullWidthDivider className="-top-px" />
         <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-2">
           <section className="bg-background p-6 md:p-8">

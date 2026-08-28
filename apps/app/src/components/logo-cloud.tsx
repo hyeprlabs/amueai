@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { DecorIcon } from "@/components/decor-icon";
 
 type Logo = {
   src: string;
@@ -10,14 +9,12 @@ export function LogoCloud() {
   return (
     <div className="grid grid-cols-2 border md:grid-cols-4">
       <LogoCard
-        className="relative border-r border-b bg-secondary dark:bg-secondary/30"
+        className="border-r border-b bg-secondary dark:bg-secondary/30"
         logo={{
           src: "https://storage.efferd.com/logo/nvidia-wordmark.svg",
           alt: "Nvidia Logo",
         }}
-      >
-        <DecorIcon className="z-10" position="bottom-right" />
-      </LogoCard>
+      />
 
       <LogoCard
         className="border-b md:border-r"
@@ -28,15 +25,12 @@ export function LogoCloud() {
       />
 
       <LogoCard
-        className="relative border-r border-b md:bg-secondary dark:md:bg-secondary/30"
+        className="border-r border-b md:bg-secondary dark:md:bg-secondary/30"
         logo={{
           src: "https://storage.efferd.com/logo/github-wordmark.svg",
           alt: "GitHub Logo",
         }}
-      >
-        <DecorIcon className="z-10" position="bottom-right" />
-        <DecorIcon className="z-10 hidden md:block" position="bottom-left" />
-      </LogoCard>
+      />
 
       <LogoCard
         className="relative border-b bg-secondary md:bg-background dark:bg-secondary/30 md:dark:bg-background"
@@ -47,14 +41,12 @@ export function LogoCloud() {
       />
 
       <LogoCard
-        className="relative border-r border-b bg-secondary md:border-b-0 md:bg-background dark:bg-secondary/30 md:dark:bg-background"
+        className="border-r border-b bg-secondary md:border-b-0 md:bg-background dark:bg-secondary/30 md:dark:bg-background"
         logo={{
           src: "https://storage.efferd.com/logo/turso-wordmark.svg",
           alt: "Turso Logo",
         }}
-      >
-        <DecorIcon className="z-10 md:hidden" position="bottom-right" />
-      </LogoCard>
+      />
 
       <LogoCard
         className="border-b bg-background md:border-r md:border-b-0 md:bg-secondary dark:md:bg-secondary/30"

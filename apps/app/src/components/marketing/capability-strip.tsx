@@ -1,4 +1,3 @@
-import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
 import { SectionHeading } from "@/components/marketing/page-hero";
 
@@ -20,12 +19,7 @@ export function CapabilityStrip({
     <section className="mb-12 lg:mb-24">
       <SectionHeading description={description} title={title} />
 
-      <div className="relative">
-        <DecorIcon className="size-4" position="top-left" />
-        <DecorIcon className="size-4" position="top-right" />
-        <DecorIcon className="size-4" position="bottom-left" />
-        <DecorIcon className="size-4" position="bottom-right" />
-
+      <div className="relative bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.04),transparent)] dark:bg-[radial-gradient(35%_80%_at_25%_0%,--theme(--color-foreground/.08),transparent)]">
         <FullWidthDivider className="-top-px" />
         <ul className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item) => (
