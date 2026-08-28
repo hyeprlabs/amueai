@@ -142,17 +142,16 @@ beforeEach(() => {
 });
 
 describe("runIngestion", () => {
-  it("embeds and stores chunks for a text source, then marks it ready", async () => {
+  it("scrapes with Firecrawl, chunks the markdown, embeds, and stores chunks, then marks ready", async () => {
     const supabase = makeFakeSupabase([
       {
         id: "src-1",
         org_id: "org-1",
-        type: "text",
-        raw_content: "First paragraph.\n\nSecond paragraph.",
-        storage_path: null,
+        raw_content: "https://example.com/docs",
         status: "queued",
       },
     ]);
+    scrapeMock.mockResolvedValue({ markdown: "First paragraph.\n\nSecond paragraph." });
     embedManyMock.mockResolvedValue({
       embeddings: [
         [0.1, 0.2],
@@ -162,6 +161,10 @@ describe("runIngestion", () => {
 
     await runIngestion(supabase as any, "src-1");
 
+    expect(scrapeMock).toHaveBeenCalledWith(
+      "https://example.com/docs",
+      expect.objectContaining({ formats: ["markdown"], onlyMainContent: true }),
+    );
     expect(embedManyMock).toHaveBeenCalledWith(
       expect.objectContaining({
         model: "openai/text-embedding-3-small",
@@ -182,30 +185,24 @@ describe("runIngestion", () => {
     expect(supabase.tables.chunks.every((c) => typeof c.embedding === "string")).toBe(true);
   });
 
-  it("scrapes with Firecrawl, embeds, and stores chunks for a url source", async () => {
+  it("marks the source failed with an error message when Firecrawl returns no content", async () => {
     const supabase = makeFakeSupabase([
       {
         id: "src-2",
         org_id: "org-1",
-        type: "url",
-        raw_content: "https://example.com/docs",
-        storage_path: null,
+        raw_content: "https://example.com/empty",
         status: "queued",
       },
     ]);
-    scrapeMock.mockResolvedValue({ markdown: "# Docs\n\nSome scraped content." });
-    embedManyMock.mockResolvedValue({ embeddings: [[0.1], [0.2]] });
+    scrapeMock.mockResolvedValue({ markdown: "" });
 
-    await runIngestion(supabase as any, "src-2");
-
-    expect(scrapeMock).toHaveBeenCalledWith(
-      "https://example.com/docs",
-      expect.objectContaining({ formats: ["markdown"], onlyMainContent: true }),
+    await expect(runIngestion(supabase as any, "src-2")).rejects.toThrow(
+      "Firecrawl returned no content",
     );
 
     const source = supabase.tables.sources.find((s) => s.id === "src-2");
-    expect(source?.status).toBe("ready");
-    expect(supabase.tables.chunks).toHaveLength(2);
+    expect(source?.status).toBe("failed");
+    expect(embedManyMock).not.toHaveBeenCalled();
   });
 
   it("marks the source failed with an error message when embedding throws", async () => {
@@ -213,12 +210,11 @@ describe("runIngestion", () => {
       {
         id: "src-3",
         org_id: "org-1",
-        type: "text",
-        raw_content: "Some content.",
-        storage_path: null,
+        raw_content: "https://example.com/page",
         status: "queued",
       },
     ]);
+    scrapeMock.mockResolvedValue({ markdown: "Some content." });
     embedManyMock.mockRejectedValue(new Error("Gateway is down"));
 
     await expect(runIngestion(supabase as any, "src-3")).rejects.toThrow("Gateway is down");
@@ -234,9 +230,7 @@ describe("runIngestion", () => {
       {
         id: "src-4",
         org_id: "org-1",
-        type: "text",
-        raw_content: "New content that will fail to embed.",
-        storage_path: null,
+        raw_content: "https://example.com/page",
         status: "ready",
       },
     ]);
@@ -247,6 +241,7 @@ describe("runIngestion", () => {
       content: "Old content.",
       embedding: "[0.9]",
     });
+    scrapeMock.mockResolvedValue({ markdown: "New content that will fail to embed." });
     embedManyMock.mockRejectedValue(new Error("Gateway is down"));
 
     await expect(runIngestion(supabase as any, "src-4")).rejects.toThrow();
@@ -262,14 +257,13 @@ describe("runIngestion", () => {
       {
         id: "src-5",
         org_id: "org-1",
-        type: "text",
-        raw_content: "Content.",
-        storage_path: null,
+        raw_content: "https://example.com/page",
         status: "processing",
       },
     ]);
 
     await expect(runIngestion(supabase as any, "src-5")).rejects.toThrow("already being processed");
+    expect(scrapeMock).not.toHaveBeenCalled();
     expect(embedManyMock).not.toHaveBeenCalled();
   });
 });

@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getGatewayChatModels } from "@/lib/gateway-models";
-import { agentSettingsSchema } from "./[id]/agent-settings-schema";
+import { agentSettingsSchema } from "./[id]/settings/agent-settings-schema";
 
 const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -28,7 +28,7 @@ export async function createAgent(formData: FormData) {
 
   if (error) throw new Error(`Failed to create agent: ${error.message}`);
 
-  redirect(`/agents/${data.id}`);
+  redirect(`/agents/${data.id}/sources`);
 }
 
 /**

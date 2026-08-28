@@ -2,11 +2,9 @@ import "server-only";
 
 import { embedMany } from "ai";
 import Firecrawl from "@mendable/firecrawl-js";
-import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database, Tables } from "@/types/supabase";
+import type { Database } from "@/types/supabase";
 
 const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const CHUNK_SIZE = 4000;
@@ -19,8 +17,8 @@ let firecrawlClient: Firecrawl | undefined;
 /**
  * Firecrawl fetches the target URL from its own infrastructure, not ours,
  * so it also owns SSRF protection, JS rendering, and anti-bot handling for
- * every URL source - replacing the hand-rolled fetch+cheerio+DNS-pinning
- * crawler that used to live here.
+ * every source - this is the only ingestion path there is (sources are
+ * URL-only for now).
  */
 function getFirecrawlClient(): Firecrawl {
   if (!firecrawlClient) {
@@ -30,8 +28,6 @@ function getFirecrawlClient(): Firecrawl {
   }
   return firecrawlClient;
 }
-
-type Source = Tables<"sources">;
 
 /**
  * Splits raw text into chunks on paragraph boundaries, hard-wrapping any
@@ -64,62 +60,8 @@ export function chunkText(text: string): string[] {
   return chunks;
 }
 
-/** Extracts the raw text to chunk for a source, branching on its type. */
-export async function extractText(
-  supabase: SupabaseClient<Database>,
-  source: Pick<Source, "type" | "raw_content" | "storage_path">,
-): Promise<string> {
-  switch (source.type) {
-    case "text":
-      if (!source.raw_content) throw new Error("Text source has no content");
-      return source.raw_content;
-    case "qa":
-      if (!source.raw_content) throw new Error("Q&A source has no content");
-      return source.raw_content;
-    case "file":
-      if (!source.storage_path) throw new Error("File source has no storage path");
-      return extractFileText(supabase, source.storage_path);
-    case "url":
-      if (!source.raw_content) throw new Error("URL source has no URL");
-      return extractUrlText(source.raw_content);
-    default:
-      throw new Error(`Unknown source type: ${source.type}`);
-  }
-}
-
-async function extractFileText(
-  supabase: SupabaseClient<Database>,
-  storagePath: string,
-): Promise<string> {
-  const { data: blob, error } = await supabase.storage.from("sources").download(storagePath);
-  if (error || !blob) throw new Error(`Failed to download file: ${error?.message}`);
-
-  const buffer = Buffer.from(await blob.arrayBuffer());
-  const extension = storagePath.split(".").pop()?.toLowerCase();
-
-  if (extension === "pdf") {
-    const parser = new PDFParse({ data: buffer });
-    try {
-      const result = await parser.getText();
-      return result.text;
-    } finally {
-      await parser.destroy();
-    }
-  }
-
-  if (extension === "docx") {
-    const result = await mammoth.extractRawText({ buffer });
-    return result.value;
-  }
-
-  if (extension === "txt") {
-    return buffer.toString("utf-8");
-  }
-
-  throw new Error(`Unsupported file extension: ${extension}`);
-}
-
-async function extractUrlText(url: string): Promise<string> {
+/** Scrapes a URL with Firecrawl and returns its main content as markdown. */
+export async function extractUrlText(url: string): Promise<string> {
   const parsed = new URL(url);
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
@@ -155,24 +97,23 @@ export async function embedChunks(chunks: string[]): Promise<number[][]> {
 }
 
 /**
- * Runs the full extract -> chunk -> embed -> store pipeline for one
- * source, flipping its status as it goes. Never leaves a source `ready`
- * on partial success, and never touches prior chunks until the new run
- * fully succeeds (so a failed retrain doesn't blank out a working agent).
- *
- * Takes whatever Supabase client the caller is authorized with: the
- * Clerk-token client for Phase 1-3's inline route, the service-role
- * client for the Trigger.dev task (Phase 10).
+ * Runs the full extract -> chunk -> embed -> store pipeline for one URL
+ * source, flipping its status as it goes. Never leaves a source `ready` on
+ * partial success, and never touches prior chunks until the new run fully
+ * succeeds (so a failed retrain doesn't blank out a working agent).
  */
 export async function runIngestion(supabase: SupabaseClient<Database>, sourceId: string) {
   const { data: source, error: fetchError } = await supabase
     .from("sources")
-    .select("id, org_id, type, raw_content, storage_path")
+    .select("id, org_id, raw_content")
     .eq("id", sourceId)
     .single();
 
   if (fetchError || !source) {
     throw new Error(`Source ${sourceId} not found: ${fetchError?.message}`);
+  }
+  if (!source.raw_content) {
+    throw new Error(`Source ${sourceId} has no URL`);
   }
 
   // Claims the source for this run: only flips to "processing" if it
@@ -195,7 +136,7 @@ export async function runIngestion(supabase: SupabaseClient<Database>, sourceId:
   }
 
   try {
-    const text = await extractText(supabase, source);
+    const text = await extractUrlText(source.raw_content);
     const chunks = chunkText(text);
 
     if (chunks.length === 0) {

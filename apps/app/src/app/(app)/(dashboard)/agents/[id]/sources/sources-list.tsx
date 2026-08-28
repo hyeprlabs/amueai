@@ -45,7 +45,7 @@ import type { Tables } from "@/types/supabase";
 
 type SourceRow = Pick<
   Tables<"sources">,
-  "id" | "label" | "type" | "status" | "error_message" | "created_at"
+  "id" | "label" | "status" | "error_message" | "created_at"
 >;
 
 const statusConfig: Record<
@@ -177,9 +177,7 @@ export function SourcesList({
             <DatabaseIcon />
           </EmptyMedia>
           <EmptyTitle>No sources yet</EmptyTitle>
-          <EmptyDescription>
-            Add text, a URL, Q&amp;A pairs, or a file to train it.
-          </EmptyDescription>
+          <EmptyDescription>Add a URL to train this agent on a page.</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -190,7 +188,6 @@ export function SourcesList({
       <TableHeader>
         <TableRow>
           <TableHead>Source</TableHead>
-          <TableHead>Type</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Added</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -200,7 +197,6 @@ export function SourcesList({
         {sources.map((source) => (
           <TableRow key={source.id}>
             <TableCell className="max-w-64 truncate font-medium">{source.label}</TableCell>
-            <TableCell className="capitalize text-muted-foreground">{source.type}</TableCell>
             <TableCell>
               <StatusBadge source={source} />
             </TableCell>

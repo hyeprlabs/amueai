@@ -1,64 +1,20 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { runIngestion } from "@/lib/ingestion";
-// Type-only import so the ingestion task's code (pdf-parse, mammoth,
-// embedMany) isn't bundled into this route handler.
-import type { ingestSource } from "@/trigger/ingest-source";
 
-// File uploads go to Storage client-side first (RLS-scoped to the org's
-// own folder) - this route just records the storage_path and hands the
-// pipeline off to Trigger.dev.
-// Content caps aren't just tidiness - embedding cost scales with input
-// size, and this route runs under a live Clerk session with no other
-// throttle in front of it (Upstash only guards the public chat route).
-const MAX_TEXT_CONTENT_LENGTH = 200_000;
-const MAX_QA_PAIRS = 50;
-
-// text/url ingestion (extract -> chunk -> embed -> store) runs inline,
-// synchronously, before this route responds - see the runIngestion call
-// below for why: Trigger.dev needs a separate `trigger deploy` before
-// tasks.trigger() has any worker to hand a run off to, and that hasn't
-// happened yet, so routing these through it would leave every source
-// stuck on "queued" forever with no embeddings ever created. Inline
-// ingestion has no such dependency. A Firecrawl scrape plus embedding a
-// 200KB source comfortably fits in one request; this just raises the
-// ceiling past the Vercel Node function default.
+// Sources are URL-only for now. Ingestion (Firecrawl scrape -> chunk ->
+// embed -> store) runs inline, synchronously, before this route responds -
+// a Firecrawl scrape plus embedding comfortably fits in one request; this
+// just raises the ceiling past the Vercel Node function default.
 export const maxDuration = 60;
 
-const createSourceSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("text"),
-    label: z.string().trim().min(1).max(200),
-    content: z.string().trim().min(1).max(MAX_TEXT_CONTENT_LENGTH),
-  }),
-  z.object({
-    type: z.literal("url"),
-    label: z.string().trim().min(1).max(200),
-    url: z.string().trim().url().max(2048),
-  }),
-  z.object({
-    type: z.literal("qa"),
-    label: z.string().trim().min(1).max(200),
-    pairs: z
-      .array(
-        z.object({
-          question: z.string().trim().min(1).max(2000),
-          answer: z.string().trim().min(1).max(10_000),
-        }),
-      )
-      .min(1)
-      .max(MAX_QA_PAIRS),
-  }),
-  z.object({
-    type: z.literal("file"),
-    label: z.string().trim().min(1).max(200),
-    storagePath: z.string().trim().min(1).max(1024),
-  }),
-]);
+const createSourceSchema = z.object({
+  label: z.string().trim().min(1).max(200),
+  url: z.string().trim().url().max(2048),
+});
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { orgId } = await auth();
@@ -70,7 +26,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { type, label } = parsed.data;
+  const { label, url } = parsed.data;
 
   const supabase = await createServerSupabaseClient();
 
@@ -79,33 +35,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: agent } = await supabase.from("agents").select("id").eq("id", agentId).single();
   if (!agent) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
 
-  const raw_content =
-    parsed.data.type === "text"
-      ? parsed.data.content
-      : parsed.data.type === "url"
-        ? parsed.data.url
-        : parsed.data.type === "qa"
-          ? parsed.data.pairs.map((pair) => `Q: ${pair.question}\nA: ${pair.answer}`).join("\n\n")
-          : null;
-
-  if (parsed.data.type === "file") {
-    // The ingestion pipeline downloads this path with the service-role
-    // client, which bypasses Storage RLS entirely - without this check a
-    // member could point storagePath at another org's uploaded file and
-    // have it embedded into their own agent. Storage RLS already confines
-    // uploads to `${orgId}/...`, so requiring that same prefix here ties
-    // the path back to an object this org could actually have uploaded.
-    if (!parsed.data.storagePath.startsWith(`${orgId}/`)) {
-      return NextResponse.json({ error: "Invalid storage path" }, { status: 400 });
-    }
-  }
-
-  const storage_path = parsed.data.type === "file" ? parsed.data.storagePath : null;
-
   const { data: source, error: insertError } = await supabase
     .from("sources")
-    .insert({ org_id: orgId, agent_id: agentId, type, label, raw_content, storage_path })
-    .select("id, label, type, status, created_at")
+    .insert({ org_id: orgId, agent_id: agentId, type: "url", label, raw_content: url })
+    .select("id, label, status, created_at")
     .single();
 
   if (insertError || !source) {
@@ -115,35 +48,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  if (type === "text" || type === "url") {
-    // Runs inline under the caller's own Clerk-scoped client - RLS already
-    // permits this org member to read/write this agent's sources/chunks,
-    // same as every other authenticated route. runIngestion sets the
-    // source's status itself (processing -> ready/failed) and never
-    // throws past this point in a way that should fail the request: the
-    // source row already exists either way, so the response just reports
-    // whatever state it landed in.
-    await runIngestion(supabase, source.id).catch((err) => {
-      console.error(`Inline ingestion failed for source ${source.id}`, err);
-    });
+  // Runs inline under the caller's own Clerk-scoped client - RLS already
+  // permits this org member to read/write this agent's sources/chunks,
+  // same as every other authenticated route. runIngestion sets the
+  // source's status itself (processing -> ready/failed) and never throws
+  // past this point in a way that should fail the request: the source row
+  // already exists either way, so the response just reports whatever
+  // state it landed in.
+  await runIngestion(supabase, source.id).catch((err) => {
+    console.error(`Inline ingestion failed for source ${source.id}`, err);
+  });
 
-    const { data: ingested } = await supabase
-      .from("sources")
-      .select("id, label, type, status, error_message, created_at")
-      .eq("id", source.id)
-      .single();
+  const { data: ingested } = await supabase
+    .from("sources")
+    .select("id, label, status, error_message, created_at")
+    .eq("id", source.id)
+    .single();
 
-    return NextResponse.json({ source: ingested ?? source }, { status: 201 });
-  }
-
-  // file/qa still go through Trigger.dev - unlike text/url they aren't the
-  // focus of this pass, and file ingestion in particular (Storage download,
-  // pdf-parse/mammoth) is heavier than fits comfortably inline.
-  await tasks.trigger<typeof ingestSource>(
-    "ingest-source",
-    { sourceId: source.id },
-    { tags: [`org:${orgId}`, `agent:${agentId}`, `source:${source.id}`] },
-  );
-
-  return NextResponse.json({ source }, { status: 201 });
+  return NextResponse.json({ source: ingested ?? source }, { status: 201 });
 }

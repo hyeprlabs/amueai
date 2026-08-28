@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 import type { GatewayChatModel } from "@/lib/gateway-models";
-import { updateAgent } from "../actions";
+import { updateAgent } from "../../actions";
 import { agentSettingsSchema, type AgentSettingsValues } from "./agent-settings-schema";
 import { ModelField } from "./model-field";
 

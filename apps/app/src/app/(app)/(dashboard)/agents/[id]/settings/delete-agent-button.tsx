@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { deleteAgent } from "../actions";
+import { deleteAgent } from "../../actions";
 
 function ConfirmDeleteButton() {
   const { pending } = useFormStatus();
