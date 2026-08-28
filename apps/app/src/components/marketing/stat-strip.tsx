@@ -12,7 +12,6 @@ const columnsForCount: Record<number, string> = {
   4: "sm:grid-cols-4",
 };
 
-/** The framed stat row directly under a feature page's hero. */
 export function StatStrip({ stats }: { stats: { value: string; label: string }[] }) {
   return (
     <div className="relative mb-12 lg:mb-24">
