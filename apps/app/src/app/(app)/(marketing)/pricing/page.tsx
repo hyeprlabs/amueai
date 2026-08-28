@@ -8,9 +8,14 @@ import {
 
 import { plans } from "@/components/marketing/pricing/plans";
 import { PricingSection } from "@/components/marketing/pricing/pricing-section";
+import {
+  MarketingFaq,
+  type MarketingFaqItem,
+} from "@/components/marketing/marketing-faq";
 import { siteConfig } from "@/config/site";
 import {
   breadcrumbItems,
+  faqPageJsonLd,
   organizationJsonLdProps,
   webPageJsonLd,
   webSiteJsonLd,
@@ -26,10 +31,33 @@ export const metadata: Metadata = createMetadata({
   pathname: "/pricing",
 });
 
+const pricingFaqItems: MarketingFaqItem[] = [
+  {
+    id: "billing-cycle",
+    question: "Can I switch between monthly and yearly billing?",
+    answer: `Yes. Every ${siteConfig.name} plan is available billed monthly or yearly, with a lower effective monthly rate on the yearly cycle.`,
+  },
+  {
+    id: "plan-difference",
+    question:
+      "What's the difference between the Basic, Pro and Business plans?",
+    answer:
+      "Plans scale with usage and support level, from the Basic plan for individuals up to Business, which adds the highest usage limits and priority support.",
+  },
+  {
+    id: "enterprise",
+    question: "I need a custom plan for my organization — who do I talk to?",
+    answer: `Reach out to ${siteConfig.email} and the team will help you find the right plan or a custom arrangement for your organization.`,
+  },
+];
+
 export default function Page() {
   return (
     <>
-      <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
+      <OrganizationJsonLd
+        {...organizationJsonLdProps()}
+        scriptKey="organization"
+      />
       <JsonLdScript data={webSiteJsonLd()} scriptKey="website" />
       <JsonLdScript
         data={webPageJsonLd({ name: title, description, pathname: "/pricing" })}
@@ -56,8 +84,10 @@ export default function Page() {
         scriptKey="software-application"
         url={absoluteUrl("/pricing")}
       />
+      <JsonLdScript data={faqPageJsonLd(pricingFaqItems)} scriptKey="faq" />
 
       <PricingSection />
+      <MarketingFaq items={pricingFaqItems} />
     </>
   );
 }
