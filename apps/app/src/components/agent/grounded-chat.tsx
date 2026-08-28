@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { FileTextIcon, SparklesIcon } from "lucide-react";
 
 import { accents } from "@/components/agent/accent";
@@ -8,86 +9,114 @@ import { cn } from "@/lib/utils";
 
 const accent = accents.blue;
 
-/** One full replay: question, retrieval, cited answer, hold, restart. */
-const LOOP = 6;
-const at = (seconds: number) => seconds / LOOP;
+/**
+ * Phases of one replay. Driven by a `setInterval`-stepped index rather than a
+ * single shared Motion timeline: each phase mounts and unmounts through
+ * `AnimatePresence`, so what's on screen is exactly what React last rendered,
+ * with no keyframe-fraction arithmetic that can silently leave a gap.
+ */
+const phases = ["question", "retrieving", "answered"] as const;
+type Phase = (typeof phases)[number];
+
+const HOLD_MS: Record<Phase, number> = {
+  question: 900,
+  retrieving: 1400,
+  answered: 2600,
+};
 
 export function GroundedChat() {
   const reduced = useReducedMotion();
+  const [index, setIndex] = useState(0);
+  const phase = reduced ? "answered" : phases[index];
 
-  /** Fades a step in at `start` and holds it until the loop restarts. */
-  const step = (start: number) =>
-    reduced
-      ? { animate: { opacity: 1, y: 0 }, transition: { duration: 0 } }
-      : {
-          animate: { opacity: [0, 0, 1, 1, 0], y: [4, 4, 0, 0, 0] },
-          transition: {
-            duration: LOOP,
-            times: [0, at(start), at(start + 0.35), 0.94, 1],
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeOut" as const,
-          },
-        };
+  useEffect(() => {
+    if (reduced) return;
+    const timer = setTimeout(
+      () => setIndex((current) => (current + 1) % phases.length),
+      HOLD_MS[phases[index]],
+    );
+    return () => clearTimeout(timer);
+  }, [index, reduced]);
+
+  const showQuestion = phase !== undefined;
+  const showRetrieving = phase === "retrieving" || phase === "answered";
+  const showAnswer = phase === "answered";
 
   return (
     <div className="flex w-full max-w-[15rem] flex-col gap-2 sm:max-w-[17rem]">
-      {/* Visitor question */}
-      <motion.p
-        className="ml-auto max-w-[85%] rounded-lg rounded-br-sm border bg-muted/60 px-2.5 py-1.5 text-[11px] leading-relaxed"
-        initial={false}
-        {...step(0.2)}
-      >
-        Do you ship to Germany?
-      </motion.p>
-
-      {/* Retrieval step: the agent names the source it is reading. */}
-      <motion.span
-        className={cn(
-          "flex w-max items-center gap-1.5 rounded-md border px-1.5 py-1 font-mono text-[10px]",
-          accent.tint,
-          accent.border,
-          accent.text,
+      <AnimatePresence>
+        {showQuestion && (
+          <motion.p
+            animate={{ opacity: 1, y: 0 }}
+            className="ml-auto max-w-[85%] rounded-lg rounded-br-sm border bg-muted/60 px-2.5 py-1.5 text-[11px] leading-relaxed"
+            exit={{ opacity: 0 }}
+            initial={reduced ? false : { opacity: 0, y: 4 }}
+          >
+            Do you ship to Germany?
+          </motion.p>
         )}
-        initial={false}
-        {...step(1.1)}
-      >
-        <FileTextIcon className="size-2.5 shrink-0" />
-        shipping-policy.pdf
-        {!reduced && (
-          <span className="flex gap-0.5">
-            {[0, 1, 2].map((dot) => (
-              <motion.span
-                animate={{ opacity: [0.25, 1, 0.25] }}
-                className={cn("block size-1 rounded-full", accent.fill)}
-                key={dot}
-                transition={{
-                  duration: 0.9,
-                  repeat: Number.POSITIVE_INFINITY,
-                  delay: dot * 0.15,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </span>
-        )}
-      </motion.span>
+      </AnimatePresence>
 
-      {/* Grounded answer */}
-      <motion.div className="flex max-w-[90%] items-start gap-1.5" initial={false} {...step(2.2)}>
-        <span
-          className={cn(
-            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border",
-            accent.tint,
-            accent.border,
-            accent.text,
-          )}
-        >
-          <SparklesIcon className="size-3" />
-        </span>
-        <p className="rounded-lg rounded-bl-sm border bg-card px-2.5 py-1.5 text-[11px] leading-relaxed shadow-xs">
-          Yes, DHL delivers in 3 to 5 business days.
-        </p>
-      </motion.div>
+      <AnimatePresence>
+        {showRetrieving && (
+          <motion.span
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              "flex w-max items-center gap-1.5 rounded-md border px-1.5 py-1 font-mono text-[10px]",
+              accent.tint,
+              accent.border,
+              accent.text,
+            )}
+            exit={{ opacity: 0 }}
+            initial={reduced ? false : { opacity: 0, y: 4 }}
+          >
+            <FileTextIcon className="size-2.5 shrink-0" />
+            shipping-policy.pdf
+            {!reduced && phase === "retrieving" && (
+              <span className="flex gap-0.5">
+                {[0, 1, 2].map((dot) => (
+                  <motion.span
+                    animate={{ opacity: [0.25, 1, 0.25] }}
+                    className={cn("block size-1 rounded-full", accent.fill)}
+                    key={dot}
+                    transition={{
+                      duration: 0.9,
+                      repeat: Number.POSITIVE_INFINITY,
+                      delay: dot * 0.15,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
+              </span>
+            )}
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAnswer && (
+          <motion.div
+            animate={{ opacity: 1, y: 0 }}
+            className="flex max-w-[90%] items-start gap-1.5"
+            exit={{ opacity: 0 }}
+            initial={reduced ? false : { opacity: 0, y: 4 }}
+          >
+            <span
+              className={cn(
+                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border",
+                accent.tint,
+                accent.border,
+                accent.text,
+              )}
+            >
+              <SparklesIcon className="size-3" />
+            </span>
+            <p className="rounded-lg rounded-bl-sm border bg-card px-2.5 py-1.5 text-[11px] leading-relaxed shadow-xs">
+              Yes, DHL delivers in 3 to 5 business days.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
