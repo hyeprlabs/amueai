@@ -16,7 +16,7 @@ export type LinkItemType = {
 export function ComingSoonBadge({ className }: { className?: string }) {
   return (
     <Badge
-      className={cn("h-4 rounded-md px-1 py-0 font-normal text-[10px] leading-none", className)}
+      className={cn("h-4 rounded-[3px] px-1 py-0 font-normal text-[10px] leading-none", className)}
       variant="outline"
     >
       Soon

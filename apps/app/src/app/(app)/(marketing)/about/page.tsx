@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
-import { ArrowRightIcon } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { CallToAction } from "@/components/cta";
 import { FullWidthDivider } from "@/components/full-width-divider";
+import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";
 import {
   breadcrumbItems,
@@ -33,7 +31,7 @@ const principles = [
       "Adding a source and going live should take an afternoon. Every decision we make is measured against that.",
   },
   {
-    title: "Built for the people on the front line",
+    title: "Built for the front line",
     description:
       "We design for the person answering the same question for the hundredth time, not for the org chart above them.",
   },
@@ -69,97 +67,76 @@ export default function AboutPage() {
       />
 
       {/* Hero */}
-      <section className="px-4 py-16 lg:py-24">
+      <section className="px-4 py-12 sm:py-14 lg:py-16">
         <Badge variant="outline">About</Badge>
-        <h1 className="mt-5 max-w-2xl text-balance font-medium text-3xl md:text-5xl">
-          We think your best support agent is already written down.
+        <h1 className="mt-4 max-w-2xl text-balance font-medium text-3xl sm:text-4xl md:text-5xl">
+          Your best support agent is already written down.
         </h1>
-        <p className="mt-6 max-w-xl text-balance text-muted-foreground text-sm sm:text-lg">
+        <p className="mt-4 max-w-xl text-balance text-muted-foreground text-sm sm:text-base">
           {siteConfig.name} turns the content you already have — help articles, policies, product
           docs — into an agent that answers your customers the moment they ask.
         </p>
       </section>
 
-      {/* Mission */}
-      <section className="relative px-4 py-16 lg:py-24">
-        <FullWidthDivider className="-top-px" />
-        <div className="grid gap-10 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-16">
-          <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-            Our mission
-          </h2>
-          <div className="max-w-xl space-y-6 text-muted-foreground text-sm sm:text-base">
-            <p>
-              Most support questions have already been answered somewhere — in a help center
-              article, a shipping policy, a spec sheet. That knowledge just sits there, waiting for
-              someone to find it, while a person retypes the same reply for the hundredth time.
-            </p>
-            <p className="text-foreground">
-              We built {siteConfig.name} so that knowledge answers for itself.
-            </p>
-            <p>
-              Point an agent at your content and it becomes a teammate that never sleeps, never
-              forgets, and never makes something up. When it doesn't know, it says so — and hands
-              the conversation to someone who does.
-            </p>
-          </div>
+      <AboutSection label="Our mission">
+        <div className="space-y-4 text-muted-foreground text-sm sm:text-base">
+          <p>
+            Most support questions have already been answered somewhere — in a help center article,
+            a shipping policy, a spec sheet. That knowledge just sits there while a person retypes
+            the same reply for the hundredth time.
+          </p>
+          <p className="text-foreground">
+            We built {siteConfig.name} so that knowledge answers for itself.
+          </p>
+          <p>
+            Point an agent at your content and it becomes a teammate that never sleeps, never
+            forgets, and never makes something up. When it doesn't know, it says so.
+          </p>
         </div>
-      </section>
+      </AboutSection>
 
-      {/* Principles */}
-      <section className="relative px-4 py-16 lg:py-24">
-        <FullWidthDivider className="-top-px" />
-        <div className="grid gap-10 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-16">
-          <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-            What we believe
-          </h2>
-          <dl className="max-w-xl space-y-8">
-            {principles.map((principle) => (
-              <div key={principle.title}>
-                <dt className="font-medium text-base">{principle.title}</dt>
-                <dd className="mt-2 text-muted-foreground text-sm sm:text-base">
-                  {principle.description}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
+      <AboutSection label="What we believe">
+        <dl className="grid gap-5 sm:grid-cols-2 sm:gap-x-8">
+          {principles.map((principle) => (
+            <div key={principle.title}>
+              <dt className="font-medium text-sm sm:text-base">{principle.title}</dt>
+              <dd className="mt-1.5 text-balance text-muted-foreground text-sm">
+                {principle.description}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </AboutSection>
 
-      {/* Facts */}
-      <section className="relative px-4 py-16 lg:py-24">
-        <FullWidthDivider className="-top-px" />
-        <div className="grid gap-10 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-16">
-          <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-            The company
-          </h2>
-          <dl className="grid max-w-xl grid-cols-2 gap-8 sm:grid-cols-4">
-            {facts.map((fact) => (
-              <div key={fact.label}>
-                <dt className="text-muted-foreground text-xs">{fact.label}</dt>
-                <dd className="mt-1 font-medium text-sm">{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
+      <AboutSection label="The company">
+        <dl className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+          {facts.map((fact) => (
+            <div key={fact.label}>
+              <dt className="text-muted-foreground text-xs">{fact.label}</dt>
+              <dd className="mt-1 font-medium text-sm">{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </AboutSection>
 
-      {/* Closing */}
-      <section className="relative flex flex-col items-start gap-4 px-4 py-16 sm:flex-row sm:items-center sm:justify-between lg:py-24">
-        <FullWidthDivider className="-top-px" />
-        <div>
-          <h2 className="text-balance font-medium text-xl md:text-2xl">Want to talk it through?</h2>
-          <p className="mt-2 text-muted-foreground text-sm">We read every message that comes in.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button nativeButton={false} render={<Link href="/contact" />}>
-            Contact us
-            <ArrowRightIcon data-icon="inline-end" />
-          </Button>
-          <Button nativeButton={false} render={<Link href="/features/agent" />} variant="outline">
-            See how it works
-          </Button>
-        </div>
-      </section>
+      <div className="pt-12 sm:pt-14 lg:pt-16">
+        <CallToAction />
+      </div>
     </>
+  );
+}
+
+/** Label in a narrow left column, content in the wide one; stacked on mobile. */
+function AboutSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section className="relative px-4 py-10 sm:py-12">
+      <FullWidthDivider className="-top-px" />
+      <div className="grid gap-4 md:grid-cols-[minmax(0,11rem)_minmax(0,1fr)] md:gap-10">
+        <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
+          {label}
+        </h2>
+        <div className="max-w-2xl">{children}</div>
+      </div>
+    </section>
   );
 }

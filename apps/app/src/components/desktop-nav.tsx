@@ -53,9 +53,11 @@ export function DesktopNav() {
               <div className="space-y-2 p-3">
                 {companyLinks2.map((item, i) =>
                   item.isComingSoon ? (
+                    // Mirrors NavigationMenuLink's own sizing so a disabled row
+                    // sits at exactly the same text and icon scale as a live one.
                     <div
                       aria-disabled="true"
-                      className="flex cursor-not-allowed items-center gap-2 text-muted-foreground opacity-50"
+                      className="flex cursor-not-allowed items-center gap-2 rounded-lg p-2 text-muted-foreground text-sm opacity-50 [&_svg:not([class*='size-'])]:size-4"
                       key={`item-${item.label}-${i}`}
                     >
                       {item.icon}
