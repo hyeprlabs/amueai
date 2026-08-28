@@ -48,9 +48,8 @@ export const featureLinks: LinkItemType[] = [
   {
     label: "Channels",
     href: "/features/channels",
-    description: "Deploy to your website, Slack, WhatsApp, and more",
+    description: "Deploy to your website, WhatsApp, and more",
     icon: <PlugIcon />,
-    isComingSoon: true,
   },
   {
     label: "API",

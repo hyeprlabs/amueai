@@ -3,18 +3,14 @@ import Link from "next/link";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 import {
   ArrowRightIcon,
-  CpuIcon,
-  FlaskConicalIcon,
-  LanguagesIcon,
-  PencilIcon,
+  MessagesSquareIcon,
   PlugIcon,
   ShieldCheckIcon,
-  UserPlusIcon,
   ZapIcon,
 } from "lucide-react";
 
-import { AgentFeatures } from "@/components/agent/agent-features";
 import { CallToAction } from "@/components/cta";
+import { ChannelsFeatures } from "@/components/channels/channels-features";
 import { CapabilityStrip } from "@/components/marketing/capability-strip";
 import { PageHero } from "@/components/marketing/page-hero";
 import { StatStrip } from "@/components/marketing/stat-strip";
@@ -28,31 +24,27 @@ import {
 } from "@/lib/next-seo";
 import { absoluteUrl, createMetadata } from "@/lib/seo";
 
-const title = "AI Agent";
-const description = `Build a custom AI agent trained on your own content that answers questions, captures leads, and supports customers 24/7 with ${siteConfig.name}.`;
-const pathname = "/features/agent";
+const title = "Channels";
+const description = `Deploy the same AI agent across your website, WhatsApp, and more, all trained once and answering everywhere with ${siteConfig.name}.`;
+const pathname = "/features/channels";
 
 export const metadata: Metadata = createMetadata({ title, description, pathname });
 
 const stats = [
-  { value: "< 1 min", label: "To train" },
+  { value: "1", label: "Agent to train" },
+  { value: "4+", label: "Channels" },
   { value: "1 line", label: "To embed" },
-  { value: "90+", label: "Languages" },
   { value: "24/7", label: "Answering" },
 ];
 
 const capabilities = [
-  { label: "Instant answers", icon: <ZapIcon /> },
-  { label: "Your choice of model", icon: <CpuIcon /> },
-  { label: "Won't invent answers", icon: <ShieldCheckIcon /> },
-  { label: "Your branding", icon: <PencilIcon /> },
-  { label: "Lead capture", icon: <UserPlusIcon /> },
-  { label: "90+ languages", icon: <LanguagesIcon /> },
-  { label: "Test playground", icon: <FlaskConicalIcon /> },
-  { label: "Every channel", icon: <PlugIcon /> },
+  { label: "One shared knowledge base", icon: <ZapIcon /> },
+  { label: "Consistent answers everywhere", icon: <ShieldCheckIcon /> },
+  { label: "New channels, no retraining", icon: <PlugIcon /> },
+  { label: "One conversation log", icon: <MessagesSquareIcon /> },
 ];
 
-export default function AgentFeaturePage() {
+export default function ChannelsFeaturePage() {
   return (
     <>
       <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
@@ -72,7 +64,7 @@ export default function AgentFeaturePage() {
         data={{
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          name: `${siteConfig.name} AI Agent`,
+          name: `${siteConfig.name} Channels`,
           applicationCategory: "BusinessApplication",
           operatingSystem: "Web",
           url: absoluteUrl(pathname),
@@ -82,8 +74,8 @@ export default function AgentFeaturePage() {
       />
 
       <PageHero
-        description="Add your content. Get an agent that answers from it, and nothing else."
-        title="An AI agent that only knows your business"
+        description="One agent, trained once, live on your website and in the apps your customers already use."
+        title="Deploy your agent everywhere at once"
       >
         <Button className="w-full sm:w-auto" nativeButton={false} render={<Link href="/pricing" />}>
           See pricing
@@ -92,21 +84,21 @@ export default function AgentFeaturePage() {
         <Button
           className="w-full sm:w-auto"
           nativeButton={false}
-          render={<Link href="/contact" />}
+          render={<Link href="/features/agent" />}
           variant="outline"
         >
-          Talk to us
+          Explore the agent
         </Button>
       </PageHero>
 
       <StatStrip stats={stats} />
 
-      <AgentFeatures />
+      <ChannelsFeatures />
 
       <CapabilityStrip
-        description="The rest of what your agent can do, out of the box."
+        description="Every channel draws from the same trained agent."
         items={capabilities}
-        title="And everything else"
+        title="One agent behind all of it"
       />
 
       <CallToAction />

@@ -104,6 +104,10 @@ const resources = [
     href: "/changelog",
   },
   {
+    title: "Channels",
+    href: "/features/channels",
+  },
+  {
     title: "Competitors",
     href: "/competitors",
   },

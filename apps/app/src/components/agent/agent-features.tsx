@@ -1,4 +1,4 @@
-import { AgentFeatureCard } from "@/components/agent/feature-card";
+import { FeatureGridCard } from "@/components/marketing/feature-grid-card";
 import { ConversationsGraphic } from "@/components/agent/conversations-graphic";
 import { EmbedGraphic } from "@/components/agent/embed-graphic";
 import { GroundedChat } from "@/components/agent/grounded-chat";
@@ -31,45 +31,45 @@ export function AgentFeatures() {
 
         <FullWidthDivider className="-top-px" />
         <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-6">
-          <AgentFeatureCard
+          <FeatureGridCard
             className="lg:col-span-3"
             description="Websites, PDFs, docs, and Q&A pairs. Add a source and it is indexed in seconds."
             title="Train it on what you already have"
           >
             <SourcesGraphic />
-          </AgentFeatureCard>
+          </FeatureGridCard>
 
-          <AgentFeatureCard
+          <FeatureGridCard
             className="lg:col-span-3"
             description="Every reply is pulled from your sources and cited. No source, no answer."
             title="It never makes things up"
           >
             <GroundedChat />
-          </AgentFeatureCard>
+          </FeatureGridCard>
 
-          <AgentFeatureCard
+          <FeatureGridCard
             className="sm:col-span-2 lg:col-span-2"
             description="Paste one script tag. The chat bubble is live on every page."
             title="Live in one line"
           >
             <EmbedGraphic />
-          </AgentFeatureCard>
+          </FeatureGridCard>
 
-          <AgentFeatureCard
+          <FeatureGridCard
             className="lg:col-span-2"
             description="Ask in any of 90+ languages and get the same answer from the same source."
             title="Speaks your customer's language"
           >
             <LanguagesGraphic />
-          </AgentFeatureCard>
+          </FeatureGridCard>
 
-          <AgentFeatureCard
+          <FeatureGridCard
             className="lg:col-span-2"
             description="Read real questions, spot what your content is missing, and fill the gaps."
             title="See what people actually ask"
           >
             <ConversationsGraphic />
-          </AgentFeatureCard>
+          </FeatureGridCard>
         </div>
         <FullWidthDivider className="-bottom-px" />
       </div>

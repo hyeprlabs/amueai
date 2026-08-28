@@ -2,14 +2,15 @@ import { cn } from "@/lib/utils";
 import { GridPattern } from "@/components/ui/grid-pattern";
 
 /**
- * One cell of the agent feature grid: illustration on top, copy underneath.
+ * One cell of an illustrated feature grid: illustration on top, copy
+ * underneath. Shared by the Agent and Channels feature pages so both bento
+ * grids look like the same component, not two similar-looking one-offs.
  *
  * The illustration sits in a fixed-height stage so cells in the same row line
  * their captions up no matter how tall each graphic is. The faint grid behind
- * the stage is the same treatment the home page's own `FeatureCard` uses, so
- * this grid reads as part of the same system rather than a one-off.
+ * the stage is the same treatment the home page's own `FeatureCard` uses.
  */
-export function AgentFeatureCard({
+export function FeatureGridCard({
   title,
   description,
   className,
