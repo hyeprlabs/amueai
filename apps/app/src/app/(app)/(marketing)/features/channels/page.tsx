@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import { CallToAction } from "@/components/cta";
-import { ChannelsFeatures } from "@/components/channels/channels-features";
+import { Channels } from "@/components/channels";
 import { CapabilityStrip } from "@/components/marketing/capability-strip";
 import { PageHero } from "@/components/marketing/page-hero";
 import { StatStrip } from "@/components/marketing/stat-strip";
@@ -93,7 +93,7 @@ export default function ChannelsFeaturePage() {
 
       <StatStrip stats={stats} />
 
-      <ChannelsFeatures />
+      <Channels />
 
       <CapabilityStrip
         description="Every channel draws from the same trained agent."

@@ -61,16 +61,24 @@ export function SourcesGraphic() {
         ))}
       </ul>
 
-      {/* Trunk: the pulse travels from the active row down (or up) to the core. */}
+      {/* Connector: visual line from active source to engine. */}
       <div className="relative flex w-8 shrink-0 justify-center self-stretch sm:w-10">
-        <div className="w-px bg-border" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-px h-full bg-border" />
+        </div>
         {!reduced && (
-          <motion.span
-            animate={{ top: "50%", opacity: [0, 1, 1, 0] }}
-            className={cn("absolute left-1/2 size-1.5 -translate-x-1/2 rounded-full", accent.fill)}
-            initial={{ top: `${rowPercent(active)}%`, opacity: 0 }}
-            key={active}
-            transition={{ duration: TRAVEL_S, ease: "easeInOut" }}
+          <motion.div
+            className={cn("absolute left-1/2 -translate-x-1/2 w-0.5", accent.fill)}
+            animate={{
+              top: `${Math.min(rowPercent(active), 50)}%`,
+              height: `${Math.abs(50 - rowPercent(active))}%`,
+            }}
+            initial={{
+              top: `${Math.min(rowPercent(0), 50)}%`,
+              height: `${Math.abs(50 - rowPercent(0))}%`,
+            }}
+            transition={{ duration: 0.3 }}
+            key={`connector-${active}`}
           />
         )}
       </div>
