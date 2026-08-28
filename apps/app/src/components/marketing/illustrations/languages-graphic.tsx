@@ -34,13 +34,13 @@ export function LanguagesGraphic() {
   const current = phrasings[reduced ? 0 : index];
 
   return (
-    <div className="flex w-full max-w-[15rem] flex-col items-center gap-3 sm:max-w-[17rem]">
+    <div className="flex w-full max-w-[15rem] flex-col items-center gap-2 sm:max-w-[17rem] sm:gap-3">
       <div className="relative flex h-16 w-full items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "flex max-w-full items-center gap-2 text-balance rounded-lg border px-2.5 py-1.5 text-[11px] leading-relaxed",
+              "flex max-w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-balance text-[11px] leading-relaxed",
               accent.tint,
               accent.border,
               accent.text,

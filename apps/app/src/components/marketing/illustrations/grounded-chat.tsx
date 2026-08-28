@@ -37,12 +37,12 @@ export function GroundedChat() {
   const showAnswer = phase === "answered";
 
   return (
-    <div className="flex w-full max-w-[15rem] flex-col gap-2 sm:max-w-[17rem]">
+    <div className="flex w-full max-w-[15rem] flex-col gap-2 sm:max-w-[17rem] sm:gap-2.5">
       <AnimatePresence>
         {showQuestion && (
           <motion.p
             animate={{ opacity: 1, y: 0 }}
-            className="ml-auto max-w-[85%] rounded-lg rounded-br-sm border bg-muted/60 px-2.5 py-1.5 text-[11px] leading-relaxed"
+            className="ml-auto max-w-[85%] rounded-lg rounded-br-sm border bg-muted/60 px-2.5 py-1.5 text-[10px] leading-relaxed"
             exit={{ opacity: 0 }}
             initial={reduced ? false : { opacity: 0, y: 4 }}
           >

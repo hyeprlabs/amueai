@@ -20,7 +20,7 @@ export function ConversationsGraphic() {
 
   return (
     <div className="flex w-full max-w-[15rem] flex-col gap-3 sm:max-w-[17rem]">
-      <div className="flex h-24 gap-1.5">
+      <div className="flex h-24 gap-2 sm:gap-2.5">
         {days.map((day, index) => (
           <motion.div
             animate={reduced ? { scaleY: 1 } : { scaleY: [0, 1] }}

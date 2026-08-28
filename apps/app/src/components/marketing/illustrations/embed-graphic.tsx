@@ -12,8 +12,8 @@ export function EmbedGraphic() {
   const reduced = useReducedMotion();
 
   return (
-    <div className="flex w-full max-w-[15rem] flex-col items-center gap-4 sm:max-w-[17rem]">
-      <div className="relative w-full overflow-hidden rounded-lg border bg-card px-2.5 py-2 shadow-xs">
+    <div className="flex w-full max-w-[15rem] flex-col items-center gap-2 sm:max-w-[17rem] sm:gap-3">
+      <div className="relative w-full overflow-hidden rounded-lg border bg-card px-2.5 py-1.5 shadow-xs">
         <pre className="whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed">
           <code>
             <span className="text-muted-foreground">&lt;script src=</span>

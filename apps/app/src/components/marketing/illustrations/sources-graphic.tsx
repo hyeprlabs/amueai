@@ -29,14 +29,13 @@ export function SourcesGraphic() {
   }, [active, reduced]);
 
   return (
-    <div className="flex w-full gap-2 sm:gap-3">
+    <div className="flex w-full max-w-[15rem] gap-2 sm:max-w-[17rem] sm:gap-3">
       {sources.map((source, index) => (
         <motion.div
           key={source.label}
-          animate={{
-            scale: !reduced && index === active ? 1.1 : 1,
-          }}
+          animate={{ scale: !reduced && index === active ? 1.1 : 1 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="flex-1"
         >
           <IconTile
             aria-hidden="true"
