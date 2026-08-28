@@ -35,7 +35,7 @@ export function SourcesGraphic() {
           key={source.label}
           animate={{ scale: !reduced && index === active ? 1.1 : 1 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="flex-1"
+          className="flex flex-1 justify-center"
         >
           <IconTile
             aria-hidden="true"
