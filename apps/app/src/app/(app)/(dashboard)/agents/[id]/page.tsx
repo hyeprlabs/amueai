@@ -1,18 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MessageSquareTextIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 import { getGatewayChatModels } from "@/lib/gateway-models";
 import { siteConfig } from "@/config/site";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { updateAgent } from "../actions";
-import { AddSourceForm } from "./add-source-form";
+import { AddSourceDialog } from "./add-source-form";
+import { DeleteAgentButton } from "./delete-agent-button";
 import { ModelSelect } from "./model-select";
+import { SaveButton } from "./save-button";
 import { SourcesList } from "./sources-list";
 import { TestChat } from "./test-chat";
 
@@ -52,100 +65,171 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
   const updateAgentWithId = updateAgent.bind(null, agent.id);
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
-      <div className="flex items-start justify-between">
+    <div className="flex max-w-3xl flex-col gap-4">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/agents" />}>Agents</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{agent.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-medium">{agent.name}</h1>
           <p className="text-sm text-muted-foreground">
-            Base instructions, model, and temperature for this agent.
+            Train it on your data, test it, then embed it on your site.
           </p>
         </div>
-        <Link href={`/agents/${agent.id}/conversations`} className="text-sm underline">
-          View conversations
-        </Link>
+        <Button variant="outline" render={<Link href={`/agents/${agent.id}/conversations`} />}>
+          <MessageSquareTextIcon />
+          Conversations
+        </Button>
       </div>
 
-      <form action={updateAgentWithId} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" defaultValue={agent.name} required maxLength={200} />
-        </div>
+      <Tabs defaultValue="sources">
+        <TabsList>
+          <TabsTrigger value="sources">Sources</TabsTrigger>
+          <TabsTrigger value="playground">Playground</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="embed">Embed</TabsTrigger>
+        </TabsList>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="system_prompt">System instructions</Label>
-          <Textarea
-            id="system_prompt"
-            name="system_prompt"
-            defaultValue={agent.system_prompt}
-            required
-            rows={6}
-            maxLength={4000}
-          />
-        </div>
+        <TabsContent value="sources" className="mt-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Data sources</CardTitle>
+                  <CardDescription>
+                    Text and URL sources are embedded right away. Q&amp;A and file sources are
+                    queued.
+                  </CardDescription>
+                </div>
+                <AddSourceDialog agentId={agent.id} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <SourcesList agentId={agent.id} initialSources={sources ?? []} />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="model">Model</Label>
-          <ModelSelect models={models} defaultValue={agent.model} />
-          <p className="text-xs text-muted-foreground">
-            Any chat model currently available through the Vercel AI Gateway.
-          </p>
-        </div>
+        <TabsContent value="playground" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Playground</CardTitle>
+              <CardDescription>Calls the same API the public widget uses.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TestChat agentId={agent.id} />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="temperature">Temperature</Label>
-          <Input
-            id="temperature"
-            name="temperature"
-            type="number"
-            min={0}
-            max={2}
-            step={0.1}
-            defaultValue={agent.temperature}
-            required
-            className="max-w-24"
-          />
-        </div>
+        <TabsContent value="settings" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Settings</CardTitle>
+              <CardDescription>Base instructions, model, and temperature.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form action={updateAgentWithId}>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="name">Name</FieldLabel>
+                    <Input
+                      id="name"
+                      name="name"
+                      defaultValue={agent.name}
+                      required
+                      maxLength={200}
+                    />
+                  </Field>
 
-        <div>
-          <Button type="submit">Save changes</Button>
-        </div>
-      </form>
+                  <Field>
+                    <FieldLabel htmlFor="system_prompt">System instructions</FieldLabel>
+                    <Textarea
+                      id="system_prompt"
+                      name="system_prompt"
+                      defaultValue={agent.system_prompt}
+                      required
+                      rows={6}
+                      maxLength={4000}
+                    />
+                    <FieldDescription>
+                      Tell it who it is and what it should refuse to answer.
+                    </FieldDescription>
+                  </Field>
 
-      <div className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-base font-medium">Data sources</h2>
-          <p className="text-sm text-muted-foreground">
-            Text, URL, Q&amp;A, or a file (.txt, .pdf, .docx).
-          </p>
-        </div>
+                  <Field>
+                    <FieldLabel htmlFor="model">Model</FieldLabel>
+                    <ModelSelect models={models} defaultValue={agent.model} />
+                    <FieldDescription>
+                      Any chat model currently available through the Vercel AI Gateway.
+                    </FieldDescription>
+                  </Field>
 
-        <AddSourceForm agentId={agent.id} />
+                  <Field>
+                    <FieldLabel htmlFor="temperature">Temperature</FieldLabel>
+                    <Input
+                      id="temperature"
+                      name="temperature"
+                      type="number"
+                      min={0}
+                      max={2}
+                      step={0.1}
+                      defaultValue={agent.temperature}
+                      required
+                      className="max-w-24"
+                    />
+                    <FieldDescription>
+                      Lower is more focused and repeatable, higher is more varied.
+                    </FieldDescription>
+                  </Field>
+                </FieldGroup>
 
-        <SourcesList agentId={agent.id} initialSources={sources ?? []} />
-      </div>
+                <div className="mt-6">
+                  <SaveButton />
+                </div>
+              </form>
+            </CardContent>
+          </Card>
 
-      <div className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-base font-medium">Test chat</h2>
-          <p className="text-sm text-muted-foreground">
-            Calls the same API the public widget uses.
-          </p>
-        </div>
-        <TestChat agentId={agent.id} />
-      </div>
+          <Card className="mt-4 ring-destructive/20">
+            <CardHeader>
+              <CardTitle>Danger zone</CardTitle>
+              <CardDescription>
+                Permanently delete this agent, its sources, and its conversation history.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DeleteAgentButton agentId={agent.id} agentName={agent.name} />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <div className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-base font-medium">Embed on your site</h2>
-          <p className="text-sm text-muted-foreground">
-            Paste this before <code>&lt;/body&gt;</code> on any page — no login required for
-            visitors.
-          </p>
-        </div>
-        <pre className="overflow-x-auto rounded-lg border bg-muted p-4 text-xs">
-          {`<script src="${siteConfig.url}/widget.js" data-agent-id="${agent.id}" async></script>`}
-        </pre>
-      </div>
+        <TabsContent value="embed" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Embed on your site</CardTitle>
+              <CardDescription>
+                Paste this before <code>&lt;/body&gt;</code> on any page — no login required for
+                visitors.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre className="overflow-x-auto rounded-lg border bg-muted p-4 text-xs">
+                {`<script src="${siteConfig.url}/widget.js" data-agent-id="${agent.id}" async></script>`}
+              </pre>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

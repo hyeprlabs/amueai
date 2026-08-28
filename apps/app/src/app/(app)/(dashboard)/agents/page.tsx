@@ -2,12 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { OrganizationSwitcher } from "@clerk/nextjs";
+import { BotIcon, TriangleAlertIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { createAgent } from "./actions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { CreateAgentDialog } from "./create-agent-dialog";
 
 export const metadata: Metadata = createMetadata({
   title: "Agents",
@@ -21,15 +29,20 @@ export default async function AgentsPage() {
 
   if (!orgId) {
     return (
-      <div className="flex flex-col items-start gap-4 rounded-lg border border-dashed p-8">
-        <div>
-          <h1 className="text-lg font-medium">Select or create a workspace</h1>
-          <p className="text-sm text-muted-foreground">
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <BotIcon />
+          </EmptyMedia>
+          <EmptyTitle>Select or create a workspace</EmptyTitle>
+          <EmptyDescription>
             AmueAI workspaces are Clerk organizations. Pick one from the switcher to see its agents.
-          </p>
-        </div>
-        <OrganizationSwitcher hidePersonal />
-      </div>
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <OrganizationSwitcher hidePersonal />
+        </EmptyContent>
+      </Empty>
     );
   }
 
@@ -41,46 +54,65 @@ export default async function AgentsPage() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-sm text-destructive">
-        Couldn&apos;t load agents: {error.message}
-      </div>
+      <Empty className="border border-dashed border-destructive/30 bg-destructive/5">
+        <EmptyHeader>
+          <EmptyMedia variant="icon" className="bg-destructive/10 text-destructive">
+            <TriangleAlertIcon />
+          </EmptyMedia>
+          <EmptyTitle>Couldn&apos;t load agents</EmptyTitle>
+          <EmptyDescription className="text-destructive">{error.message}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-lg font-medium">Agents</h1>
-        <p className="text-sm text-muted-foreground">
-          Agents trained on your data, scoped to this workspace.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-medium">Agents</h1>
+          <p className="text-sm text-muted-foreground">
+            Agents trained on your data, scoped to this workspace.
+          </p>
+        </div>
+        {agents.length > 0 && <CreateAgentDialog />}
       </div>
 
-      <form action={createAgent} className="flex items-center gap-2">
-        <Input name="name" placeholder="e.g. Acme Support" required className="max-w-xs" />
-        <Button type="submit">New agent</Button>
-      </form>
-
       {agents.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-sm text-muted-foreground">
-          No agents yet.
-        </div>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <BotIcon />
+            </EmptyMedia>
+            <EmptyTitle>No agents yet</EmptyTitle>
+            <EmptyDescription>
+              Create your first agent, then add text or URL sources to train it.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <CreateAgentDialog />
+          </EmptyContent>
+        </Empty>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {agents.map((agent) => (
-            <li key={agent.id}>
-              <Link
-                href={`/agents/${agent.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-muted/50"
-              >
-                <span className="font-medium">{agent.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(agent.created_at).toLocaleDateString()}
-                </span>
-              </Link>
-            </li>
+            <Link key={agent.id} href={`/agents/${agent.id}`} className="group">
+              <Card className="h-full transition-shadow group-hover:shadow-md group-hover:ring-foreground/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BotIcon className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{agent.name}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    Created {new Date(agent.created_at).toLocaleDateString()}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

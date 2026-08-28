@@ -73,3 +73,17 @@ export async function updateAgent(agentId: string, formData: FormData) {
 
   redirect(`/agents/${agentId}`);
 }
+
+export async function deleteAgent(agentId: string) {
+  const { orgId } = await auth();
+  if (!orgId) throw new Error("No active organization");
+
+  const supabase = await createServerSupabaseClient();
+
+  // RLS scopes this to the active org, and sources/chunks/conversations/
+  // messages all cascade on agents.id - deleting the agent row is enough.
+  const { error } = await supabase.from("agents").delete().eq("id", agentId);
+  if (error) throw new Error(`Failed to delete agent: ${error.message}`);
+
+  redirect("/agents");
+}
