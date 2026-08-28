@@ -1,0 +1,316 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const embedMock = vi.fn();
+const streamTextMock = vi.fn();
+vi.mock("ai", () => ({
+  embed: (...args: unknown[]) => embedMock(...args),
+  streamText: (...args: unknown[]) => streamTextMock(...args),
+}));
+
+const checkChatRateLimitMock = vi.fn();
+vi.mock("@/lib/rate-limit", () => ({
+  checkChatRateLimit: (...args: unknown[]) => checkChatRateLimitMock(...args),
+}));
+
+let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
+vi.mock("@/lib/supabase/server", () => ({
+  createServiceRoleSupabaseClient: () => fakeSupabase,
+}));
+
+const { POST } = await import("./route");
+
+/**
+ * A minimal in-memory stand-in for the exact supabase-js chains this route
+ * uses across agents/conversations/messages plus the match_chunks RPC -
+ * enough to exercise the real rate-limit/lookup/conversation/retrieval
+ * control flow without a live Supabase project.
+ */
+function makeFakeSupabase(seed: {
+  agents?: Record<string, unknown>[];
+  conversations?: Record<string, unknown>[];
+  chunks?: { content: string; source_id: string; similarity: number }[];
+}) {
+  const tables = {
+    agents: [...(seed.agents ?? [])],
+    conversations: [...(seed.conversations ?? [])],
+    messages: [] as Record<string, unknown>[],
+  };
+  let forceConversationInsertError: string | null = null;
+
+  function from(table: "agents" | "conversations" | "messages") {
+    const rows = tables[table];
+    const state: {
+      filters: Array<[string, unknown]>;
+      op?: "select" | "insert";
+      insertRows?: Record<string, unknown>[];
+    } = { filters: [] };
+
+    function matches(row: Record<string, unknown>) {
+      return state.filters.every(([col, val]) => row[col] === val);
+    }
+
+    function execute() {
+      if (state.op === "insert") {
+        if (table === "conversations" && forceConversationInsertError) {
+          const message = forceConversationInsertError;
+          forceConversationInsertError = null;
+          return { data: null, error: { message } };
+        }
+        const newRows = (state.insertRows ?? []).map((row, i) => ({
+          id: row.id ?? `${table}-${rows.length + i + 1}`,
+          ...row,
+        }));
+        rows.push(...newRows);
+        return { data: newRows, error: null };
+      }
+      return { data: rows.filter(matches), error: null };
+    }
+
+    const builder = {
+      select(_cols?: string) {
+        state.op ??= "select";
+        return builder;
+      },
+      eq(col: string, val: unknown) {
+        state.filters.push([col, val]);
+        return builder;
+      },
+      insert(row: Record<string, unknown> | Record<string, unknown>[]) {
+        state.op = "insert";
+        state.insertRows = Array.isArray(row) ? row : [row];
+        return builder;
+      },
+      single() {
+        const { data, error } = execute();
+        const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
+        return Promise.resolve(
+          row
+            ? { data: row, error: null }
+            : { data: null, error: error ?? { message: "not found" } },
+        );
+      },
+      // oxlint-disable-next-line no-thenable
+      then(onFulfilled: (result: { data: unknown; error: unknown }) => unknown) {
+        return Promise.resolve(execute()).then(onFulfilled);
+      },
+    };
+
+    return builder;
+  }
+
+  return {
+    from,
+    tables,
+    rpc: vi.fn((_fn: string, _args: Record<string, unknown>) =>
+      Promise.resolve({ data: seed.chunks ?? [], error: null }),
+    ),
+    failNextConversationInsert(message: string) {
+      forceConversationInsertError = message;
+    },
+  };
+}
+
+function chatRequest(body: unknown) {
+  return new Request("http://localhost/api/chat/agent-1", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+const agent = {
+  id: "agent-1",
+  org_id: "org-1",
+  system_prompt: "You are a helpful assistant. Only answer from the provided context.",
+  model: "openai/gpt-4o-mini",
+  temperature: 0.3,
+  fallback_message: null,
+};
+
+beforeEach(() => {
+  embedMock.mockReset();
+  streamTextMock.mockReset();
+  checkChatRateLimitMock.mockReset();
+
+  embedMock.mockResolvedValue({ embedding: [0.1, 0.2, 0.3] });
+  checkChatRateLimitMock.mockResolvedValue(true);
+  streamTextMock.mockReturnValue({
+    toUIMessageStreamResponse: (init?: { headers?: Record<string, string> }) =>
+      new Response(null, { status: 200, headers: init?.headers }),
+  });
+  fakeSupabase = makeFakeSupabase({ agents: [agent] });
+});
+
+describe("POST /api/chat/[agentId]", () => {
+  it("rejects an invalid body with a 400", async () => {
+    const res = await POST(chatRequest({ message: "" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(streamTextMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 when the agent doesn't exist", async () => {
+    fakeSupabase = makeFakeSupabase({ agents: [] });
+
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "missing-agent" }),
+    });
+
+    expect(res.status).toBe(404);
+    expect(checkChatRateLimitMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 without calling the model when rate limited", async () => {
+    checkChatRateLimitMock.mockResolvedValue(false);
+
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(res.status).toBe(429);
+    expect(streamTextMock).not.toHaveBeenCalled();
+  });
+
+  it("rate-limits by IP and agent id together", async () => {
+    await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+      // no x-forwarded-for header
+    });
+
+    expect(checkChatRateLimitMock).toHaveBeenCalledWith("unknown", "agent-1");
+  });
+
+  it("starts a new conversation when no conversationId is given, and returns its id in a header", async () => {
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(fakeSupabase.tables.conversations).toHaveLength(1);
+    expect(fakeSupabase.tables.conversations[0]).toMatchObject({
+      org_id: "org-1",
+      agent_id: "agent-1",
+      visitor_id: "visitor-1",
+    });
+    expect(res.headers.get("X-Conversation-Id")).toBe(fakeSupabase.tables.conversations[0].id);
+  });
+
+  it("reuses an existing conversation instead of creating a duplicate", async () => {
+    fakeSupabase = makeFakeSupabase({
+      agents: [agent],
+      conversations: [
+        { id: "conv-1", agent_id: "agent-1", visitor_id: "visitor-1", org_id: "org-1" },
+      ],
+    });
+
+    const res = await POST(
+      chatRequest({ message: "Hi", conversationId: "conv-1", visitorId: "visitor-1" }),
+      { params: Promise.resolve({ agentId: "agent-1" }) },
+    );
+
+    expect(fakeSupabase.tables.conversations).toHaveLength(1);
+    expect(res.headers.get("X-Conversation-Id")).toBe("conv-1");
+  });
+
+  it("creates the row when a client-generated conversationId isn't known yet", async () => {
+    await POST(chatRequest({ message: "Hi", conversationId: "conv-new", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(fakeSupabase.tables.conversations).toHaveLength(1);
+    expect(fakeSupabase.tables.conversations[0]).toMatchObject({
+      id: "conv-new",
+      org_id: "org-1",
+      agent_id: "agent-1",
+      visitor_id: "visitor-1",
+    });
+  });
+
+  it("returns 500 when starting a conversation fails", async () => {
+    fakeSupabase.failNextConversationInsert("insert failed");
+
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(res.status).toBe(500);
+    expect(streamTextMock).not.toHaveBeenCalled();
+  });
+
+  it("embeds the message and retrieves matching chunks to build the system prompt", async () => {
+    fakeSupabase = makeFakeSupabase({
+      agents: [agent],
+      chunks: [
+        { content: "Refunds are available within 30 days.", source_id: "src-1", similarity: 0.9 },
+      ],
+    });
+
+    await POST(chatRequest({ message: "What's your refund policy?", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(embedMock).toHaveBeenCalledWith(
+      expect.objectContaining({ value: "What's your refund policy?" }),
+    );
+    expect(fakeSupabase.rpc).toHaveBeenCalledWith(
+      "match_chunks",
+      expect.objectContaining({ match_agent_id: "agent-1", match_count: 6 }),
+    );
+
+    const call = streamTextMock.mock.calls[0][0];
+    expect(call.system).toContain("Refunds are available within 30 days.");
+  });
+
+  it("says plainly that no context was found rather than falling back to outside knowledge", async () => {
+    fakeSupabase = makeFakeSupabase({ agents: [agent], chunks: [] });
+
+    await POST(chatRequest({ message: "What's your refund policy?", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    const call = streamTextMock.mock.calls[0][0];
+    expect(call.system).toContain("(no matching context found)");
+  });
+
+  it("calls the Gateway with the agent's own model/temperature and user/tags, never quotaEntityId", async () => {
+    await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    const call = streamTextMock.mock.calls[0][0];
+    expect(call.model).toBe("openai/gpt-4o-mini");
+    expect(call.temperature).toBe(0.3);
+    // Regression guard: quotaEntityId requires a quota entity
+    // pre-provisioned in the Vercel dashboard - sending an arbitrary
+    // Clerk org_id there makes the Gateway 400 every request (see
+    // lib/ingestion history). user/tags are the safe substitute.
+    expect(call.providerOptions.gateway).not.toHaveProperty("quotaEntityId");
+    expect(call.providerOptions.gateway.user).toBe("org-1");
+    expect(call.providerOptions.gateway.tags).toContain("org:org-1");
+  });
+
+  it("persists both the user and assistant turns once the stream finishes", async () => {
+    await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    const call = streamTextMock.mock.calls[0][0];
+    await call.onFinish({ text: "Hello! How can I help?" });
+
+    expect(fakeSupabase.tables.messages).toEqual([
+      expect.objectContaining({
+        role: "user",
+        content: "Hi",
+        org_id: "org-1",
+        agent_id: "agent-1",
+      }),
+      expect.objectContaining({
+        role: "assistant",
+        content: "Hello! How can I help?",
+        org_id: "org-1",
+        agent_id: "agent-1",
+      }),
+    ]);
+  });
+});
