@@ -76,30 +76,9 @@ export function SourcesGraphic() {
       </div>
 
       <div className="flex shrink-0 flex-col items-center gap-1.5">
-        <div className="relative">
-          {!reduced && (
-            <motion.span
-              animate={{ scale: [1, 1.4], opacity: [0.5, 0] }}
-              className={cn("absolute inset-0 rounded-full border", accent.border)}
-              initial={{ scale: 1, opacity: 0 }}
-              key={active}
-              transition={{ duration: 0.6, delay: TRAVEL_S }}
-            />
-          )}
-          {/*
-            `soft` derives its tint and inner border from `currentColor`, so
-            overriding just the text colour is enough to retint the whole tile.
-          */}
-          <IconTile
-            aria-hidden="true"
-            className={accent.text}
-            radius="full"
-            size="lg"
-            variant="soft"
-          >
-            <CpuIcon />
-          </IconTile>
-        </div>
+        <IconTile aria-hidden="true" radius="full" size="lg" variant="frame">
+          <CpuIcon />
+        </IconTile>
         <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
           Engine
         </span>
