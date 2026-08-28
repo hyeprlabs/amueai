@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { FileTextIcon, GlobeIcon, MessagesSquareIcon, TypeIcon } from "lucide-react";
 
-import { accents } from "@/components/agent/accent";
+import { accents } from "./accent";
 import { IconTile } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
 

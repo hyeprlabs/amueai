@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 
-import { accents } from "@/components/agent/accent";
+import { accents } from "./accent";
 import { cn } from "@/lib/utils";
 
 /** Answered vs unanswered, per day. The gap is the point: it shrinks. */

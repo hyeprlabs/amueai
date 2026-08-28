@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { FileTextIcon, SparklesIcon } from "lucide-react";
 
-import { accents } from "@/components/agent/accent";
+import { accents } from "./accent";
 import { cn } from "@/lib/utils";
 
 const accent = accents.blue;

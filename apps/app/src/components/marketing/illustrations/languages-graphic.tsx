@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import ReactCountryFlag from "react-country-flag";
 
-import { accents } from "@/components/agent/accent";
+import { accents } from "./accent";
 import { cn } from "@/lib/utils";
 
 /** The same question, answered from the same source, in four languages. */

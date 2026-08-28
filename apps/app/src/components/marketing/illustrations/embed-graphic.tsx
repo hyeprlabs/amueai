@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import { MessageCircleIcon } from "lucide-react";
 
-import { accents } from "@/components/agent/accent";
+import { accents } from "./accent";
 import { cn } from "@/lib/utils";
 
 const accent = accents.violet;

@@ -1,9 +1,11 @@
 import { FeatureGridCard } from "@/components/marketing/feature-grid-card";
-import { ConversationsGraphic } from "@/components/agent/conversations-graphic";
-import { EmbedGraphic } from "@/components/agent/embed-graphic";
-import { GroundedChat } from "@/components/agent/grounded-chat";
-import { LanguagesGraphic } from "@/components/agent/languages-graphic";
-import { SourcesGraphic } from "@/components/agent/sources-graphic";
+import {
+  ConversationsGraphic,
+  EmbedGraphic,
+  GroundedChat,
+  LanguagesGraphic,
+  SourcesGraphic,
+} from "@/components/marketing/illustrations";
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
 import { SectionHeading } from "@/components/marketing/page-hero";
