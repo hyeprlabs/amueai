@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
 import { MarketingPagination } from "@/components/marketing/marketing-pagination";
-import { BlogSection } from "@/components/blog/blog-section";
+import { BlogSection } from "@/components/marketing/pages/blog/blog-section";
 import { siteConfig } from "@/config/site";
 import { getCategories, getPosts, parsePageParam } from "@/lib/blog";
 import {

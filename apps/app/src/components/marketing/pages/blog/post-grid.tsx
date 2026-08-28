@@ -1,5 +1,5 @@
-import { BlogEmpty } from "@/components/blog/blog-empty";
-import { PostCard } from "@/components/blog/post-card";
+import { BlogEmpty } from "@/components/marketing/pages/blog/blog-empty";
+import { PostCard } from "@/components/marketing/pages/blog/post-card";
 import type { Post } from "@/payload-types";
 
 export function PostGrid({ posts }: { posts: Post[] }) {
