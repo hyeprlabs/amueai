@@ -2,7 +2,7 @@ import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { FullWidthDivider } from "@/components/marketing/full-width-divider";
+import { FullWidthDivider } from "@/components/full-width-divider";
 import { SectionHeading } from "@/components/marketing/page-hero";
 
 type Channel = {

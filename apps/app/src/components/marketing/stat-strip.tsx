@@ -1,4 +1,4 @@
-import { FullWidthDivider } from "@/components/marketing/full-width-divider";
+import { FullWidthDivider } from "@/components/full-width-divider";
 import { cn } from "@/lib/utils";
 
 /**

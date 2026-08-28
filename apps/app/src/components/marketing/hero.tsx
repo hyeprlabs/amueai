@@ -2,8 +2,8 @@ import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
-import { DecorIcon } from "@/components/marketing/decor-icon";
-import { FullWidthDivider } from "@/components/marketing/full-width-divider";
+import { DecorIcon } from "@/components/decor-icon";
+import { FullWidthDivider } from "@/components/full-width-divider";
 import { WhitelistForm } from "@/components/marketing/whitelist-form";
 import { BorderBeam } from "@/components/ui/border-beam";
 

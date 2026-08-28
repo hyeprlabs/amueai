@@ -6,7 +6,7 @@ import {
   LanguagesGraphic,
   SourcesGraphic,
 } from "@/components/marketing/illustrations";
-import { FullWidthDivider } from "@/components/marketing/full-width-divider";
+import { FullWidthDivider } from "@/components/full-width-divider";
 import { SectionHeading } from "@/components/marketing/page-hero";
 
 /**

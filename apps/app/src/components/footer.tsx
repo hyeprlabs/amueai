@@ -6,9 +6,9 @@ import { GithubIcon } from "@/components/icons/github-icon";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { Logo } from "@/components/logo";
-import { LegalDropdown } from "@/components/marketing/legal-dropdown";
+import { LegalDropdown } from "@/components/legal-dropdown";
 import { Button } from "@/components/ui/button";
-import { FullWidthDivider } from "@/components/marketing/full-width-divider";
+import { FullWidthDivider } from "@/components/full-width-divider";
 
 export function Footer() {
   return (

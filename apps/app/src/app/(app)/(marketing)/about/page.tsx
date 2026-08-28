@@ -3,7 +3,7 @@ import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 import { ClockIcon, LockIcon, ShieldCheckIcon, TargetIcon } from "lucide-react";
 
 import { CallToAction } from "@/components/marketing/cta";
-import { FullWidthDivider } from "@/components/marketing/full-width-divider";
+import { FullWidthDivider } from "@/components/full-width-divider";
 import { PageHero, SectionHeading } from "@/components/marketing/page-hero";
 import { GridPattern } from "@/components/ui/grid-pattern";
 import { siteConfig } from "@/config/site";

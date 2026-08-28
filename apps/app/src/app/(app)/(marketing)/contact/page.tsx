@@ -4,7 +4,7 @@ import { BriefcaseIcon, LifeBuoyIcon, MailIcon, ScaleIcon, ShieldCheckIcon } fro
 
 import { ContactForm } from "@/components/marketing/contact-form";
 import { CallToAction } from "@/components/marketing/cta";
-import { FullWidthDivider } from "@/components/marketing/full-width-divider";
+import { FullWidthDivider } from "@/components/full-width-divider";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { XIcon } from "@/components/icons/x-icon";
