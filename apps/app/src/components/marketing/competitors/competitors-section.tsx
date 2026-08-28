@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CompetitorsEmpty } from "@/components/competitors/competitors-empty";
+import { CompetitorsEmpty } from "@/components/marketing/competitors/competitors-empty";
 import { FullWidthDivider } from "@/components/full-width-divider";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";

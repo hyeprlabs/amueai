@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
-import { LegalContact } from "@/components/legal-contact";
+import { LegalContact } from "@/components/marketing/legal-contact";
 import { LegalDropdown } from "@/components/legal-dropdown";
 import { siteConfig } from "@/config/site";
 import { getLegalPage } from "@/lib/legal-pages";

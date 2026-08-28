@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
-import { ChangelogSection } from "@/components/changelog/changelog-section";
-import { MarketingPagination } from "@/components/marketing-pagination";
+import { ChangelogSection } from "@/components/marketing/changelog/changelog-section";
+import { MarketingPagination } from "@/components/marketing/marketing-pagination";
 import { siteConfig } from "@/config/site";
 import { getChanges } from "@/lib/changelog";
 import {

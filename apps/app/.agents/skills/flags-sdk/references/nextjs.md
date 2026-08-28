@@ -23,10 +23,10 @@ pnpm i flags
 Declare a flag in `flags.ts`:
 
 ```ts
-import { flag } from 'flags/next';
+import { flag } from "flags/next";
 
 export const exampleFlag = flag({
-  key: 'example-flag',
+  key: "example-flag",
   decide() {
     return Math.random() > 0.5;
   },
@@ -45,8 +45,8 @@ pnpm i @vercel/toolbar
 
 ```ts
 // next.config.ts
-import type { NextConfig } from 'next';
-import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
+import type { NextConfig } from "next";
+import createWithVercelToolbar from "@vercel/toolbar/plugins/next";
 
 const nextConfig: NextConfig = {};
 
@@ -58,16 +58,12 @@ export default withVercelToolbar(nextConfig);
 
 ```tsx
 // app/layout.tsx
-import { VercelToolbar } from '@vercel/toolbar/next';
+import { VercelToolbar } from "@vercel/toolbar/next";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   // On Vercel, the toolbar is auto-injected in preview deployments.
   // This manual injection is only needed for local development.
-  const shouldInjectToolbar = process.env.NODE_ENV === 'development';
+  const shouldInjectToolbar = process.env.NODE_ENV === "development";
   return (
     <html lang="en">
       <body>
@@ -85,11 +81,11 @@ Call the flag function from any async server component or proxy:
 
 ```tsx
 // app/page.tsx
-import { exampleFlag } from '../flags';
+import { exampleFlag } from "../flags";
 
 export default async function Page() {
   const example = await exampleFlag();
-  return <div>{example ? 'Flag is on' : 'Flag is off'}</div>;
+  return <div>{example ? "Flag is on" : "Flag is off"}</div>;
 }
 ```
 
@@ -99,18 +95,16 @@ Pass `req` to the flag in `getServerSideProps`:
 
 ```tsx
 // pages/index.tsx
-import type { InferGetServerSidePropsType, GetServerSideProps } from 'next';
-import { exampleFlag } from '../flags';
+import type { InferGetServerSidePropsType, GetServerSideProps } from "next";
+import { exampleFlag } from "../flags";
 
 export const getServerSideProps = (async ({ req }) => {
   const example = await exampleFlag(req);
   return { props: { example } };
 }) satisfies GetServerSideProps<{ example: boolean }>;
 
-export default function Page({
-  example,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  return <div>{example ? 'Flag is on' : 'Flag is off'}</div>;
+export default function Page({ example }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  return <div>{example ? "Flag is on" : "Flag is off"}</div>;
 }
 ```
 
@@ -119,25 +113,23 @@ export default function Page({
 Use `identify` to establish who the request is for. The returned entities are passed to `decide`:
 
 ```ts
-import { flag, dedupe } from 'flags/next';
-import type { ReadonlyRequestCookies } from 'flags';
+import { flag, dedupe } from "flags/next";
+import type { ReadonlyRequestCookies } from "flags";
 
 interface Entities {
   user?: { id: string };
 }
 
-const identify = dedupe(
-  ({ cookies }: { cookies: ReadonlyRequestCookies }): Entities => {
-    const userId = cookies.get('user-id')?.value;
-    return { user: userId ? { id: userId } : undefined };
-  },
-);
+const identify = dedupe(({ cookies }: { cookies: ReadonlyRequestCookies }): Entities => {
+  const userId = cookies.get("user-id")?.value;
+  return { user: userId ? { id: userId } : undefined };
+});
 
 export const myFlag = flag<boolean, Entities>({
-  key: 'my-flag',
+  key: "my-flag",
   identify,
   decide({ entities }) {
-    return entities?.user?.id === 'user1';
+    return entities?.user?.id === "user1";
   },
 });
 ```
@@ -149,8 +141,8 @@ export const myFlag = flag<boolean, Entities>({
 Override identify at call site (use sparingly):
 
 ```ts
-await exampleFlag.run({ identify: { user: { id: 'user1' } } });
-await exampleFlag.run({ identify: () => ({ user: { id: 'user1' } }) });
+await exampleFlag.run({ identify: { user: { id: "user1" } } });
+await exampleFlag.run({ identify: () => ({ user: { id: "user1" } }) });
 ```
 
 ## Dedupe
@@ -158,14 +150,15 @@ await exampleFlag.run({ identify: () => ({ user: { id: 'user1' } }) });
 Wrap functions in `dedupe` to run them once per request within the same runtime:
 
 ```ts
-import { dedupe } from 'flags/next';
+import { dedupe } from "flags/next";
 
 const identify = dedupe(({ cookies }) => {
-  return { user: { id: cookies.get('uid')?.value } };
+  return { user: { id: cookies.get("uid")?.value } };
 });
 ```
 
 Use cases:
+
 - Prevent duplicate `identify` calls across multiple flags
 - Generate consistent random IDs for anonymous visitor experiments
 
@@ -195,15 +188,15 @@ vercel env add FLAGS_SECRET development --value <development-secret>
 
 ```ts
 // flags.ts
-import { flag } from 'flags/next';
+import { flag } from "flags/next";
 
 export const showSummerSale = flag({
-  key: 'summer-sale',
+  key: "summer-sale",
   decide: () => false,
 });
 
 export const showBanner = flag({
-  key: 'banner',
+  key: "banner",
   decide: () => false,
 });
 
@@ -214,11 +207,11 @@ export const marketingFlags = [showSummerSale, showBanner] as const;
 
 ```ts
 // proxy.ts
-import { type NextRequest, NextResponse } from 'next/server';
-import { precompute } from 'flags/next';
-import { marketingFlags } from './flags';
+import { type NextRequest, NextResponse } from "next/server";
+import { precompute } from "flags/next";
+import { marketingFlags } from "./flags";
 
-export const config = { matcher: ['/'] };
+export const config = { matcher: ["/"] };
 
 export async function proxy(request: NextRequest) {
   const code = await precompute(marketingFlags);
@@ -234,7 +227,7 @@ export async function proxy(request: NextRequest) {
 
 ```tsx
 // app/[code]/page.tsx
-import { marketingFlags, showSummerSale, showBanner } from '../../flags';
+import { marketingFlags, showSummerSale, showBanner } from "../../flags";
 
 type Params = Promise<{ code: string }>;
 
@@ -256,7 +249,7 @@ export default async function Page({ params }: { params: Params }) {
 
 ```tsx
 // app/[code]/layout.tsx
-import { generatePermutations } from 'flags/next';
+import { generatePermutations } from "flags/next";
 
 export async function generateStaticParams() {
   const codes = await generatePermutations(marketingFlags);
@@ -274,9 +267,9 @@ Options enable efficient URL encoding and Flags Explorer display:
 
 ```ts
 export const greetingFlag = flag<string>({
-  key: 'greeting',
-  options: ['Hello world', 'Hi', 'Hola'],
-  decide: () => 'Hello world',
+  key: "greeting",
+  options: ["Hello world", "Hi", "Hola"],
+  decide: () => "Hello world",
 });
 ```
 
@@ -284,12 +277,12 @@ Or with labels:
 
 ```ts
 export const greetingFlag = flag<string>({
-  key: 'greeting',
+  key: "greeting",
   options: [
-    { label: 'Hello world', value: 'Hello world' },
-    { label: 'Hi', value: 'Hi' },
+    { label: "Hello world", value: "Hello world" },
+    { label: "Hi", value: "Hi" },
   ],
-  decide: () => 'Hello world',
+  decide: () => "Hello world",
 });
 ```
 
@@ -315,18 +308,18 @@ app/[rootCode]/
 
 ```tsx
 // pages/[code]/index.tsx
-import { generatePermutations } from 'flags/next';
+import { generatePermutations } from "flags/next";
 
 export const getStaticPaths = (async () => {
   const codes = await generatePermutations(marketingFlags);
   return {
     paths: codes.map((code) => ({ params: { code } })),
-    fallback: 'blocking',
+    fallback: "blocking",
   };
 }) satisfies GetStaticPaths;
 
 export const getStaticProps = (async (context) => {
-  if (typeof context.params?.code !== 'string') return { notFound: true };
+  if (typeof context.params?.code !== "string") return { notFound: true };
   const example = await exampleFlag(context.params.code, marketingFlags);
   return { props: { example } };
 }) satisfies GetStaticProps<{ example: boolean }>;
@@ -337,26 +330,24 @@ export const getStaticProps = (async (context) => {
 For authenticated dashboard pages, use `identify` to read user context from cookies/JWTs:
 
 ```ts
-import type { ReadonlyRequestCookies } from 'flags';
-import { flag, dedupe } from 'flags/next';
+import type { ReadonlyRequestCookies } from "flags";
+import { flag, dedupe } from "flags/next";
 
 interface Entities {
   user?: { id: string };
 }
 
-const identify = dedupe(
-  ({ cookies }: { cookies: ReadonlyRequestCookies }): Entities => {
-    const userId = cookies.get('dashboard-user-id')?.value;
-    return { user: userId ? { id: userId } : undefined };
-  },
-);
+const identify = dedupe(({ cookies }: { cookies: ReadonlyRequestCookies }): Entities => {
+  const userId = cookies.get("dashboard-user-id")?.value;
+  return { user: userId ? { id: userId } : undefined };
+});
 
 export const dashboardFlag = flag<boolean, Entities>({
-  key: 'dashboard-flag',
+  key: "dashboard-flag",
   identify,
   decide({ entities }) {
     if (!entities?.user) return false;
-    const allowedUsers = ['user1'];
+    const allowedUsers = ["user1"];
     return allowedUsers.includes(entities.user.id);
   },
 });
@@ -367,7 +358,7 @@ Usage in a page:
 ```tsx
 export default async function DashboardPage() {
   const dashboard = await dashboardFlag();
-  return <div>{dashboard ? 'New Dashboard' : 'Old Dashboard'}</div>;
+  return <div>{dashboard ? "New Dashboard" : "Old Dashboard"}</div>;
 }
 ```
 
@@ -379,37 +370,31 @@ For static marketing pages with A/B tests, combine precompute with visitor ID ge
 
 ```ts
 // proxy.ts
-import { precompute } from 'flags/next';
-import { type NextRequest, NextResponse } from 'next/server';
-import { marketingFlags } from './flags';
-import { getOrGenerateVisitorId } from './get-or-generate-visitor-id';
+import { precompute } from "flags/next";
+import { type NextRequest, NextResponse } from "next/server";
+import { marketingFlags } from "./flags";
+import { getOrGenerateVisitorId } from "./get-or-generate-visitor-id";
 
 export async function marketingProxy(request: NextRequest) {
-  const visitorId = await getOrGenerateVisitorId(
-    request.cookies,
-    request.headers,
-  );
+  const visitorId = await getOrGenerateVisitorId(request.cookies, request.headers);
 
   const code = await precompute(marketingFlags);
 
-  return NextResponse.rewrite(
-    new URL(`/examples/marketing-pages/${code}`, request.url),
-    {
-      headers: {
-        'Set-Cookie': `marketing-visitor-id=${visitorId}; Path=/`,
-        'x-marketing-visitor-id': visitorId,
-      },
+  return NextResponse.rewrite(new URL(`/examples/marketing-pages/${code}`, request.url), {
+    headers: {
+      "Set-Cookie": `marketing-visitor-id=${visitorId}; Path=/`,
+      "x-marketing-visitor-id": visitorId,
     },
-  );
+  });
 }
 ```
 
 ### Deduplicated visitor ID generation
 
 ```ts
-import { nanoid } from 'nanoid';
-import { dedupe } from 'flags/next';
-import type { ReadonlyHeaders, ReadonlyRequestCookies } from 'flags';
+import { nanoid } from "nanoid";
+import { dedupe } from "flags/next";
+import type { ReadonlyHeaders, ReadonlyRequestCookies } from "flags";
 
 const generateId = dedupe(async () => nanoid());
 
@@ -417,10 +402,10 @@ export const getOrGenerateVisitorId = async (
   cookies: ReadonlyRequestCookies,
   headers: ReadonlyHeaders,
 ) => {
-  const cookieVisitorId = cookies.get('marketing-visitor-id')?.value;
+  const cookieVisitorId = cookies.get("marketing-visitor-id")?.value;
   if (cookieVisitorId) return cookieVisitorId;
 
-  const headerVisitorId = headers.get('x-marketing-visitor-id');
+  const headerVisitorId = headers.get("x-marketing-visitor-id");
   if (headerVisitorId) return headerVisitorId;
 
   return generateId();
@@ -438,7 +423,7 @@ const identify = dedupe(
 );
 
 export const marketingAbTest = flag<boolean, Entities>({
-  key: 'marketing-ab-test-flag',
+  key: "marketing-ab-test-flag",
   identify,
   decide({ entities }) {
     if (!entities?.visitor) return false;
@@ -453,14 +438,14 @@ Use flags in proxy to rewrite requests to static page variants:
 
 ```ts
 // proxy.ts
-import { type NextRequest, NextResponse } from 'next/server';
-import { myFlag } from './flags';
+import { type NextRequest, NextResponse } from "next/server";
+import { myFlag } from "./flags";
 
-export const config = { matcher: ['/example'] };
+export const config = { matcher: ["/example"] };
 
 export async function proxy(request: NextRequest) {
   const active = await myFlag();
-  const variant = active ? 'variant-on' : 'variant-off';
+  const variant = active ? "variant-on" : "variant-off";
   return NextResponse.rewrite(new URL(`/example/${variant}`, request.url));
 }
 ```
@@ -493,8 +478,8 @@ The Flags Explorer is part of the Vercel Toolbar. Before adding the discovery en
 
 ```ts
 // app/.well-known/vercel/flags/route.ts
-import { getProviderData, createFlagsDiscoveryEndpoint } from 'flags/next';
-import * as flags from '../../../../flags';
+import { getProviderData, createFlagsDiscoveryEndpoint } from "flags/next";
+import * as flags from "../../../../flags";
 
 export const GET = createFlagsDiscoveryEndpoint(async () => {
   return getProviderData(flags);
@@ -510,8 +495,8 @@ module.exports = {
   async rewrites() {
     return [
       {
-        source: '/.well-known/vercel/flags',
-        destination: '/api/vercel/flags',
+        source: "/.well-known/vercel/flags",
+        destination: "/api/vercel/flags",
       },
     ];
   },
@@ -520,14 +505,14 @@ module.exports = {
 
 ```ts
 // pages/api/vercel/flags.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyAccess } from 'flags';
+import type { NextApiRequest, NextApiResponse } from "next";
+import { verifyAccess } from "flags";
 
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
   const access = await verifyAccess(req.headers.authorization);
   if (!access) return res.status(401).json(null);
 
-  const providerData = { /* ... */ };
+  const providerData = {/* ... */};
   return res.status(200).json(providerData);
 }
 ```

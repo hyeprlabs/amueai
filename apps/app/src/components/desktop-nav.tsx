@@ -7,7 +7,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { companyLinks, companyLinks2, featureLinks } from "@/components/nav-links";
-import { LinkItem } from "@/components/sheard";
+import { ComingSoonBadge, LinkItem } from "@/components/sheard";
 
 export function DesktopNav() {
   return (
@@ -29,9 +29,9 @@ export function DesktopNav() {
             <div className="p-2">
               <p className="text-muted-foreground text-sm">
                 Interested?{" "}
-                <a className="font-medium text-foreground hover:underline" href="/demo">
-                  Schedule a demo
-                </a>
+                <span aria-disabled="true" className="cursor-not-allowed font-medium opacity-50">
+                  Schedule a demo (soon)
+                </span>
               </p>
             </div>
           </NavigationMenuContent>
@@ -51,12 +51,26 @@ export function DesktopNav() {
                 ))}
               </div>
               <div className="space-y-2 p-3">
-                {companyLinks2.map((item, i) => (
-                  <NavigationMenuLink href={item.href} key={`item-${item.label}-${i}`}>
-                    {item.icon}
-                    {item.label}
-                  </NavigationMenuLink>
-                ))}
+                {companyLinks2.map((item, i) =>
+                  item.isComingSoon ? (
+                    // Mirrors NavigationMenuLink's own sizing so a disabled row
+                    // sits at exactly the same text and icon scale as a live one.
+                    <div
+                      aria-disabled="true"
+                      className="flex cursor-not-allowed items-center gap-2 rounded-lg p-2 text-muted-foreground text-sm opacity-50 [&_svg:not([class*='size-'])]:size-4"
+                      key={`item-${item.label}-${i}`}
+                    >
+                      {item.icon}
+                      {item.label}
+                      <ComingSoonBadge />
+                    </div>
+                  ) : (
+                    <NavigationMenuLink href={item.href} key={`item-${item.label}-${i}`}>
+                      {item.icon}
+                      {item.label}
+                    </NavigationMenuLink>
+                  ),
+                )}
               </div>
             </div>
           </NavigationMenuContent>

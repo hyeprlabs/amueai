@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { WhitelistForm } from "@/components/whitelist-form";
+import { WhitelistForm } from "@/components/marketing/whitelist-form";
 import { BorderBeam } from "@/components/ui/border-beam";
 
 export function HeroSection() {
