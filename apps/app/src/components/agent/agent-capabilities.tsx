@@ -11,6 +11,7 @@ import {
 
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
+import { SectionHeading } from "@/components/marketing/page-hero";
 
 /** Deliberately label-only: the bands above already made the argument. */
 const capabilities = [
@@ -27,12 +28,10 @@ const capabilities = [
 export function AgentCapabilities() {
   return (
     <section className="mb-12 lg:mb-24">
-      <div className="mx-auto max-w-3xl px-4 py-6 text-center">
-        <h2 className="text-balance font-medium text-2xl md:text-4xl">And everything else</h2>
-        <p className="mt-4 text-balance text-muted-foreground text-sm md:text-base">
-          The rest of what your agent can do, out of the box.
-        </p>
-      </div>
+      <SectionHeading
+        description="The rest of what your agent can do, out of the box."
+        title="And everything else"
+      />
 
       <div className="relative">
         <DecorIcon className="size-4" position="top-left" />

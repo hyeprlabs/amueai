@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useWaitlist } from "@clerk/nextjs";
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { AlertCircleIcon, LoaderCircleIcon } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import { siteConfig } from "@/config/site";
 import { fireConfetti } from "@/lib/confetti";
 import { cn } from "@/lib/utils";
 
+const CONSENT_REQUIRED = "Please accept the Terms of Service and Privacy Policy.";
+
 /**
  * Consent is a required, separately-refused field rather than an implied
  * "by joining you agree" line: GDPR Art. 7 and the German TDDDG want an
@@ -26,9 +28,7 @@ import { cn } from "@/lib/utils";
  */
 const whitelistSchema = z.object({
   emailAddress: z.string().trim().min(1, "Please enter your email address"),
-  acceptedTerms: z
-    .boolean()
-    .refine((accepted) => accepted, "Please accept the Terms of Service and Privacy Policy"),
+  acceptedTerms: z.boolean().refine((accepted) => accepted, CONSENT_REQUIRED),
 });
 
 type WhitelistFormValues = z.infer<typeof whitelistSchema>;
@@ -95,11 +95,25 @@ export function WhitelistForm() {
     }
   };
 
+  /**
+   * Missing consent is surfaced as a toast rather than inline text, so the
+   * form's resting state stays clean. The field is still marked invalid, which
+   * is what screen readers and the focus ring go on.
+   *
+   * Reads the errors handed in by the resolver, not `formState.errors` from the
+   * render closure: that one is still the previous value at this point.
+   */
+  const onInvalid = (submitErrors: FieldErrors<WhitelistFormValues>) => {
+    if (submitErrors.acceptedTerms) {
+      toast.add({ title: CONSENT_REQUIRED, type: "error" });
+    }
+  };
+
   return (
     <form
       className="-mx-3 w-[calc(100%+1.5rem)] sm:mx-0 sm:w-full sm:max-w-md"
       noValidate
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSubmit, onInvalid)}
     >
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-start">
         <Field className="flex-1" data-invalid={fieldError ? true : undefined}>
@@ -194,15 +208,6 @@ export function WhitelistForm() {
             </div>
           )}
         />
-
-        <div aria-live="polite">
-          {termsError && (
-            <FieldError className="flex items-center gap-1 text-xs">
-              <AlertCircleIcon className="size-3.5 shrink-0" />
-              {termsError.message}
-            </FieldError>
-          )}
-        </div>
       </Field>
     </form>
   );

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
+import { ClockIcon, LockIcon, ShieldCheckIcon, TargetIcon } from "lucide-react";
 
 import { CallToAction } from "@/components/cta";
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { PageHero } from "@/components/marketing/page-hero";
+import { PageHero, SectionHeading } from "@/components/marketing/page-hero";
+import { GridPattern } from "@/components/ui/grid-pattern";
 import { siteConfig } from "@/config/site";
 import {
   breadcrumbItems,
@@ -20,34 +22,34 @@ const pathname = "/about";
 
 export const metadata: Metadata = createMetadata({ title, description, pathname });
 
-const principles = [
-  {
-    title: "Grounded, not guessing",
-    description:
-      "An agent that invents an answer is worse than no agent at all. Ours answer from your content or admit they don't know.",
-  },
-  {
-    title: "Minutes, not quarters",
-    description:
-      "Adding a source and going live should take an afternoon. Every decision we make is measured against that.",
-  },
-  {
-    title: "Built for the front line",
-    description:
-      "We design for the person answering the same question for the hundredth time, not for the org chart above them.",
-  },
-  {
-    title: "Your data stays yours",
-    description:
-      "Your content trains your agent and nothing else. It is never folded into a shared model.",
-  },
-];
-
 const facts = [
   { label: "Built by", value: siteConfig.publisher },
   { label: "Founded", value: "2025" },
   { label: "Where", value: "Remote" },
   { label: "Focus", value: "Support automation" },
+];
+
+const principles = [
+  {
+    title: "Grounded, not guessing",
+    icon: <TargetIcon />,
+    description: "Answers come from your content, or the agent says it does not know.",
+  },
+  {
+    title: "Minutes, not quarters",
+    icon: <ClockIcon />,
+    description: "From first source to live agent in an afternoon.",
+  },
+  {
+    title: "Built for the front line",
+    icon: <ShieldCheckIcon />,
+    description: "Designed for the people answering the same question all day.",
+  },
+  {
+    title: "Your data stays yours",
+    icon: <LockIcon />,
+    description: "Your content trains your agent. Never a shared model.",
+  },
 ];
 
 export default function AboutPage() {
@@ -69,78 +71,97 @@ export default function AboutPage() {
 
       <PageHero
         badge="About"
-        description={`${siteConfig.name} turns the content you already have — help articles, policies, product docs — into an agent that answers your customers the moment they ask.`}
-        title="Your best support agent is already written down."
+        description={`${siteConfig.name} turns the content you already have into an agent that answers your customers the moment they ask.`}
+        title="Your best support agent is already written down"
       />
 
-      <AboutSection label="Our mission">
-        <div className="space-y-4 text-muted-foreground text-sm md:text-base">
-          <p>
-            Most support questions have already been answered somewhere — in a help center article,
-            a shipping policy, a spec sheet. That knowledge just sits there while a person retypes
-            the same reply for the hundredth time.
-          </p>
-          <p className="text-foreground">
-            We built {siteConfig.name} so that knowledge answers for itself.
-          </p>
-          <p>
-            Point an agent at your content and it becomes a teammate that never sleeps, never
-            forgets, and never makes something up. When it doesn't know, it says so.
-          </p>
-        </div>
-      </AboutSection>
-
-      <AboutSection label="What we believe">
-        <dl className="grid gap-6 sm:grid-cols-2 sm:gap-x-8">
-          {principles.map((principle) => (
-            <div key={principle.title}>
-              <dt className="font-medium text-sm md:text-base">{principle.title}</dt>
-              <dd className="mt-2 text-balance font-light text-muted-foreground text-sm">
-                {principle.description}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </AboutSection>
-
-      <AboutSection label="The company">
-        <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-          {facts.map((fact) => (
-            <div key={fact.label}>
-              <dt className="text-muted-foreground text-xs">{fact.label}</dt>
-              <dd className="mt-1 font-medium text-sm md:text-base">{fact.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </AboutSection>
-
+      {/* Facts */}
       <div className="relative mb-12 lg:mb-24">
         <DecorIcon className="size-4" position="top-left" />
         <DecorIcon className="size-4" position="top-right" />
+        <DecorIcon className="size-4" position="bottom-left" />
+        <DecorIcon className="size-4" position="bottom-right" />
+
         <FullWidthDivider className="-top-px" />
+        <dl className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
+          {facts.map((fact) => (
+            <div className="bg-background px-3 py-6 text-center" key={fact.label}>
+              <dt className="text-muted-foreground text-xs">{fact.label}</dt>
+              <dd className="mt-1 text-balance font-medium text-sm md:text-base">{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <FullWidthDivider className="-bottom-px" />
       </div>
+
+      {/* Mission */}
+      <section className="mb-12 lg:mb-24">
+        <SectionHeading title="Our mission" />
+        <div className="relative">
+          <DecorIcon className="size-4" position="top-left" />
+          <DecorIcon className="size-4" position="top-right" />
+          <DecorIcon className="size-4" position="bottom-left" />
+          <DecorIcon className="size-4" position="bottom-right" />
+
+          <FullWidthDivider className="-top-px" />
+          <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-3">
+            <p className="bg-background p-6 font-light text-muted-foreground text-sm md:p-8">
+              Most support questions have already been answered somewhere. In a help article, a
+              policy page, a spec sheet.
+            </p>
+            <p className="bg-background p-6 text-foreground text-sm md:p-8">
+              That knowledge just sits there while someone retypes the same reply for the hundredth
+              time.
+            </p>
+            <p className="bg-background p-6 font-light text-muted-foreground text-sm md:p-8">
+              We built {siteConfig.name} so it answers for itself, around the clock, in your words.
+            </p>
+          </div>
+          <FullWidthDivider className="-bottom-px" />
+        </div>
+      </section>
+
+      {/* Principles */}
+      <section className="mb-12 lg:mb-24">
+        <SectionHeading title="What we believe" />
+        <div className="relative">
+          <DecorIcon className="size-4" position="top-left" />
+          <DecorIcon className="size-4" position="top-right" />
+          <DecorIcon className="size-4" position="bottom-left" />
+          <DecorIcon className="size-4" position="bottom-right" />
+
+          <FullWidthDivider className="-top-px" />
+          <dl className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+            {principles.map((principle) => (
+              <div className="relative overflow-hidden bg-background p-6" key={principle.title}>
+                <div className="mask-[radial-gradient(farthest-side_at_top,white,transparent)] pointer-events-none absolute top-0 left-1/2 -mt-2 -ml-20 size-full">
+                  <GridPattern
+                    className="absolute inset-0 size-full stroke-foreground/20 opacity-80"
+                    height={40}
+                    width={40}
+                    x={20}
+                  />
+                </div>
+                <div
+                  aria-hidden="true"
+                  className="relative [&_svg]:size-6 [&_svg]:text-foreground/75"
+                >
+                  {principle.icon}
+                </div>
+                <dt className="relative mt-10 text-balance text-sm md:text-base">
+                  {principle.title}
+                </dt>
+                <dd className="relative z-20 mt-2 text-balance font-light text-muted-foreground text-xs">
+                  {principle.description}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <FullWidthDivider className="-bottom-px" />
+        </div>
+      </section>
 
       <CallToAction />
     </>
-  );
-}
-
-/**
- * Label in a narrow left column, content in the wide one; stacked on mobile.
- *
- * The label is the section's `h2` rather than decorative text, so the page
- * outline reads Mission / Beliefs / Company under the `h1`.
- */
-function AboutSection({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <section className="relative px-4 py-10 md:py-12">
-      <FullWidthDivider className="-top-px" />
-      <div className="grid gap-4 md:grid-cols-[minmax(0,11rem)_minmax(0,1fr)] md:gap-10">
-        <h2 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-          {label}
-        </h2>
-        <div className="max-w-2xl">{children}</div>
-      </div>
-    </section>
   );
 }

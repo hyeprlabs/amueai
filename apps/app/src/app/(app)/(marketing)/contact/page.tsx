@@ -22,7 +22,7 @@ import {
 import { createMetadata } from "@/lib/seo";
 
 const title = "Contact";
-const description = `Get in touch with the ${siteConfig.name} team — support, sales, press, or privacy. We read every message and reply within one business day.`;
+const description = `Get in touch with the ${siteConfig.name} team about support, sales, press, or privacy. We read every message and reply within one business day.`;
 const pathname = "/contact";
 
 export const metadata: Metadata = createMetadata({ title, description, pathname });
@@ -95,7 +95,7 @@ export default function ContactPage() {
 
       <PageHero
         badge="Contact"
-        description="Questions about the product, a bug you've hit, or a rollout you're planning — send it over and someone on the team will get back to you."
+        description="Questions about the product, a bug you've hit, or a rollout you're planning. Send it over and someone on the team will get back to you."
         title={`Talk to the people building ${siteConfig.name}`}
       />
 
@@ -118,7 +118,7 @@ export default function ContactPage() {
           </section>
 
           {/*
-            One `h2` for the column, with the three blocks under it as `h3`s —
+            One `h2` for the column, with the three blocks under it as `h3`s:
             "What we can help with" is a sibling of the email block, not a
             subsection of it.
           */}

@@ -41,7 +41,7 @@ export function ContactForm() {
 
   const onSubmit = ({ name, email, message }: ContactFormValues) => {
     const subject = `Message from ${name}`;
-    const body = `${message}\n\n— ${name} (${email})`;
+    const body = `${message}\n\nFrom: ${name} (${email})`;
     window.location.href = `mailto:${siteConfig.email}?subject=${encodeURIComponent(
       subject,
     )}&body=${encodeURIComponent(body)}`;

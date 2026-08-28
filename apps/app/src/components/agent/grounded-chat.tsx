@@ -1,72 +1,91 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { BotIcon, FileTextIcon } from "lucide-react";
+import { FileTextIcon, SparklesIcon } from "lucide-react";
 
+import { accents } from "@/components/agent/accent";
 import { cn } from "@/lib/utils";
 
-/**
- * A short widget transcript that fades in on a loop. Two turns only — the
- * question and the cited answer — so the point lands at a glance.
- */
-const turns = [
-  { role: "user", text: "Do you ship to Germany?" },
-  { role: "agent", text: "Yes — DHL, 3–5 business days.", cite: "shipping-policy.pdf" },
-] as const;
+/** One full replay: question, agent thinking, cited answer, hold, restart. */
+const LOOP = 6;
+const at = (seconds: number) => seconds / LOOP;
 
 export function GroundedChat() {
   const reduced = useReducedMotion();
 
+  /** Fades a step in at `start` and holds it until the loop restarts. */
+  const step = (start: number) =>
+    reduced
+      ? { animate: { opacity: 1, y: 0 }, transition: { duration: 0 } }
+      : {
+          animate: { opacity: [0, 0, 1, 1, 0], y: [4, 4, 0, 0, 0] },
+          transition: {
+            duration: LOOP,
+            times: [0, at(start), at(start + 0.35), 0.94, 1],
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeOut" as const,
+          },
+        };
+
   return (
-    <div className="w-full max-w-xs overflow-hidden rounded-xl border bg-card shadow-xs">
-      <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2">
-        <span className="flex size-6 items-center justify-center rounded-full border bg-background">
-          <BotIcon className="size-3.5" />
+    <div className="flex w-full max-w-[15rem] flex-col gap-2 sm:max-w-[17rem]">
+      {/* Visitor question */}
+      <motion.p
+        className="ml-auto max-w-[85%] rounded-lg rounded-br-sm border bg-muted/60 px-2.5 py-1.5 text-[11px] leading-relaxed"
+        initial={false}
+        {...step(0.2)}
+      >
+        Do you ship to Germany?
+      </motion.p>
+
+      {/* Retrieval step: the agent is reading a source, and says which one. */}
+      <motion.span
+        className={cn(
+          "flex w-max items-center gap-1.5 rounded-md border px-1.5 py-1 font-mono text-[10px]",
+          accents.blue.tint,
+          accents.blue.border,
+          accents.blue.text,
+        )}
+        initial={false}
+        {...step(1.1)}
+      >
+        <FileTextIcon className="size-2.5 shrink-0" />
+        shipping-policy.pdf
+        {!reduced && (
+          <span className="flex gap-0.5">
+            {[0, 1, 2].map((dot) => (
+              <motion.span
+                animate={{ opacity: [0.25, 1, 0.25] }}
+                className={cn("block size-1 rounded-full", accents.blue.fill)}
+                key={dot}
+                transition={{
+                  duration: 0.9,
+                  repeat: Number.POSITIVE_INFINITY,
+                  delay: dot * 0.15,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </span>
+        )}
+      </motion.span>
+
+      {/* Grounded answer */}
+      <motion.div className="flex max-w-[90%] items-start gap-1.5" initial={false} {...step(2.2)}>
+        <span
+          className={cn(
+            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border",
+            accents.violet.tint,
+            accents.violet.border,
+            accents.violet.text,
+          )}
+        >
+          <SparklesIcon className="size-3" />
         </span>
-        <span className="font-medium text-xs">Support agent</span>
-      </div>
-
-      <div className="flex flex-col gap-2.5 p-3">
-        {turns.map((turn, index) => (
-          <motion.div
-            animate={reduced ? { opacity: 1, y: 0 } : { opacity: [0, 1, 1, 0], y: [4, 0, 0, 0] }}
-            className={cn(
-              "flex flex-col gap-1",
-              turn.role === "user" ? "items-end" : "items-start",
-            )}
-            initial={false}
-            key={turn.text}
-            transition={
-              reduced
-                ? { duration: 0 }
-                : {
-                    duration: 5,
-                    repeat: Number.POSITIVE_INFINITY,
-                    times: [0, 0.12 + index * 0.14, 0.9, 1],
-                    ease: "easeOut",
-                  }
-            }
-          >
-            <p
-              className={cn(
-                "max-w-[85%] rounded-lg border px-2.5 py-1.5 text-xs leading-relaxed",
-                turn.role === "user"
-                  ? "rounded-br-sm bg-muted/60"
-                  : "rounded-bl-sm bg-background shadow-xs",
-              )}
-            >
-              {turn.text}
-            </p>
-
-            {"cite" in turn && (
-              <span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
-                <FileTextIcon className="size-2.5 shrink-0" />
-                {turn.cite}
-              </span>
-            )}
-          </motion.div>
-        ))}
-      </div>
+        <p className="rounded-lg rounded-bl-sm border bg-card px-2.5 py-1.5 text-[11px] leading-relaxed shadow-xs">
+          Yes, DHL delivers in 3 to 5 business days.
+        </p>
+      </motion.div>
     </div>
   );
 }

@@ -3,46 +3,73 @@
 import { motion, useReducedMotion } from "motion/react";
 import { MessageCircleIcon } from "lucide-react";
 
+import { accents } from "@/components/agent/accent";
+import { cn } from "@/lib/utils";
+
 /**
- * The snippet, and the launcher it puts on the page. Kept to those two
- * elements — an abstract mock of the surrounding site added noise without
- * adding meaning.
+ * The snippet, syntax-coloured, and the launcher it drops onto the page. A
+ * caret runs along the code as if it were being pasted, then the bubble pops in.
  */
 export function EmbedGraphic() {
   const reduced = useReducedMotion();
 
   return (
-    <div className="flex w-full max-w-xs flex-col items-center gap-5">
-      <pre className="w-full whitespace-pre-wrap break-all rounded-lg border bg-muted/40 px-3 py-2 font-mono text-[10px] leading-relaxed">
-        <code>
-          <span className="text-muted-foreground">&lt;script</span> src=
-          <span className="text-muted-foreground">&quot;…/widget.js&quot;</span>
-          <span className="text-muted-foreground">&gt;&lt;/script&gt;</span>
-        </code>
-      </pre>
+    <div className="flex w-full max-w-[15rem] flex-col items-center gap-4 sm:max-w-[17rem]">
+      <div className="relative w-full overflow-hidden rounded-lg border bg-card px-2.5 py-2 shadow-xs">
+        <pre className="whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed">
+          <code>
+            <span className={accents.violet.text}>&lt;script</span>{" "}
+            <span className={accents.blue.text}>src</span>=
+            <span className={accents.emerald.text}>&quot;…/widget.js&quot;</span>
+            <span className={accents.violet.text}>&gt;&lt;/script&gt;</span>
+          </code>
+        </pre>
 
-      <span aria-hidden="true" className="h-6 w-px bg-border" />
+        {/* Sweep, reading as the snippet being pasted in. */}
+        {!reduced && (
+          <motion.span
+            animate={{ x: ["-30%", "130%"] }}
+            className="pointer-events-none absolute inset-y-0 w-1/3 bg-linear-to-r from-transparent via-foreground/10 to-transparent"
+            transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+          />
+        )}
+      </div>
 
-      <motion.div
-        animate={reduced ? undefined : { scale: [0.9, 1, 1, 0.9], opacity: [0, 1, 1, 0] }}
-        className="flex size-12 items-center justify-center rounded-full border bg-primary text-primary-foreground shadow"
-        transition={
-          reduced
-            ? undefined
-            : {
-                duration: 4,
-                times: [0, 0.2, 0.85, 1],
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeOut",
-              }
-        }
-      >
-        <MessageCircleIcon className="size-5" />
-      </motion.div>
+      <span aria-hidden="true" className="h-4 w-px bg-border" />
 
-      <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
-        Live on every page
-      </p>
+      <div className="relative flex size-12 items-center justify-center">
+        {!reduced && (
+          <motion.span
+            animate={{ scale: [0.8, 1.6], opacity: [0.5, 0] }}
+            className="absolute inset-0 rounded-full border border-blue-500/50"
+            transition={{
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+              repeatDelay: 2,
+              ease: "easeOut",
+            }}
+          />
+        )}
+        <motion.span
+          animate={reduced ? undefined : { scale: [0.85, 1, 1, 1] }}
+          className={cn(
+            "flex size-11 items-center justify-center rounded-full text-white shadow-lg",
+            accents.blue.fill,
+          )}
+          transition={
+            reduced
+              ? undefined
+              : {
+                  duration: 4,
+                  times: [0, 0.15, 0.9, 1],
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "backOut",
+                }
+          }
+        >
+          <MessageCircleIcon className="size-5" />
+        </motion.span>
+      </div>
     </div>
   );
 }

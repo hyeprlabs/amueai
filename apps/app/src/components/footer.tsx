@@ -74,7 +74,7 @@ export function Footer() {
   );
 }
 
-// Only pages that actually exist today — sorted alphabetically within each column.
+// Only pages that actually exist today, sorted alphabetically within each column.
 const company = [
   {
     title: "About Us",

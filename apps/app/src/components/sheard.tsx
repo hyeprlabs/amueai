@@ -8,7 +8,7 @@ export type LinkItemType = {
   href: string;
   icon: React.ReactNode;
   description?: string;
-  /** Page isn't built yet — render as a disabled, greyed-out placeholder instead of a link. */
+  /** Page isn't built yet: render a disabled, greyed-out placeholder instead of a link. */
   isComingSoon?: boolean;
 };
 
