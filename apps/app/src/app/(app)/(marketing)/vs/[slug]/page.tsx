@@ -13,7 +13,7 @@ import {
 } from "next-seo";
 
 import { AuthorInfo } from "@/components/marketing/author-info";
-import { ComparisonTable } from "@/components/marketing/pages/competitors/comparison-table";
+import { ComparisonTable } from "@/components/marketing/competitors/comparison-table";
 import { MarketingFaq } from "@/components/marketing/marketing-faq";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";

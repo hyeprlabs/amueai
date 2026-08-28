@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { BlogEmpty } from "@/components/marketing/pages/blog/blog-empty";
-import { CategoryDropdown } from "@/components/marketing/pages/blog/category-dropdown";
+import { BlogEmpty } from "@/components/marketing/blog/blog-empty";
+import { CategoryDropdown } from "@/components/marketing/blog/category-dropdown";
 import { FullWidthDivider } from "@/components/marketing/full-width-divider";
 import { cn } from "@/lib/utils";
 import type { Category, Post } from "@/payload-types";

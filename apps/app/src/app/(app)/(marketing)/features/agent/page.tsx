@@ -13,7 +13,7 @@ import {
   ZapIcon,
 } from "lucide-react";
 
-import { AgentFeatures } from "@/components/marketing/features/agent/agent-features";
+import { AgentFeatures } from "@/components/marketing/agent/agent-features";
 import { CallToAction } from "@/components/marketing/cta";
 import { CapabilityStrip } from "@/components/marketing/capability-strip";
 import { PageHero } from "@/components/marketing/page-hero";

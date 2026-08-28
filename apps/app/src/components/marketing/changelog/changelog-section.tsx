@@ -1,6 +1,6 @@
 import { RichText } from "@payloadcms/richtext-lexical/react";
 
-import { ChangelogEmpty } from "@/components/marketing/pages/changelog/changelog-empty";
+import { ChangelogEmpty } from "@/components/marketing/changelog/changelog-empty";
 import { Badge } from "@/components/ui/badge";
 import { FullWidthDivider } from "@/components/marketing/full-width-divider";
 import { CHANGE_TYPES } from "@/lib/change-types";
