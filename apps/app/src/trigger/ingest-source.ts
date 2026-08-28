@@ -8,11 +8,13 @@ import { runIngestion } from "@/lib/ingestion";
  * throughout - the source/chunk rows are already stamped with org_id
  * explicitly (see lib/ingestion.ts), not defaulted from a JWT.
  *
- * trigger.config.ts points at the real project (proj_bhfgpttdkwfmnqrkslup).
- * This task still needs `npx trigger.dev@latest deploy` (or the GitHub
- * integration) before POST /sources' tasks.trigger() call has a worker to
- * hand off to - deferred for now. Retries come from trigger.config.ts's
- * defaults.
+ * Only the file/qa source routes still enqueue this - text/url now run
+ * runIngestion inline in the route handler instead (see the sources and
+ * retrain routes), since this task needs `npx trigger.dev@latest deploy`
+ * (or the GitHub integration) before tasks.trigger() has a worker to hand
+ * a run off to, and that hasn't happened yet. Deploy this before relying
+ * on file/qa ingestion actually completing. Retries come from
+ * trigger.config.ts's defaults.
  */
 export const ingestSource = task({
   id: "ingest-source",

@@ -29,19 +29,31 @@ export function AddSourceForm({ agentId }: { agentId: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function createSource(body: Record<string, unknown>) {
+  /**
+   * Returns the created source's ingestion outcome so the caller can warn
+   * about a failed embed without treating source creation itself as
+   * having failed - the row was created either way, and it'll show up in
+   * the list (with a Retrain button) as soon as router.refresh() runs.
+   */
+  async function createSource(body: Record<string, unknown>): Promise<{ failed: boolean }> {
     const res = await fetch(`/api/agents/${agentId}/sources`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
+    const responseBody = await res.json().catch(() => null);
+
     if (!res.ok) {
-      const responseBody = await res.json().catch(() => null);
       throw new Error(
         typeof responseBody?.error === "string" ? responseBody.error : "Failed to add source",
       );
     }
+
+    // Text and URL sources are embedded inline before this request
+    // resolves, so a "failed" status here is the real outcome, not a
+    // stale placeholder still waiting on a background worker.
+    return { failed: responseBody?.source?.status === "failed" };
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -50,13 +62,15 @@ export function AddSourceForm({ agentId }: { agentId: string }) {
     setError(null);
 
     try {
+      let outcome: { failed: boolean } = { failed: false };
+
       if (type === "text") {
-        await createSource({ type: "text", label, content });
+        outcome = await createSource({ type: "text", label, content });
       } else if (type === "url") {
-        await createSource({ type: "url", label, url });
+        outcome = await createSource({ type: "url", label, url });
       } else if (type === "qa") {
         if (!question.trim()) throw new Error("Question is required");
-        await createSource({
+        outcome = await createSource({
           type: "qa",
           label: question.trim().slice(0, 200),
           pairs: [{ question, answer }],
@@ -74,7 +88,7 @@ export function AddSourceForm({ agentId }: { agentId: string }) {
         if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
         try {
-          await createSource({ type: "file", label: label || file.name, storagePath });
+          outcome = await createSource({ type: "file", label: label || file.name, storagePath });
         } catch (err) {
           // Don't leave an orphaned blob behind when the source row never
           // gets created.
@@ -90,6 +104,10 @@ export function AddSourceForm({ agentId }: { agentId: string }) {
       setAnswer("");
       setFile(null);
       router.refresh();
+
+      if (outcome.failed) {
+        setError("Source was created but couldn't be processed — see the list below to retrain.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add source");
     } finally {
@@ -171,7 +189,13 @@ export function AddSourceForm({ agentId }: { agentId: string }) {
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div>
         <Button type="submit" disabled={pending}>
-          {pending ? "Adding…" : "Add source"}
+          {pending
+            ? type === "url"
+              ? "Fetching & embedding…"
+              : type === "text"
+                ? "Embedding…"
+                : "Adding…"
+            : "Add source"}
         </Button>
       </div>
     </form>

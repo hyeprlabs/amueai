@@ -4,8 +4,9 @@ import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { runIngestion } from "@/lib/ingestion";
 // Type-only import so the ingestion task's code (pdf-parse, mammoth,
-// cheerio, embedMany) isn't bundled into this route handler.
+// embedMany) isn't bundled into this route handler.
 import type { ingestSource } from "@/trigger/ingest-source";
 
 // File uploads go to Storage client-side first (RLS-scoped to the org's
@@ -16,6 +17,17 @@ import type { ingestSource } from "@/trigger/ingest-source";
 // throttle in front of it (Upstash only guards the public chat route).
 const MAX_TEXT_CONTENT_LENGTH = 200_000;
 const MAX_QA_PAIRS = 50;
+
+// text/url ingestion (extract -> chunk -> embed -> store) runs inline,
+// synchronously, before this route responds - see the runIngestion call
+// below for why: Trigger.dev needs a separate `trigger deploy` before
+// tasks.trigger() has any worker to hand a run off to, and that hasn't
+// happened yet, so routing these through it would leave every source
+// stuck on "queued" forever with no embeddings ever created. Inline
+// ingestion has no such dependency. A Firecrawl scrape plus embedding a
+// 200KB source comfortably fits in one request; this just raises the
+// ceiling past the Vercel Node function default.
+export const maxDuration = 60;
 
 const createSourceSchema = z.discriminatedUnion("type", [
   z.object({
@@ -103,6 +115,30 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
+  if (type === "text" || type === "url") {
+    // Runs inline under the caller's own Clerk-scoped client - RLS already
+    // permits this org member to read/write this agent's sources/chunks,
+    // same as every other authenticated route. runIngestion sets the
+    // source's status itself (processing -> ready/failed) and never
+    // throws past this point in a way that should fail the request: the
+    // source row already exists either way, so the response just reports
+    // whatever state it landed in.
+    await runIngestion(supabase, source.id).catch((err) => {
+      console.error(`Inline ingestion failed for source ${source.id}`, err);
+    });
+
+    const { data: ingested } = await supabase
+      .from("sources")
+      .select("id, label, type, status, error_message, created_at")
+      .eq("id", source.id)
+      .single();
+
+    return NextResponse.json({ source: ingested ?? source }, { status: 201 });
+  }
+
+  // file/qa still go through Trigger.dev - unlike text/url they aren't the
+  // focus of this pass, and file ingestion in particular (Storage download,
+  // pdf-parse/mammoth) is heavier than fits comfortably inline.
   await tasks.trigger<typeof ingestSource>(
     "ingest-source",
     { sourceId: source.id },
