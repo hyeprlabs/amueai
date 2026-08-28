@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
+import { getGatewayChatModels } from "@/lib/gateway-models";
 import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateAgent } from "../actions";
 import { AddSourceForm } from "./add-source-form";
+import { ModelSelect } from "./model-select";
 import { SourcesList } from "./sources-list";
 import { TestChat } from "./test-chat";
 
@@ -32,6 +34,14 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
     .single();
 
   if (!agent) notFound();
+
+  const gatewayModels = await getGatewayChatModels();
+  // The agent's current model might have been deprecated/removed from the
+  // Gateway catalog since it was picked - keep it selectable regardless so
+  // saving the rest of the form doesn't silently change the model.
+  const models = gatewayModels.some((model) => model.id === agent.model)
+    ? gatewayModels
+    : [{ id: agent.model, name: agent.model, provider: "current" }, ...gatewayModels];
 
   const { data: sources } = await supabase
     .from("sources")
@@ -75,9 +85,9 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="model">Model</Label>
-          <Input id="model" name="model" defaultValue={agent.model} required />
+          <ModelSelect models={models} defaultValue={agent.model} />
           <p className="text-xs text-muted-foreground">
-            An AI Gateway model string, e.g. <code>openai/gpt-4o-mini</code>.
+            Any chat model currently available through the Vercel AI Gateway.
           </p>
         </div>
 
