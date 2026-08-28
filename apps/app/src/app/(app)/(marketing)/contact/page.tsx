@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 import { BriefcaseIcon, LifeBuoyIcon, MailIcon, ScaleIcon, ShieldCheckIcon } from "lucide-react";
 
-import { ContactForm } from "@/components/contact-form";
-import { CallToAction } from "@/components/cta";
-import { FullWidthDivider } from "@/components/full-width-divider";
+import { ContactForm } from "@/components/marketing/contact-form";
+import { CallToAction } from "@/components/marketing/cta";
+import { FullWidthDivider } from "@/components/marketing/full-width-divider";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { XIcon } from "@/components/icons/x-icon";

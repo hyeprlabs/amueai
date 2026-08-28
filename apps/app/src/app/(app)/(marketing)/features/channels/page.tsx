@@ -9,8 +9,8 @@ import {
   ZapIcon,
 } from "lucide-react";
 
-import { CallToAction } from "@/components/cta";
-import { Channels } from "@/components/channels";
+import { CallToAction } from "@/components/marketing/cta";
+import { Channels } from "@/components/marketing/channels";
 import { CapabilityStrip } from "@/components/marketing/capability-strip";
 import { PageHero } from "@/components/marketing/page-hero";
 import { StatStrip } from "@/components/marketing/stat-strip";

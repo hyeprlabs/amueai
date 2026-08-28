@@ -2,7 +2,7 @@ import Image from "next/image";
 import type React from "react";
 
 import { cn } from "@/lib/utils";
-import { CobeGlobe } from "@/components/cobe-globe";
+import { CobeGlobe } from "@/components/marketing/cobe-globe";
 import { TrendingUpIcon, SquareMousePointerIcon, GlobeIcon } from "lucide-react";
 
 const features = [

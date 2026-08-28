@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { XIcon } from "@/components/icons/x-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DecorIcon } from "@/components/decor-icon";
+import { DecorIcon } from "@/components/marketing/decor-icon";
 import { Mail, Users } from "lucide-react";
 
 const APP_EMAIL = "amueai@hyeprlabs.com";

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
 import { CompetitorsSection } from "@/components/competitors/competitors-section";
-import { MarketingPagination } from "@/components/marketing-pagination";
+import { MarketingPagination } from "@/components/marketing/marketing-pagination";
 import { siteConfig } from "@/config/site";
 import { competitorPageTitle, getCompetitors } from "@/lib/competitors";
 import {

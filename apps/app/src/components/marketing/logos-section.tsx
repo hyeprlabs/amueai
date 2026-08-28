@@ -1,6 +1,6 @@
-import { LogoCloud } from "@/components/logo-cloud"; // @efferd/logo-cloud-2
-import { DecorIcon } from "@/components/decor-icon";
-import { FullWidthDivider } from "@/components/full-width-divider";
+import { LogoCloud } from "@/components/marketing/logo-cloud"; // @efferd/logo-cloud-2
+import { DecorIcon } from "@/components/marketing/decor-icon";
+import { FullWidthDivider } from "@/components/marketing/full-width-divider";
 
 export function LogosSection() {
   return (

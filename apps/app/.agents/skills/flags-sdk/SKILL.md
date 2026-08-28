@@ -30,11 +30,13 @@ The Flags SDK (`flags` npm package) is a feature flags toolkit for Next.js and S
 Each flag is declared as a function. No string keys at call sites:
 
 ```ts
-import { flag } from 'flags/next';
+import { flag } from "flags/next";
 
 export const exampleFlag = flag({
-  key: 'example-flag',
-  decide() { return false; },
+  key: "example-flag",
+  decide() {
+    return false;
+  },
 });
 
 const value = await exampleFlag();
@@ -49,11 +51,11 @@ Flags evaluate server-side to avoid layout shift, keep pages static, and maintai
 Adapters replace `decide` and `origin` on a flag declaration, connecting your flags to a provider. Vercel Flags (`@flags-sdk/vercel`) is the first-party adapter. Third-party adapters are available for Statsig, LaunchDarkly, PostHog, and others.
 
 ```ts
-import { flag } from 'flags/next';
-import { vercelAdapter } from '@flags-sdk/vercel';
+import { flag } from "flags/next";
+import { vercelAdapter } from "@flags-sdk/vercel";
 
 export const exampleFlag = flag({
-  key: 'example-flag',
+  key: "example-flag",
   adapter: vercelAdapter,
 });
 ```
@@ -79,6 +81,7 @@ Check the project state to adapt commands and decide which steps you can skip:
 ### Steps
 
 1. **Install packages** (if not already in `package.json`):
+
    ```bash
    pnpm i flags @flags-sdk/vercel
    ```
@@ -92,23 +95,25 @@ Check the project state to adapt commands and decide which steps you can skip:
 3. **Pull environment variables**: Run `vercel env pull` to write `FLAGS` and `FLAGS_SECRET` to `.env.local`. Without these environment variables, `vercelAdapter` will not be able to evaluate flags. This step is **mandatory** after creating a flag.
 
 4. **Declare the flag in code**: Add it to `flags.ts` (or create the file if it doesn't exist) using `vercelAdapter`:
+
    ```ts
-   import { flag } from 'flags/next';
-   import { vercelAdapter } from '@flags-sdk/vercel';
+   import { flag } from "flags/next";
+   import { vercelAdapter } from "@flags-sdk/vercel";
 
    export const myFlag = flag({
-     key: 'my-flag',
+     key: "my-flag",
      adapter: vercelAdapter,
    });
    ```
 
 5. **Use the flag**: Call it in your page or component and conditionally render based on the result:
+
    ```tsx
-   import { myFlag } from '../flags';
+   import { myFlag } from "../flags";
 
    export default async function Page() {
      const enabled = await myFlag();
-     return <div>{enabled ? 'Feature on' : 'Feature off'}</div>;
+     return <div>{enabled ? "Feature on" : "Feature off"}</div>;
    }
    ```
 
@@ -116,7 +121,7 @@ Check the project state to adapt commands and decide which steps you can skip:
    - Run `pnpm i @vercel/toolbar`
    - Wrap `next.config.ts` with the toolbar plugin
    - Render `<VercelToolbar />` in the root layout
-   See [references/nextjs.md — Toolbar Setup](references/nextjs.md#toolbar-setup) for the full code.
+     See [references/nextjs.md — Toolbar Setup](references/nextjs.md#toolbar-setup) for the full code.
 
 7. **Set up Flags Explorer** (if not already present): Create `app/.well-known/vercel/flags/route.ts` — see the [Flags Explorer setup](#flags-explorer-setup) section below.
 
@@ -135,17 +140,19 @@ When using Vercel Flags, declare flags with `vercelAdapter` as shown in the [Age
 ### Basic flag
 
 ```ts
-import { flag } from 'flags/next'; // or 'flags/sveltekit'
+import { flag } from "flags/next"; // or 'flags/sveltekit'
 
 export const showBanner = flag<boolean>({
-  key: 'show-banner',
-  description: 'Show promotional banner',
+  key: "show-banner",
+  description: "Show promotional banner",
   defaultValue: false,
   options: [
-    { value: false, label: 'Hide' },
-    { value: true, label: 'Show' },
+    { value: false, label: "Hide" },
+    { value: true, label: "Show" },
   ],
-  decide() { return false; },
+  decide() {
+    return false;
+  },
 });
 ```
 
@@ -154,26 +161,24 @@ export const showBanner = flag<boolean>({
 Use `identify` to establish who the request is for. The returned entities are passed to `decide`:
 
 ```ts
-import { dedupe, flag } from 'flags/next';
-import type { ReadonlyRequestCookies } from 'flags';
+import { dedupe, flag } from "flags/next";
+import type { ReadonlyRequestCookies } from "flags";
 
 interface Entities {
   user?: { id: string };
 }
 
-const identify = dedupe(
-  ({ cookies }: { cookies: ReadonlyRequestCookies }): Entities => {
-    const userId = cookies.get('user-id')?.value;
-    return { user: userId ? { id: userId } : undefined };
-  },
-);
+const identify = dedupe(({ cookies }: { cookies: ReadonlyRequestCookies }): Entities => {
+  const userId = cookies.get("user-id")?.value;
+  return { user: userId ? { id: userId } : undefined };
+});
 
 export const dashboardFlag = flag<boolean, Entities>({
-  key: 'new-dashboard',
+  key: "new-dashboard",
   identify,
   decide({ entities }) {
     if (!entities?.user) return false;
-    return ['user1', 'user2'].includes(entities.user.id);
+    return ["user1", "user2"].includes(entities.user.id);
   },
 });
 ```
@@ -183,11 +188,11 @@ export const dashboardFlag = flag<boolean, Entities>({
 Adapters connect flags to third-party providers. Each adapter replaces `decide` and `origin`:
 
 ```ts
-import { flag } from 'flags/next';
-import { statsigAdapter } from '@flags-sdk/statsig';
+import { flag } from "flags/next";
+import { statsigAdapter } from "@flags-sdk/statsig";
 
 export const myGate = flag({
-  key: 'my_gate',
+  key: "my_gate",
   adapter: statsigAdapter.featureGate((gate) => gate.value),
   identify,
 });
@@ -197,26 +202,26 @@ See [references/providers.md](references/providers.md) for all supported adapter
 
 ### Key parameters
 
-| Parameter      | Type                               | Description                                          |
-| -------------- | ---------------------------------- | ---------------------------------------------------- |
-| `key`          | `string`                           | Unique flag identifier                               |
-| `decide`       | `function`                         | Resolves the flag value                              |
-| `defaultValue` | `any`                              | Fallback if `decide` returns undefined or throws     |
-| `description`  | `string`                           | Shown in Flags Explorer                              |
-| `origin`       | `string`                           | URL to manage the flag in provider dashboard         |
-| `options`      | `{ label?: string, value: any }[]` | Possible values, used for precompute + Flags Explorer|
-| `adapter`      | `Adapter`                          | Provider adapter implementing `decide` and `origin`  |
-| `identify`     | `function`                         | Returns evaluation context (entities) for `decide`   |
+| Parameter      | Type                               | Description                                           |
+| -------------- | ---------------------------------- | ----------------------------------------------------- |
+| `key`          | `string`                           | Unique flag identifier                                |
+| `decide`       | `function`                         | Resolves the flag value                               |
+| `defaultValue` | `any`                              | Fallback if `decide` returns undefined or throws      |
+| `description`  | `string`                           | Shown in Flags Explorer                               |
+| `origin`       | `string`                           | URL to manage the flag in provider dashboard          |
+| `options`      | `{ label?: string, value: any }[]` | Possible values, used for precompute + Flags Explorer |
+| `adapter`      | `Adapter`                          | Provider adapter implementing `decide` and `origin`   |
+| `identify`     | `function`                         | Returns evaluation context (entities) for `decide`    |
 
 ## Dedupe
 
 Wrap shared functions (especially `identify`) in `dedupe` to run them once per request:
 
 ```ts
-import { dedupe } from 'flags/next';
+import { dedupe } from "flags/next";
 
 const identify = dedupe(({ cookies }) => {
-  return { user: { id: cookies.get('uid')?.value } };
+  return { user: { id: cookies.get("uid")?.value } };
 });
 ```
 
@@ -227,8 +232,8 @@ Note: `dedupe` is not available in Pages Router.
 To evaluate **multiple** flags at once, call `evaluate()` (from `flags/next`) instead of awaiting flags one at a time or using `Promise.all()`. To evaluate a **single** flag, just call it: `await myFlag()`.
 
 ```ts
-import { evaluate } from 'flags/next';
-import { flagA, flagB } from '../flags';
+import { evaluate } from "flags/next";
+import { flagA, flagB } from "../flags";
 
 // avoid: each await blocks the next, so the flags resolve sequentially
 const a = await flagA();
@@ -262,9 +267,9 @@ Adapters can opt into batching by implementing the optional `bulkDecide` hook. T
 
 ```ts
 // app/.well-known/vercel/flags/route.ts
-import { createFlagsDiscoveryEndpoint } from 'flags/next';
-import { getProviderData } from '@flags-sdk/vercel';
-import * as flags from '../../../../flags';
+import { createFlagsDiscoveryEndpoint } from "flags/next";
+import { getProviderData } from "@flags-sdk/vercel";
+import * as flags from "../../../../flags";
 
 export const GET = createFlagsDiscoveryEndpoint(async () => {
   return getProviderData(flags);
@@ -279,9 +284,9 @@ When using a third-party provider alongside Vercel Flags, combine their data wit
 
 ```ts
 // src/hooks.server.ts
-import { createHandle } from 'flags/sveltekit';
-import { FLAGS_SECRET } from '$env/static/private';
-import * as flags from '$lib/flags';
+import { createHandle } from "flags/sveltekit";
+import { FLAGS_SECRET } from "$env/static/private";
+import * as flags from "$lib/flags";
 
 export const handle = createHandle({ secret: FLAGS_SECRET, flags });
 ```
@@ -309,12 +314,14 @@ Then run `vc env pull` to sync to local.
 Use precompute to keep pages static while using feature flags. Middleware evaluates flags and encodes results into the URL via rewrite. The page reads precomputed values instead of re-evaluating.
 
 High-level flow:
+
 1. Declare flags and group them in an array
 2. Call `precompute(flagGroup)` in middleware, get a `code` string
 3. Rewrite request to `/${code}/original-path`
 4. Page reads flag values from `code`: `await myFlag(code, flagGroup)`
 
 For full implementation details, see framework-specific references:
+
 - **Next.js**: See [references/nextjs.md](references/nextjs.md) — covers proxy middleware, precompute setup, ISR, generatePermutations, multiple groups
 - **SvelteKit**: See [references/sveltekit.md](references/sveltekit.md) — covers reroute hook, middleware, precompute setup, ISR, prerendering
 
@@ -326,20 +333,20 @@ Create an adapter factory that returns an object with `origin` and `decide`. For
 
 For keeping flag data confidential in the browser (used by Flags Explorer):
 
-| Function                   | Purpose                             |
-| -------------------------- | ----------------------------------- |
-| `encryptFlagValues`        | Encrypt resolved flag values        |
-| `decryptFlagValues`        | Decrypt flag values                 |
-| `encryptFlagDefinitions`   | Encrypt flag definitions/metadata   |
-| `decryptFlagDefinitions`   | Decrypt flag definitions            |
-| `encryptOverrides`         | Encrypt toolbar overrides           |
-| `decryptOverrides`         | Decrypt toolbar overrides           |
+| Function                 | Purpose                           |
+| ------------------------ | --------------------------------- |
+| `encryptFlagValues`      | Encrypt resolved flag values      |
+| `decryptFlagValues`      | Decrypt flag values               |
+| `encryptFlagDefinitions` | Encrypt flag definitions/metadata |
+| `decryptFlagDefinitions` | Decrypt flag definitions          |
+| `encryptOverrides`       | Encrypt toolbar overrides         |
+| `decryptOverrides`       | Decrypt toolbar overrides         |
 
 All use `FLAGS_SECRET` by default. Example:
 
 ```tsx
-import { encryptFlagValues } from 'flags';
-import { FlagValues } from 'flags/react';
+import { encryptFlagValues } from "flags";
+import { FlagValues } from "flags/react";
 
 async function ConfidentialFlags({ values }) {
   const encrypted = await encryptFlagValues(values);

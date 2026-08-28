@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { AgentFeatures } from "@/components/agent/agent-features";
-import { CallToAction } from "@/components/cta";
+import { CallToAction } from "@/components/marketing/cta";
 import { CapabilityStrip } from "@/components/marketing/capability-strip";
 import { PageHero } from "@/components/marketing/page-hero";
 import { StatStrip } from "@/components/marketing/stat-strip";

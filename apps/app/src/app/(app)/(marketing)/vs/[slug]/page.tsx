@@ -14,7 +14,7 @@ import {
 
 import { AuthorInfo } from "@/components/marketing/author-info";
 import { ComparisonTable } from "@/components/competitors/comparison-table";
-import { MarketingFaq } from "@/components/marketing-faq";
+import { MarketingFaq } from "@/components/marketing/marketing-faq";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { competitorPageTitle, getCompetitorBySlug, getRelatedCompetitors } from "@/lib/competitors";

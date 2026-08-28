@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { RotateCwIcon } from "lucide-react";
 
-import { FullWidthDivider } from "@/components/full-width-divider";
+import { FullWidthDivider } from "@/components/marketing/full-width-divider";
 import { Background } from "@/components/ui/bg";
 import { Button } from "@/components/ui/button";
 

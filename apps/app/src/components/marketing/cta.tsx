@@ -1,5 +1,5 @@
-import { DecorIcon } from "@/components/decor-icon";
-import { WhitelistForm } from "@/components/whitelist-form";
+import { DecorIcon } from "@/components/marketing/decor-icon";
+import { WhitelistForm } from "@/components/marketing/whitelist-form";
 
 export function CallToAction() {
   return (

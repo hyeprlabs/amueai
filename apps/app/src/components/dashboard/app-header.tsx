@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { DecorIcon } from "@/components/decor-icon";
+import { DecorIcon } from "@/components/marketing/decor-icon";
 import { AppBreadcrumbs } from "@/components/dashboard/app-breadcrumbs";
 import { navLinks } from "@/components/dashboard/app-shared";
 import { CustomSidebarTrigger } from "@/components/dashboard/custom-sidebar-trigger";

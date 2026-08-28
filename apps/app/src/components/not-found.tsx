@@ -8,7 +8,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { FullWidthDivider } from "@/components/full-width-divider";
+import { FullWidthDivider } from "@/components/marketing/full-width-divider";
 import { Background } from "@/components/ui/bg";
 import { HomeIcon } from "lucide-react";
 

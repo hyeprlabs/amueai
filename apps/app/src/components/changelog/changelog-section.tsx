@@ -2,7 +2,7 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 
 import { ChangelogEmpty } from "@/components/changelog/changelog-empty";
 import { Badge } from "@/components/ui/badge";
-import { FullWidthDivider } from "@/components/full-width-divider";
+import { FullWidthDivider } from "@/components/marketing/full-width-divider";
 import { CHANGE_TYPES } from "@/lib/change-types";
 import type { Change } from "@/payload-types";
 
