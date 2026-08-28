@@ -1,4 +1,4 @@
-import { LogoCloud } from "@/components/marketing/logo-cloud"; // @efferd/logo-cloud-2
+import { LogoCloud } from "@/components/logo-cloud"; // @efferd/logo-cloud-2
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
 
