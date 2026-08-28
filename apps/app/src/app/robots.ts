@@ -12,20 +12,11 @@ import { absoluteUrl } from "@/lib/seo";
  */
 const disallowedPaths = ["/api/"] as const;
 
-/**
- * `/api/v1/*` is the public, read-only content API — it needs to stay
- * crawlable despite the broader `/api/` disallow above. Longest-prefix-wins
- * is how every major crawler (Google, Bing, and the AI bots this exists for)
- * resolves an allow/disallow overlap, so this more specific rule takes
- * precedence over `Disallow: /api/` for anything under it.
- */
-const allowedPaths = ["/", "/api/v1/"] as const;
-
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: [...allowedPaths],
+      allow: "/",
       disallow: [...disallowedPaths],
     },
     sitemap: absoluteUrl("/sitemap.xml"),

@@ -13,7 +13,6 @@ const marketingRoutes = [
   { pathname: "/", changeFrequency: "weekly", priority: 1 },
   { pathname: "/features/agent", changeFrequency: "monthly", priority: 0.9 },
   { pathname: "/features/channels", changeFrequency: "monthly", priority: 0.8 },
-  { pathname: "/developers", changeFrequency: "monthly", priority: 0.7 },
   { pathname: "/pricing", changeFrequency: "monthly", priority: 0.8 },
   { pathname: "/blog", changeFrequency: "daily", priority: 0.8 },
   { pathname: "/about", changeFrequency: "monthly", priority: 0.6 },

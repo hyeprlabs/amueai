@@ -111,10 +111,6 @@ const resources = [
     title: "Competitors",
     href: "/competitors",
   },
-  {
-    title: "Developers",
-    href: "/developers",
-  },
 ];
 
 const socialLinks = [

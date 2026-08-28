@@ -21,7 +21,6 @@ const recoveryLinks = [
   { href: "/sitemap.xml", label: "Sitemap" },
   { href: "/llms.txt", label: "llms.txt" },
   { href: "/blog", label: "Blog" },
-  { href: "/developers", label: "Developer docs" },
 ] as const;
 
 export function NotFoundPage() {

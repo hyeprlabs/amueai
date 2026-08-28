@@ -10,9 +10,6 @@ describe("GET /llms.txt", () => {
     const text = await response.text();
     expect(text).toMatch(/^# AmueAI/);
     expect(text).toContain("## When to use AmueAI");
-    expect(text).toContain("## Developers");
-    expect(text).toContain("/openapi.json");
-    expect(text).toContain("/developers");
     expect(text).toContain("/sitemap.xml");
   });
 });
