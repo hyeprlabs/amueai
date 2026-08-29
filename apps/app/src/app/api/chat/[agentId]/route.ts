@@ -50,8 +50,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   // page at someone else's agent and spend that org's Gateway credits while
   // reading its knowledge base. An empty allowed_origins means "not locked
   // down yet" and stays open; once an origin is set, only those match.
-  // allowed_origins predates this build and has no backfill, so rows
-  // created before it gained a default still read null.
+  // The column is NOT NULL with a '{}' default, so a real row always has an
+  // array here; the guard is for the shape a caller could still hand us
+  // (a partial fixture, a future select that omits the column).
   if (agent.allowed_origins && agent.allowed_origins.length > 0) {
     const origin = request.headers.get("origin");
     if (!origin || !agent.allowed_origins.includes(origin)) {
