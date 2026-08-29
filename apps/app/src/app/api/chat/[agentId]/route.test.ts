@@ -5,6 +5,32 @@ const streamTextMock = vi.fn();
 vi.mock("ai", () => ({
   embed: (...args: unknown[]) => embedMock(...args),
   streamText: (...args: unknown[]) => streamTextMock(...args),
+  createUIMessageStream: ({
+    execute,
+  }: {
+    execute: (options: { writer: unknown }) => Promise<void>;
+  }) => {
+    const written: unknown[] = [];
+    const writer = {
+      write: (chunk: unknown) => written.push(chunk),
+      merge: () => {},
+    };
+    const ready = execute({ writer });
+    return { written, ready };
+  },
+  createUIMessageStreamResponse: ({
+    stream,
+    headers,
+  }: {
+    stream: { written: unknown[]; ready: Promise<void> };
+    headers?: Record<string, string>;
+  }) => {
+    const response = new Response(null, { status: 200, headers });
+    // Expose what was written for assertions without changing the Response API.
+    (response as Response & { __written: unknown[] }).__written = stream.written;
+    return response;
+  },
+  toUIMessageStream: () => ({}),
 }));
 
 const checkChatRateLimitMock = vi.fn();
@@ -29,24 +55,30 @@ function makeFakeSupabase(seed: {
   agents?: Record<string, unknown>[];
   conversations?: Record<string, unknown>[];
   chunks?: { content: string; source_id: string; similarity: number }[];
+  sources?: Record<string, unknown>[];
 }) {
   const tables = {
     agents: [...(seed.agents ?? [])],
     conversations: [...(seed.conversations ?? [])],
     messages: [] as Record<string, unknown>[],
+    sources: [...(seed.sources ?? [])],
   };
   let forceConversationInsertError: string | null = null;
 
-  function from(table: "agents" | "conversations" | "messages") {
+  function from(table: "agents" | "conversations" | "messages" | "sources") {
     const rows = tables[table];
     const state: {
       filters: Array<[string, unknown]>;
+      inFilters: Array<[string, unknown[]]>;
       op?: "select" | "insert";
       insertRows?: Record<string, unknown>[];
-    } = { filters: [] };
+    } = { filters: [], inFilters: [] };
 
     function matches(row: Record<string, unknown>) {
-      return state.filters.every(([col, val]) => row[col] === val);
+      return (
+        state.filters.every(([col, val]) => row[col] === val) &&
+        state.inFilters.every(([col, vals]) => vals.includes(row[col]))
+      );
     }
 
     function execute() {
@@ -73,6 +105,10 @@ function makeFakeSupabase(seed: {
       },
       eq(col: string, val: unknown) {
         state.filters.push([col, val]);
+        return builder;
+      },
+      in(col: string, vals: unknown[]) {
+        state.inFilters.push([col, vals]);
         return builder;
       },
       insert(row: Record<string, unknown> | Record<string, unknown>[]) {
@@ -134,10 +170,7 @@ beforeEach(() => {
 
   embedMock.mockResolvedValue({ embedding: [0.1, 0.2, 0.3] });
   checkChatRateLimitMock.mockResolvedValue(true);
-  streamTextMock.mockReturnValue({
-    toUIMessageStreamResponse: (init?: { headers?: Record<string, string> }) =>
-      new Response(null, { status: 200, headers: init?.headers }),
-  });
+  streamTextMock.mockReturnValue({ stream: {} });
   fakeSupabase = makeFakeSupabase({ agents: [agent] });
 });
 
@@ -271,6 +304,53 @@ describe("POST /api/chat/[agentId]", () => {
 
     const call = streamTextMock.mock.calls[0][0];
     expect(call.system).toContain("(no matching context found)");
+  });
+
+  it("writes source-url parts for the sources behind the retrieved chunks", async () => {
+    fakeSupabase = makeFakeSupabase({
+      agents: [agent],
+      chunks: [
+        { content: "Refunds are available within 30 days.", source_id: "src-1", similarity: 0.9 },
+        { content: "Refunds require a receipt.", source_id: "src-1", similarity: 0.8 },
+        { content: "Exchanges are handled separately.", source_id: "src-2", similarity: 0.7 },
+      ],
+      sources: [
+        { id: "src-1", label: "Refund Policy", raw_content: "https://example.com/refunds" },
+        { id: "src-2", label: "Exchange Policy", raw_content: "https://example.com/exchanges" },
+      ],
+    });
+
+    const res = await POST(
+      chatRequest({ message: "What's your refund policy?", visitorId: "visitor-1" }),
+      { params: Promise.resolve({ agentId: "agent-1" }) },
+    );
+
+    const written = (res as Response & { __written: unknown[] }).__written;
+    expect(written).toEqual([
+      {
+        type: "source-url",
+        sourceId: "src-1",
+        url: "https://example.com/refunds",
+        title: "Refund Policy",
+      },
+      {
+        type: "source-url",
+        sourceId: "src-2",
+        url: "https://example.com/exchanges",
+        title: "Exchange Policy",
+      },
+    ]);
+  });
+
+  it("writes no source-url parts when no chunks matched", async () => {
+    fakeSupabase = makeFakeSupabase({ agents: [agent], chunks: [] });
+
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    const written = (res as Response & { __written: unknown[] }).__written;
+    expect(written).toEqual([]);
   });
 
   it("calls the Gateway with the agent's own model/temperature and user/tags, never quotaEntityId", async () => {

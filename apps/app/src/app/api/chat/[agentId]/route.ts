@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { embed, streamText } from "ai";
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  embed,
+  streamText,
+  toUIMessageStream,
+} from "ai";
 import { z } from "zod";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
@@ -92,6 +98,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
 
   const context = (chunks ?? []).map((chunk) => chunk.content).join("\n---\n");
 
+  const sourceIds = [...new Set((chunks ?? []).map((chunk) => chunk.source_id))];
+  const { data: sourceRows } =
+    sourceIds.length > 0
+      ? await supabase.from("sources").select("id, label, raw_content").in("id", sourceIds)
+      : { data: [] };
+
   const system = `${agent.system_prompt}
 
 Context:
@@ -103,39 +115,55 @@ Answer the user's question using only the context above. Never use outside knowl
 
   const conversationIdForClosure = conversationId;
 
-  const result = streamText({
-    model: agent.model,
-    temperature: agent.temperature,
-    system,
-    prompt: message,
-    // Ties Gateway usage/cost back to the org for observability via `user`
-    // (end-user identifier for spend tracking) and `tags`, not
-    // `quotaEntityId` - that requires a quota entity pre-provisioned in the
-    // Vercel dashboard, and sending an arbitrary Clerk org_id that was never
-    // registered there makes the Gateway 400 every request with
-    // "Quota entity ... was provided but no quota exists."
-    providerOptions: { gateway: { user: agent.org_id, tags: [`org:${agent.org_id}`] } },
-    onFinish: async ({ text }) => {
-      await supabase.from("messages").insert([
-        {
-          org_id: agent.org_id,
-          agent_id: agent.id,
-          conversation_id: conversationIdForClosure,
-          role: "user",
-          content: message,
+  const stream = createUIMessageStream({
+    execute: async ({ writer }) => {
+      for (const source of sourceRows ?? []) {
+        writer.write({
+          type: "source-url",
+          sourceId: source.id,
+          url: source.raw_content ?? "",
+          title: source.label,
+        });
+      }
+
+      const result = streamText({
+        model: agent.model,
+        temperature: agent.temperature,
+        system,
+        prompt: message,
+        // Ties Gateway usage/cost back to the org for observability via `user`
+        // (end-user identifier for spend tracking) and `tags`, not
+        // `quotaEntityId` - that requires a quota entity pre-provisioned in the
+        // Vercel dashboard, and sending an arbitrary Clerk org_id that was never
+        // registered there makes the Gateway 400 every request with
+        // "Quota entity ... was provided but no quota exists."
+        providerOptions: { gateway: { user: agent.org_id, tags: [`org:${agent.org_id}`] } },
+        onFinish: async ({ text }) => {
+          await supabase.from("messages").insert([
+            {
+              org_id: agent.org_id,
+              agent_id: agent.id,
+              conversation_id: conversationIdForClosure,
+              role: "user",
+              content: message,
+            },
+            {
+              org_id: agent.org_id,
+              agent_id: agent.id,
+              conversation_id: conversationIdForClosure,
+              role: "assistant",
+              content: text,
+            },
+          ]);
         },
-        {
-          org_id: agent.org_id,
-          agent_id: agent.id,
-          conversation_id: conversationIdForClosure,
-          role: "assistant",
-          content: text,
-        },
-      ]);
+      });
+
+      writer.merge(toUIMessageStream({ stream: result.stream }));
     },
   });
 
-  return result.toUIMessageStreamResponse({
+  return createUIMessageStreamResponse({
+    stream,
     headers: { "X-Conversation-Id": conversationId },
   });
 }

@@ -2,16 +2,23 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useState } from "react";
+import { Fragment } from "react";
 
-import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
-import { Message, MessageContent } from "@/components/ai-elements/message";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputSubmit,
   PromptInputTextarea,
+  type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
-import { Response } from "@/components/ai-elements/response";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 
 /**
  * The chat UI both the dashboard test-chat panel and the public widget
@@ -30,8 +37,6 @@ export function ChatPanel({
   visitorId: string;
   emptyState?: string;
 }) {
-  const [input, setInput] = useState("");
-
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: `/api/chat/${agentId}`,
@@ -44,24 +49,53 @@ export function ChatPanel({
     }),
   });
 
+  const handleSubmit = (message: PromptInputMessage) => {
+    if (!message.text.trim()) return;
+    sendMessage({ text: message.text });
+  };
+
   return (
     <div className="flex h-full flex-col">
       <Conversation>
         <ConversationContent>
-          {messages.length === 0 && <p className="text-sm text-muted-foreground">{emptyState}</p>}
-          {messages.map((message) => (
-            <Message key={message.id} from={message.role === "user" ? "user" : "assistant"}>
-              <MessageContent from={message.role === "user" ? "user" : "assistant"}>
-                {message.parts.map((part, i) =>
-                  part.type === "text" ? <Response key={i}>{part.text}</Response> : null,
+          {messages.length === 0 && <ConversationEmptyState description={emptyState} />}
+          {messages.map((message) => {
+            const sourceParts = message.parts.filter((part) => part.type === "source-url");
+
+            return (
+              <Fragment key={message.id}>
+                {message.role === "assistant" && sourceParts.length > 0 && (
+                  <Sources>
+                    <SourcesTrigger count={sourceParts.length} />
+                    <SourcesContent>
+                      {sourceParts.map((part, i) => (
+                        <Source
+                          key={`${message.id}-source-${i}`}
+                          href={part.url}
+                          title={part.title}
+                        />
+                      ))}
+                    </SourcesContent>
+                  </Sources>
                 )}
+                <Message from={message.role}>
+                  <MessageContent>
+                    {message.parts.map((part, i) =>
+                      part.type === "text" ? (
+                        <MessageResponse key={i}>{part.text}</MessageResponse>
+                      ) : null,
+                    )}
+                  </MessageContent>
+                </Message>
+              </Fragment>
+            );
+          })}
+          {status === "submitted" && (
+            <Message from="assistant">
+              <MessageContent>
+                <Shimmer>Thinking…</Shimmer>
               </MessageContent>
             </Message>
-          ))}
-          {status === "submitted" && (
-            <p className="text-sm text-muted-foreground" aria-live="polite">
-              Thinking…
-            </p>
           )}
           {error && (
             <p className="text-sm text-destructive" role="alert">
@@ -69,22 +103,12 @@ export function ChatPanel({
             </p>
           )}
         </ConversationContent>
+        <ConversationScrollButton />
       </Conversation>
 
-      <PromptInput
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!input.trim()) return;
-          sendMessage({ text: input });
-          setInput("");
-        }}
-      >
-        <PromptInputTextarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask a question…"
-        />
-        <PromptInputSubmit disabled={!input.trim()} status={status} />
+      <PromptInput onSubmit={handleSubmit}>
+        <PromptInputTextarea placeholder="Ask a question…" />
+        <PromptInputSubmit status={status} />
       </PromptInput>
     </div>
   );

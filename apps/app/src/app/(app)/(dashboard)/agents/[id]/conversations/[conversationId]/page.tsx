@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
-import { Message, MessageContent } from "@/components/ai-elements/message";
-import { Response } from "@/components/ai-elements/response";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 
 export const metadata: Metadata = createMetadata({
   title: "Conversation",
@@ -45,8 +44,8 @@ export default async function ConversationPage({
         ) : (
           messages.map((message) => (
             <Message key={message.id} from={message.role === "user" ? "user" : "assistant"}>
-              <MessageContent from={message.role === "user" ? "user" : "assistant"}>
-                <Response>{message.content}</Response>
+              <MessageContent>
+                <MessageResponse>{message.content}</MessageResponse>
               </MessageContent>
             </Message>
           ))
