@@ -3,7 +3,6 @@ import { ChevronLeftIcon } from "lucide-react";
 
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { FloatingPaths } from "@/components/floating-paths";
 import { NewAgentForm } from "./new-agent-form";
 
 export function NewPage() {
@@ -21,10 +20,6 @@ export function NewPage() {
             </p>
             <footer className="font-mono font-semibold text-sm">~ AmueAI</footer>
           </blockquote>
-        </div>
-        <div className="absolute inset-0">
-          <FloatingPaths position={1} />
-          <FloatingPaths position={-1} />
         </div>
       </div>
       <div className="relative flex min-h-screen flex-col justify-center px-8 py-12">
