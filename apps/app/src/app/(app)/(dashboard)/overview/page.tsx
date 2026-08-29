@@ -66,7 +66,7 @@ export default async function OverviewPage() {
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button nativeButton={false} render={<Link href="/agents">Create an agent</Link>} />
+          <Button nativeButton={false} render={<Link href="/new">Create an agent</Link>} />
         </EmptyContent>
       </Empty>
     );

@@ -14,10 +14,10 @@ const createAgentSchema = z.object({
 });
 
 /**
- * Called directly (not via a <form action>) from client RHF forms
- * (create-agent-dialog.tsx and the /new onboarding wizard) - returned
- * rather than redirected, same reasoning as updateAgent below, so the
- * client stays in control of navigation.
+ * Called directly (not via a <form action>) from the /new onboarding
+ * wizard's client RHF form - returned rather than redirected, same
+ * reasoning as updateAgent below, so the client stays in control of
+ * navigation.
  */
 export async function createAgent(input: unknown) {
   const { orgId } = await auth();

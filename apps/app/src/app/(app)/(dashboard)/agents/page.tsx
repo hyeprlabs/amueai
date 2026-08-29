@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { OrganizationSwitcher } from "@clerk/nextjs";
-import { BotIcon, TriangleAlertIcon } from "lucide-react";
+import { BotIcon, PlusIcon, TriangleAlertIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
@@ -15,7 +16,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { CreateAgentDialog } from "./create-agent-dialog";
 
 export const metadata: Metadata = createMetadata({
   title: "Agents",
@@ -75,7 +75,12 @@ export default async function AgentsPage() {
             Agents trained on your data, scoped to this workspace.
           </p>
         </div>
-        {agents.length > 0 && <CreateAgentDialog />}
+        {agents.length > 0 && (
+          <Button render={<Link href="/new" />} nativeButton={false}>
+            <PlusIcon />
+            New agent
+          </Button>
+        )}
       </div>
 
       {agents.length === 0 ? (
@@ -90,7 +95,10 @@ export default async function AgentsPage() {
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <CreateAgentDialog />
+            <Button render={<Link href="/new" />} nativeButton={false}>
+              <PlusIcon />
+              New agent
+            </Button>
           </EmptyContent>
         </Empty>
       ) : (
