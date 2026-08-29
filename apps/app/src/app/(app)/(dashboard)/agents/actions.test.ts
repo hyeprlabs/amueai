@@ -293,14 +293,17 @@ describe("deleteAgent", () => {
     await expect(deleteAgent("agent-1")).rejects.toThrow("No active organization");
   });
 
-  it("deletes the agent and redirects to the agents list", async () => {
+  it("deletes the agent and leaves navigation to the caller", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
     fakeSupabase.agents.push({ id: "agent-1", org_id: "org-1", name: "Acme Support" });
 
     await deleteAgent("agent-1");
 
     expect(fakeSupabase.agents).toHaveLength(0);
-    expect(redirectMock).toHaveBeenCalledWith("/agents");
+    // The action must NOT redirect: a redirect thrown while the confirm
+    // dialog is still mounted raced Base UI's close cleanup. The client
+    // closes the dialog, then routes.
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 
   it("surfaces a database failure as a plain Error", async () => {

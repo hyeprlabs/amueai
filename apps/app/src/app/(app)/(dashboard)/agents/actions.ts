@@ -1,7 +1,6 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -88,6 +87,14 @@ export async function updateAgent(agentId: string, input: unknown) {
   return values;
 }
 
+/**
+ * Called directly (not via a <form action>) from DeleteAgentButton's
+ * client handler, same reasoning as createAgent/updateAgent above: a
+ * `redirect()` thrown from inside this action while the confirm dialog
+ * is still open raced the dialog's own unmount/close-animation cleanup
+ * and threw. The client closes the dialog first, then navigates once
+ * this resolves.
+ */
 export async function deleteAgent(agentId: string) {
   const { orgId } = await auth();
   if (!orgId) throw new Error("No active organization");
@@ -98,6 +105,4 @@ export async function deleteAgent(agentId: string) {
   // messages all cascade on agents.id - deleting the agent row is enough.
   const { error } = await supabase.from("agents").delete().eq("id", agentId);
   if (error) throw new Error(`Failed to delete agent: ${error.message}`);
-
-  redirect("/agents");
 }

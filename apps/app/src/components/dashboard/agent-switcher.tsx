@@ -11,8 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { IconTile } from "@/components/ui/icon-tile";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
 
 export type AgentSwitcherAgent = { id: string; name: string };
 
@@ -35,7 +36,19 @@ export function AgentSwitcher({
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
+          {/*
+            No `render={<SidebarMenuButton />}` here on purpose - nesting one
+            polymorphic `useRender` component inside another (Menu.Trigger's
+            own render target) doubled up the ref/prop merging and threw on
+            open. A native trigger styled with the same button's own variant
+            classes gets the identical look without that fragile composition.
+          */}
+          <DropdownMenuTrigger
+            className={cn(
+              sidebarMenuButtonVariants({ size: "lg" }),
+              "w-full border border-sidebar-border",
+            )}
+          >
             <IconTile variant="soft" size="sm">
               <BotIcon />
             </IconTile>
