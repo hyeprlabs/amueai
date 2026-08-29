@@ -1,9 +1,6 @@
 import { BuildTabsNav } from "./build-tabs-nav";
 
-export default async function BuildLayout({
-  children,
-  params,
-}: LayoutProps<"/agents/[id]/build">) {
+export default async function BuildLayout({ children, params }: LayoutProps<"/agents/[id]/build">) {
   const { id } = await params;
 
   return (

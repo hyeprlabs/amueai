@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import {
   Conversation,
@@ -13,8 +13,10 @@ import {
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
+  PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
+  PromptInputTools,
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -31,11 +33,14 @@ export function ChatPanel({
   conversationId,
   visitorId,
   emptyState = "Try asking this agent something from its sources.",
+  toolbarStart,
 }: {
   agentId: string;
   conversationId: string;
   visitorId: string;
   emptyState?: string;
+  /** Extra controls (e.g. the dashboard's model switcher) shown left of the submit button. Omitted entirely for the public widget. */
+  toolbarStart?: ReactNode;
 }) {
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -108,7 +113,14 @@ export function ChatPanel({
 
       <PromptInput onSubmit={handleSubmit}>
         <PromptInputTextarea placeholder="Ask a question…" />
-        <PromptInputSubmit status={status} />
+        {toolbarStart ? (
+          <PromptInputFooter>
+            <PromptInputTools>{toolbarStart}</PromptInputTools>
+            <PromptInputSubmit status={status} />
+          </PromptInputFooter>
+        ) : (
+          <PromptInputSubmit status={status} />
+        )}
       </PromptInput>
     </div>
   );

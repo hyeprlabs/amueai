@@ -11,9 +11,7 @@ export const metadata: Metadata = createMetadata({
   noIndex: true,
 });
 
-export default async function AgentEmbedPage({
-  params,
-}: PageProps<"/agents/[id]/build/embed">) {
+export default async function AgentEmbedPage({ params }: PageProps<"/agents/[id]/build/embed">) {
   const { id } = await params;
 
   return (

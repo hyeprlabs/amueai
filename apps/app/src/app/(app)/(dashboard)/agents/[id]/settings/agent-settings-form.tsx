@@ -1,11 +1,19 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSeparator,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { updateAgent } from "../../actions";
@@ -20,6 +28,7 @@ export function AgentSettingsForm({
 }) {
   const {
     register,
+    control,
     handleSubmit,
     resetDefaultValues,
     setError,
@@ -46,43 +55,54 @@ export function AgentSettingsForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <FieldGroup>
-        {errors.root?.serverError && (
-          <p role="alert" className="text-sm text-destructive">
-            {errors.root.serverError.message}
-          </p>
-        )}
+      {errors.root?.serverError && (
+        <p role="alert" className="mb-4 text-sm text-destructive">
+          {errors.root.serverError.message}
+        </p>
+      )}
 
+      <FieldGroup>
         <Field data-invalid={!!errors.name}>
           <FieldLabel htmlFor="name">Name</FieldLabel>
           <Input id="name" maxLength={200} {...register("name")} />
           <FieldError errors={[errors.name]} />
         </Field>
 
-        <Field data-invalid={!!errors.temperature}>
-          <FieldLabel htmlFor="temperature">Temperature</FieldLabel>
-          <Input
-            id="temperature"
-            type="number"
-            min={0}
-            max={2}
-            step={0.1}
-            className="max-w-24"
-            {...register("temperature", { valueAsNumber: true })}
-          />
-          <FieldDescription>
-            Lower is more focused and repeatable, higher is more varied.
-          </FieldDescription>
-          <FieldError errors={[errors.temperature]} />
-        </Field>
+        <FieldSeparator />
+
+        <Controller
+          control={control}
+          name="temperature"
+          render={({ field }) => (
+            <Field data-invalid={!!errors.temperature}>
+              <div className="flex items-center justify-between">
+                <FieldLabel htmlFor="temperature">Temperature</FieldLabel>
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {field.value.toFixed(1)}
+                </span>
+              </div>
+              <Slider
+                id="temperature"
+                min={0}
+                max={2}
+                step={0.1}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+              <FieldDescription>
+                Lower is more focused and repeatable, higher is more varied.
+              </FieldDescription>
+              <FieldError errors={[errors.temperature]} />
+            </Field>
+          )}
+        />
       </FieldGroup>
 
-      <div className="mt-6">
-        <Button type="submit" disabled={isSubmitting || !isDirty}>
-          {isSubmitting && <Spinner />}
-          {isSubmitting ? "Saving…" : "Save changes"}
-        </Button>
-      </div>
+      <Button type="submit" className="mt-6" disabled={isSubmitting || !isDirty}>
+        {isSubmitting && <Spinner />}
+        {isSubmitting ? "Saving…" : "Save changes"}
+      </Button>
     </form>
   );
 }

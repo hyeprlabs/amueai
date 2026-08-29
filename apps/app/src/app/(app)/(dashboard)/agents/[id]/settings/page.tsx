@@ -27,14 +27,15 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
   if (!agent) notFound();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex max-w-2xl flex-col gap-4">
+      <div>
+        <h1 className="text-lg font-medium">Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Name and temperature. Model and instructions live in the Playground.
+        </p>
+      </div>
+
       <Card>
-        <CardHeader>
-          <CardTitle>Settings</CardTitle>
-          <CardDescription>
-            Name and temperature. Model and instructions live in the Playground.
-          </CardDescription>
-        </CardHeader>
         <CardContent>
           <AgentSettingsForm
             agentId={agent.id}
@@ -48,7 +49,7 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
 
       <Card className="ring-destructive/20">
         <CardHeader>
-          <CardTitle>Danger zone</CardTitle>
+          <CardTitle className="text-destructive">Danger zone</CardTitle>
           <CardDescription>
             Permanently delete this agent, its sources, and its conversation history.
           </CardDescription>

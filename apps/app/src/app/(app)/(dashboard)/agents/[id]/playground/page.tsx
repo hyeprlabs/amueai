@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 import { getGatewayChatModels } from "@/lib/gateway-models";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AgentPersonalityForm } from "./agent-personality-form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AgentInstructionsForm } from "./agent-instructions-form";
 import { TestChat } from "./test-chat";
 
 export const metadata: Metadata = createMetadata({
@@ -32,36 +32,35 @@ export default async function AgentPlaygroundPage({
   const gatewayModels = await getGatewayChatModels();
   // The agent's current model might have been deprecated/removed from the
   // Gateway catalog since it was picked - keep it selectable regardless so
-  // saving instructions doesn't silently change the model.
+  // switching models never silently strands the agent on an invalid one.
   const models = gatewayModels.some((model) => model.id === agent.model)
     ? gatewayModels
     : [{ id: agent.model, name: agent.model, provider: "current" }, ...gatewayModels];
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Playground</CardTitle>
-          <CardDescription>Calls the same API the public widget uses.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TestChat agentId={id} />
-        </CardContent>
-      </Card>
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="text-lg font-medium">Playground</h1>
+        <p className="text-sm text-muted-foreground">
+          Calls the same API the public widget uses. Switch models right from the chat.
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Personality</CardTitle>
-          <CardDescription>Model and instructions this agent answers with.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AgentPersonalityForm
-            agentId={agent.id}
-            defaultValues={{ model: agent.model, system_prompt: agent.system_prompt }}
-            models={models}
-          />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <TestChat agentId={id} models={models} defaultModel={agent.model} />
+
+        <Card className="gap-3 py-4">
+          <CardHeader className="px-4">
+            <CardTitle className="text-sm">Instructions</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 px-4">
+            <AgentInstructionsForm
+              agentId={agent.id}
+              defaultValues={{ system_prompt: agent.system_prompt }}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
