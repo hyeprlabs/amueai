@@ -195,6 +195,68 @@ describe("POST /api/chat/[agentId]", () => {
     expect(checkChatRateLimitMock).not.toHaveBeenCalled();
   });
 
+  describe("allowed_origins", () => {
+    function originRequest(origin?: string) {
+      return new Request("http://localhost/api/chat/agent-1", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(origin ? { origin } : {}),
+        },
+        body: JSON.stringify({ message: "Hi", visitorId: "visitor-1" }),
+      });
+    }
+
+    it("stays open when no origins are configured", async () => {
+      fakeSupabase = makeFakeSupabase({ agents: [{ ...agent, allowed_origins: [] }] });
+
+      const res = await POST(originRequest("https://anywhere.example"), {
+        params: Promise.resolve({ agentId: "agent-1" }),
+      });
+
+      expect(res.status).toBe(200);
+    });
+
+    it("allows a configured origin", async () => {
+      fakeSupabase = makeFakeSupabase({
+        agents: [{ ...agent, allowed_origins: ["https://acme.com"] }],
+      });
+
+      const res = await POST(originRequest("https://acme.com"), {
+        params: Promise.resolve({ agentId: "agent-1" }),
+      });
+
+      expect(res.status).toBe(200);
+    });
+
+    it("blocks another site embedding this agent, before spending any model credits", async () => {
+      fakeSupabase = makeFakeSupabase({
+        agents: [{ ...agent, allowed_origins: ["https://acme.com"] }],
+      });
+
+      const res = await POST(originRequest("https://evil.example"), {
+        params: Promise.resolve({ agentId: "agent-1" }),
+      });
+
+      expect(res.status).toBe(403);
+      expect(streamTextMock).not.toHaveBeenCalled();
+      expect(embedMock).not.toHaveBeenCalled();
+    });
+
+    it("blocks a request with no Origin header once origins are configured", async () => {
+      fakeSupabase = makeFakeSupabase({
+        agents: [{ ...agent, allowed_origins: ["https://acme.com"] }],
+      });
+
+      const res = await POST(originRequest(), {
+        params: Promise.resolve({ agentId: "agent-1" }),
+      });
+
+      expect(res.status).toBe(403);
+      expect(streamTextMock).not.toHaveBeenCalled();
+    });
+  });
+
   it("returns 429 without calling the model when rate limited", async () => {
     checkChatRateLimitMock.mockResolvedValue(false);
 

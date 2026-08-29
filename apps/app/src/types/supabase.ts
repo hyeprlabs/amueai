@@ -15,6 +15,7 @@ export type Database = {
       agents: {
         Row: {
           allowed_origins: string[];
+          brand: Json | null;
           created_at: string;
           fallback_message: string;
           id: string;
@@ -27,6 +28,7 @@ export type Database = {
         };
         Insert: {
           allowed_origins?: string[];
+          brand?: Json | null;
           created_at?: string;
           fallback_message?: string;
           id?: string;
@@ -39,6 +41,7 @@ export type Database = {
         };
         Update: {
           allowed_origins?: string[];
+          brand?: Json | null;
           created_at?: string;
           fallback_message?: string;
           id?: string;

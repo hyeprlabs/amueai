@@ -20,7 +20,7 @@ let firecrawlClient: Firecrawl | undefined;
  * every source - this is the only ingestion path there is (sources are
  * URL-only for now).
  */
-function getFirecrawlClient(): Firecrawl {
+export function getFirecrawlClient(): Firecrawl {
   if (!firecrawlClient) {
     const apiKey = process.env.FIRECRAWL_API_KEY;
     if (!apiKey) throw new Error("FIRECRAWL_API_KEY is not configured");

@@ -37,12 +37,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
 
   const { data: agent } = await supabase
     .from("agents")
-    .select("id, org_id, system_prompt, model, temperature, fallback_message")
+    .select("id, org_id, system_prompt, model, temperature, fallback_message, allowed_origins")
     .eq("id", agentId)
     .single();
 
   if (!agent) {
     return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+  }
+
+  // Agent ids are public by design - they ship in the embed snippet on the
+  // customer's own site - so without this check anyone could point their
+  // page at someone else's agent and spend that org's Gateway credits while
+  // reading its knowledge base. An empty allowed_origins means "not locked
+  // down yet" and stays open; once an origin is set, only those match.
+  // allowed_origins predates this build and has no backfill, so rows
+  // created before it gained a default still read null.
+  if (agent.allowed_origins && agent.allowed_origins.length > 0) {
+    const origin = request.headers.get("origin");
+    if (!origin || !agent.allowed_origins.includes(origin)) {
+      return NextResponse.json({ error: "Origin not allowed for this agent" }, { status: 403 });
+    }
   }
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";

@@ -30,7 +30,7 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { createAgent } from "../(dashboard)/agents/actions";
+import { captureAgentBrand, createAgent } from "../(dashboard)/agents/actions";
 
 const TOTAL_STEPS = 3;
 
@@ -136,11 +136,18 @@ export function NewAgentForm() {
 
       if (values.sourceType === "website" && values.websiteUrl) {
         const url = `https://${stripProtocol(values.websiteUrl)}`;
-        await fetch(`/api/agents/${agent.id}/sources`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ label: url, url }),
-        }).catch(() => {});
+        // Content ingestion and brand capture both scrape the same site and
+        // neither blocks the other, so run them together. Both are
+        // best-effort: a site that can't be scraped, or has no detectable
+        // brand, still leaves a usable agent behind.
+        await Promise.allSettled([
+          fetch(`/api/agents/${agent.id}/sources`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ label: url, url }),
+          }),
+          captureAgentBrand(agent.id, { url }),
+        ]);
       }
 
       router.push(`/agents/${agent.id}/build/sources`);

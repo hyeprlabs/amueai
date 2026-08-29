@@ -5,6 +5,7 @@ import { HammerIcon, MessageSquareTextIcon, RadioTowerIcon } from "lucide-react"
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
+import type { AgentBrand } from "@/lib/branding";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconTile } from "@/components/ui/icon-tile";
 
@@ -42,11 +43,13 @@ export default async function AgentOverviewPage({ params }: PageProps<"/agents/[
   const supabase = await createServerSupabaseClient();
   const { data: agent } = await supabase
     .from("agents")
-    .select("id, name, model, created_at")
+    .select("id, name, model, created_at, brand")
     .eq("id", id)
     .single();
 
   if (!agent) notFound();
+
+  const brand = agent.brand as AgentBrand | null;
 
   const [{ count: sourceCount }, { count: conversationCount }] = await Promise.all([
     supabase.from("sources").select("id", { count: "exact", head: true }).eq("agent_id", id),
@@ -61,6 +64,36 @@ export default async function AgentOverviewPage({ params }: PageProps<"/agents/[
           Created {new Date(agent.created_at).toLocaleDateString()}
         </p>
       </div>
+
+      {brand && (
+        <Card className="flex-row items-center gap-4 p-4">
+          {brand.logo && (
+            // Firecrawl returns an arbitrary third-party logo URL, which
+            // next/image would need whitelisted in remotePatterns per
+            // customer domain - impossible for user-supplied sites.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand.logo} alt="" className="size-10 shrink-0 rounded-md object-contain" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">{brand.name ?? "Brand detected"}</p>
+            <p className="text-xs text-muted-foreground">Pulled from your site during setup.</p>
+          </div>
+          {brand.colors && (
+            <div className="flex shrink-0 items-center gap-1.5">
+              {[brand.colors.primary, brand.colors.background, brand.colors.text]
+                .filter((color): color is string => Boolean(color))
+                .map((color) => (
+                  <span
+                    key={color}
+                    title={color}
+                    style={{ backgroundColor: color }}
+                    className="size-5 rounded-full ring-1 ring-foreground/15"
+                  />
+                ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>

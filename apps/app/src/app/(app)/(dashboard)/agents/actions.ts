@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getGatewayChatModels } from "@/lib/gateway-models";
+import { extractUrlBranding } from "@/lib/branding";
 import { agentSettingsSchema } from "./[id]/settings/agent-settings-schema";
 
 const createAgentSchema = z.object({
@@ -35,6 +36,37 @@ export async function createAgent(input: unknown) {
   if (error) throw new Error(`Failed to create agent: ${error.message}`);
 
   return data;
+}
+
+const captureBrandSchema = z.object({
+  url: z.string().trim().url().max(2048),
+});
+
+/**
+ * Scrapes the agent's source website for its visual identity and stores it
+ * on the agent row. Called from the /new onboarding wizard right after the
+ * agent is created, so an agent trained on a site also inherits that site's
+ * name, logo and palette without anyone picking colors by hand.
+ *
+ * Resolves rather than throws when a site has no detectable brand - this
+ * is an enhancement to onboarding, never a reason to fail it.
+ */
+export async function captureAgentBrand(agentId: string, input: unknown) {
+  const { orgId } = await auth();
+  if (!orgId) throw new Error("No active organization");
+
+  const { url } = captureBrandSchema.parse(input);
+
+  const brand = await extractUrlBranding(url);
+  if (!brand) return null;
+
+  const supabase = await createServerSupabaseClient();
+  // RLS scopes this to the caller's org, so a forged agentId from another
+  // org matches no row and writes nothing.
+  const { error } = await supabase.from("agents").update({ brand }).eq("id", agentId);
+  if (error) throw new Error(`Failed to save brand: ${error.message}`);
+
+  return brand;
 }
 
 const updateAgentSchema = agentSettingsSchema.partial();
