@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   findActiveNavItem,
   getActiveAgentId,
-  getAgentSubNav,
+  getAgentNavGroups,
   headerPageTitle,
   isNavItemActive,
 } from "./app-shared";
@@ -14,7 +14,7 @@ describe("isNavItemActive", () => {
   });
 
   it("matches a nested route under the item's path", () => {
-    expect(isNavItemActive("/agents", "/agents/abc-123/conversations")).toBe(true);
+    expect(isNavItemActive("/agents", "/agents/abc-123/analytics")).toBe(true);
   });
 
   it("does not match a sibling route that merely shares a prefix", () => {
@@ -39,11 +39,11 @@ describe("findActiveNavItem", () => {
     expect(findActiveNavItem("/agents/abc-123")?.title).toBe("Agents");
   });
 
-  it("finds Overview for its real route, not the old stub", () => {
-    expect(findActiveNavItem("/overview")?.title).toBe("Overview");
+  it("finds Usage for its real route", () => {
+    expect(findActiveNavItem("/usage")?.title).toBe("Usage");
   });
 
-  it("returns undefined for a route with no matching nav item (e.g. /settings, no longer in the sidebar)", () => {
+  it("returns undefined for a route with no matching nav item (e.g. /settings, never in the sidebar's primary face)", () => {
     expect(findActiveNavItem("/profile")).toBeUndefined();
     expect(findActiveNavItem("/settings")).toBeUndefined();
   });
@@ -72,22 +72,23 @@ describe("getActiveAgentId", () => {
   });
 
   it("returns undefined outside /agents entirely", () => {
-    expect(getActiveAgentId("/overview")).toBeUndefined();
+    expect(getActiveAgentId("/usage")).toBeUndefined();
   });
 });
 
-describe("getAgentSubNav", () => {
-  it("builds the 5 sidebar sub-tabs scoped to the given agent", () => {
-    const subNav = getAgentSubNav("abc-123");
+describe("getAgentNavGroups", () => {
+  it("builds a single flat group of the 5 agent tabs, scoped to the given agent", () => {
+    const groups = getAgentNavGroups("abc-123");
 
-    expect(subNav.map((item) => item.title)).toEqual([
+    expect(groups).toHaveLength(1);
+    expect(groups[0].items.map((item) => item.title)).toEqual([
       "Playground",
       "Build",
       "Analytics",
       "Channels",
       "Settings",
     ]);
-    expect(subNav.map((item) => item.path)).toEqual([
+    expect(groups[0].items.map((item) => item.path)).toEqual([
       "/agents/abc-123/playground",
       "/agents/abc-123/build",
       "/agents/abc-123/analytics",

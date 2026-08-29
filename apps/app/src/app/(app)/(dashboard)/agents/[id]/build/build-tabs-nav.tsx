@@ -10,7 +10,7 @@ const TABS = [
   { segment: "embed", label: "Embed" },
 ] as const;
 
-/** Same real-<Link>-per-tab pattern as AgentTabsNav, one level down. */
+/** A real <Link> per tab, same idea as the sidebar's own nav, one level down inside Build. */
 export function BuildTabsNav({ agentId }: { agentId: string }) {
   const pathname = usePathname();
 

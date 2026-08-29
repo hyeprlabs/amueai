@@ -10,7 +10,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { AgentTabsNav } from "./agent-tabs-nav";
 
 export default async function AgentLayout({ children, params }: LayoutProps<"/agents/[id]">) {
   const { id } = await params;
@@ -33,15 +32,6 @@ export default async function AgentLayout({ children, params }: LayoutProps<"/ag
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-
-      <div>
-        <h1 className="text-lg font-medium">{agent.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          Train it on your data, test it, then embed it on your site.
-        </p>
-      </div>
-
-      <AgentTabsNav agentId={agent.id} />
 
       {children}
     </div>

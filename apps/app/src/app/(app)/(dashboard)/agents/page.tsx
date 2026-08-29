@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { OrganizationSwitcher } from "@clerk/nextjs";
-import { BotIcon, PlusIcon, TriangleAlertIcon } from "lucide-react";
+import { BotIcon, ChevronRightIcon, PlusIcon, TriangleAlertIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { IconTile } from "@/components/ui/icon-tile";
 import {
   Empty,
   EmptyContent,
@@ -104,19 +105,18 @@ export default async function AgentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {agents.map((agent) => (
-            <Link key={agent.id} href={`/agents/${agent.id}`} className="group">
-              <Card className="h-full transition-shadow group-hover:shadow-md group-hover:ring-foreground/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BotIcon className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{agent.name}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+            <Link key={agent.id} href={`/agents/${agent.id}/overview`} className="group">
+              <Card className="flex-row items-center gap-3 p-4 transition-shadow group-hover:shadow-md group-hover:ring-foreground/20">
+                <IconTile variant="soft">
+                  <BotIcon />
+                </IconTile>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{agent.name}</p>
                   <p className="text-xs text-muted-foreground">
                     Created {new Date(agent.created_at).toLocaleDateString()}
                   </p>
-                </CardContent>
+                </div>
+                <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
               </Card>
             </Link>
           ))}

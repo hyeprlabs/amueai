@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 import {
-  LayoutGridIcon,
-  BotIcon,
-  MessageSquareTextIcon,
-  HammerIcon,
   BarChart3Icon,
-  RadioTowerIcon,
-  SettingsIcon,
+  BotIcon,
+  GaugeIcon,
+  HammerIcon,
   HelpCircleIcon,
   BookOpenIcon,
+  MessageSquareTextIcon,
+  RadioTowerIcon,
+  SettingsIcon,
 } from "lucide-react";
 
 export type SidebarNavItem = {
@@ -16,7 +16,6 @@ export type SidebarNavItem = {
   path?: string;
   icon?: ReactNode;
   isActive?: boolean;
-  subItems?: SidebarNavItem[];
 };
 
 export type SidebarNavGroup = {
@@ -24,19 +23,20 @@ export type SidebarNavGroup = {
   items: SidebarNavItem[];
 };
 
-export const navGroups: SidebarNavGroup[] = [
+/** The sidebar's default face: everything not scoped to one agent. */
+export const primaryNavGroups: SidebarNavGroup[] = [
   {
     label: "Product",
     items: [
       {
-        title: "Overview",
-        path: "/overview",
-        icon: <LayoutGridIcon />,
-      },
-      {
         title: "Agents",
         path: "/agents",
         icon: <BotIcon />,
+      },
+      {
+        title: "Usage",
+        path: "/usage",
+        icon: <GaugeIcon />,
       },
     ],
   },
@@ -55,13 +55,22 @@ export function getActiveAgentId(pathname: string): string | undefined {
   return pathname.match(/^\/agents\/([^/]+)(?:\/|$)/)?.[1];
 }
 
-/** The sidebar's Playground/Build/Analytics/Channels/Settings sub-nav for one agent. */
-export function getAgentSubNav(agentId: string): SidebarNavItem[] {
-  return AGENT_TABS.map((tab) => ({
-    title: tab.title,
-    path: `/agents/${agentId}/${tab.segment}`,
-    icon: tab.icon,
-  }));
+/**
+ * The sidebar's other face: flat Playground/Build/Analytics/Channels/
+ * Settings nav for one agent, no collapsing, no parent "Agents" item - the
+ * whole sidebar becomes this agent's nav while you're inside it (paired
+ * with the AgentSwitcher rendered above it in AppSidebar).
+ */
+export function getAgentNavGroups(agentId: string): SidebarNavGroup[] {
+  return [
+    {
+      items: AGENT_TABS.map((tab) => ({
+        title: tab.title,
+        path: `/agents/${agentId}/${tab.segment}`,
+        icon: tab.icon,
+      })),
+    },
+  ];
 }
 
 export const footerNavLinks: SidebarNavItem[] = [
@@ -77,10 +86,8 @@ export const footerNavLinks: SidebarNavItem[] = [
   },
 ];
 
-export const navLinks: SidebarNavItem[] = [
-  ...navGroups.flatMap((group) =>
-    group.items.flatMap((item) => (item.subItems?.length ? [item, ...item.subItems] : [item])),
-  ),
+const navLinks: SidebarNavItem[] = [
+  ...primaryNavGroups.flatMap((group) => group.items),
   ...footerNavLinks,
 ];
 

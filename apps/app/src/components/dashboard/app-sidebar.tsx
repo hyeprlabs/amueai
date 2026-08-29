@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { OrganizationSwitcher } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Sidebar,
@@ -14,16 +15,32 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { footerNavLinks, navGroups } from "@/components/dashboard/app-shared";
+import {
+  footerNavLinks,
+  getActiveAgentId,
+  getAgentNavGroups,
+  primaryNavGroups,
+} from "@/components/dashboard/app-shared";
+import { AgentSwitcher, type AgentSwitcherAgent } from "@/components/dashboard/agent-switcher";
 import { LatestChange } from "@/components/dashboard/latest-change";
 import { NavGroup } from "@/components/dashboard/nav-group";
 import type { Change } from "@/payload-types";
 
-export function AppSidebar({ latestChange }: { latestChange?: Change }) {
+export function AppSidebar({
+  latestChange,
+  agents,
+}: {
+  latestChange?: Change;
+  agents: AgentSwitcherAgent[];
+}) {
   const { state } = useSidebar();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  const activeAgentId = getActiveAgentId(pathname);
+  const navGroups = activeAgentId ? getAgentNavGroups(activeAgentId) : primaryNavGroups;
 
   return (
     <Sidebar
@@ -43,6 +60,11 @@ export function AppSidebar({ latestChange }: { latestChange?: Change }) {
         )}
       </SidebarHeader>
       <SidebarContent>
+        {activeAgentId && (
+          <div className="px-2 pt-2">
+            <AgentSwitcher agents={agents} currentAgentId={activeAgentId} />
+          </div>
+        )}
         {navGroups.map((group, index) => (
           <NavGroup key={`sidebar-group-${index}`} {...group} />
         ))}

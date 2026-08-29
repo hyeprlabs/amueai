@@ -4,24 +4,14 @@ import { forwardRef, type ComponentProps } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import {
-  getActiveAgentId,
-  getAgentSubNav,
-  isNavItemActive,
-  type SidebarNavGroup,
-} from "@/components/dashboard/app-shared";
-import { ChevronRightIcon } from "lucide-react";
+import { isNavItemActive, type SidebarNavGroup } from "@/components/dashboard/app-shared";
 
 /**
  * Used as a Base UI `render` element (SidebarMenuButton clones it via
@@ -42,80 +32,26 @@ const NavLink = forwardRef<HTMLAnchorElement, ComponentProps<"a">>(function NavL
   return <a href={href} ref={ref} {...props} />;
 });
 
+/** A flat list of nav links - the sidebar has no collapsible groups. */
 export function NavGroup({ label, items }: SidebarNavGroup) {
   const pathname = usePathname();
-  const activeAgentId = getActiveAgentId(pathname);
 
   return (
     <SidebarGroup>
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
-        {items.map((rawItem) => {
-          // The sidebar can't statically list an agent's own sub-pages
-          // (Playground/Build/Analytics/Channels/Settings) since they're
-          // keyed by whichever agent id is currently open - swap them in
-          // here once the route reveals which agent that is.
-          const item =
-            rawItem.path === "/agents" && activeAgentId
-              ? { ...rawItem, subItems: getAgentSubNav(activeAgentId) }
-              : rawItem;
-
-          const isActive = isNavItemActive(item.path, pathname);
-          const subItemsActive =
-            item.subItems?.map((subItem) => isNavItemActive(subItem.path, pathname)) ?? [];
-          const anySubActive = subItemsActive.some(Boolean);
-
-          return (
-            <Collapsible
-              className="group/collapsible"
-              defaultOpen={isActive || anySubActive}
-              key={item.title}
+        {items.map((item) => (
+          <SidebarMenuItem key={item.title}>
+            <SidebarMenuButton
+              isActive={isNavItemActive(item.path, pathname)}
+              render={<NavLink href={item.path} />}
+              tooltip={item.title}
             >
-              <SidebarMenuItem>
-                {item.subItems?.length ? (
-                  <>
-                    <CollapsibleTrigger
-                      render={
-                        <SidebarMenuButton
-                          isActive={isActive || anySubActive}
-                          tooltip={item.title}
-                        />
-                      }
-                    >
-                      {item.icon}
-                      <span>{item.title}</span>
-                      <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.subItems?.map((subItem, i) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton
-                              isActive={subItemsActive[i]}
-                              render={<NavLink href={subItem.path} />}
-                            >
-                              {subItem.icon}
-                              <span>{subItem.title}</span>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </>
-                ) : (
-                  <SidebarMenuButton
-                    isActive={isActive}
-                    render={<NavLink href={item.path} />}
-                    tooltip={item.title}
-                  >
-                    {item.icon}
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
-            </Collapsible>
-          );
-        })}
+              {item.icon}
+              <span>{item.title}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))}
       </SidebarMenu>
     </SidebarGroup>
   );

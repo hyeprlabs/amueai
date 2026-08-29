@@ -18,13 +18,13 @@ import {
 } from "@/components/ui/empty";
 
 export const metadata: Metadata = createMetadata({
-  title: "Overview",
-  description: "Your agent activity at a glance.",
-  pathname: "/overview",
+  title: "Usage",
+  description: "Your workspace's agent activity at a glance.",
+  pathname: "/usage",
   noIndex: true,
 });
 
-export default async function OverviewPage() {
+export default async function UsagePage() {
   const { orgId } = await auth();
 
   if (!orgId) {
@@ -33,8 +33,7 @@ export default async function OverviewPage() {
         <div>
           <h1 className="text-lg font-medium">Select or create a workspace</h1>
           <p className="text-sm text-muted-foreground">
-            AmueAI workspaces are Clerk organizations. Pick one from the switcher to see its
-            overview.
+            AmueAI workspaces are Clerk organizations. Pick one from the switcher to see its usage.
           </p>
         </div>
         <OrganizationSwitcher hidePersonal />
@@ -83,8 +82,10 @@ export default async function OverviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-lg font-medium">Overview</h1>
-        <p className="text-sm text-muted-foreground">Your agent activity at a glance.</p>
+        <h1 className="text-lg font-medium">Usage</h1>
+        <p className="text-sm text-muted-foreground">
+          Your workspace&apos;s agent activity at a glance.
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -118,7 +119,7 @@ export default async function OverviewPage() {
             {agents?.map((agent) => (
               <li key={agent.id}>
                 <Link
-                  href={`/agents/${agent.id}`}
+                  href={`/agents/${agent.id}/overview`}
                   className="flex items-center justify-between py-2.5 text-sm hover:underline"
                 >
                   <span className="font-medium">{agent.name}</span>
