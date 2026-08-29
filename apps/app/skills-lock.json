@@ -97,6 +97,12 @@
       "skillPath": "skills/.curated/react-hook-form/SKILL.md",
       "computedHash": "e9881245bb3f993f93c9fce336ca7a517ce39864aa46c95d04238fc5ebc4e4d1"
     },
+    "seo-geo": {
+      "source": "resciencelab/opc-skills",
+      "sourceType": "github",
+      "skillPath": "skills/seo-geo/SKILL.md",
+      "computedHash": "56f90ba46b36563bb5461feb8462aed9283e74dfc4cdac2a98c42c4bc86a95be"
+    },
     "setup-polar": {
       "source": "polarsource/skills",
       "sourceType": "github",

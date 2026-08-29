@@ -8,9 +8,12 @@ import {
 
 import { plans } from "@/components/marketing/pricing/plans";
 import { PricingSection } from "@/components/marketing/pricing/pricing-section";
+import { pricingFaqItems } from "@/components/marketing/pricing/pricing-faq-items";
+import { MarketingFaq } from "@/components/marketing/marketing-faq";
 import { siteConfig } from "@/config/site";
 import {
   breadcrumbItems,
+  faqPageJsonLd,
   organizationJsonLdProps,
   webPageJsonLd,
   webSiteJsonLd,
@@ -56,8 +59,10 @@ export default function Page() {
         scriptKey="software-application"
         url={absoluteUrl("/pricing")}
       />
+      <JsonLdScript data={faqPageJsonLd(pricingFaqItems)} scriptKey="faq" />
 
       <PricingSection />
+      <MarketingFaq items={pricingFaqItems} />
     </>
   );
 }

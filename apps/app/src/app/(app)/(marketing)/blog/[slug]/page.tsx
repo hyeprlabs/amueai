@@ -13,9 +13,9 @@ import {
 } from "next-seo";
 
 import { AuthorInfo } from "@/components/marketing/author-info";
-import { CategoryDropdown } from "@/components/blog/category-dropdown";
-import { MarketingFaq } from "@/components/marketing-faq";
-import { PostGrid } from "@/components/blog/post-grid";
+import { CategoryDropdown } from "@/components/marketing/blog/category-dropdown";
+import { MarketingFaq } from "@/components/marketing/marketing-faq";
+import { PostGrid } from "@/components/marketing/blog/post-grid";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { getCategories, getPostBySlug, getRelatedPosts } from "@/lib/blog";

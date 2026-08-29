@@ -8,12 +8,12 @@
     "build": "tsx scripts/migrate.ts && next build",
     "db:migrate": "tsx scripts/migrate.ts",
     "start": "next start",
+    "test": "vitest run",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "generate:types": "payload generate:types",
-    "test": "vitest run"
+    "generate:types": "payload generate:types"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.86",
@@ -50,6 +50,7 @@
     "nuqs": "^2.10.0",
     "payload": "^3.88.0",
     "react": "19.2.8",
+    "react-country-flag": "^3.1.0",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.85.0",
     "shadcn": "^4.18.0",

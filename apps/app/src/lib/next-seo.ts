@@ -13,12 +13,16 @@ export function organizationJsonLdProps(): OrganizationJsonLdProps {
     email: siteConfig.email,
     sameAs: Object.values(siteConfig.links),
     contactPoint: { contactType: "customer support", email: siteConfig.email },
+    ...(siteConfig.address && { address: siteConfig.address }),
   };
 }
 
 /** Maps our `{ name, pathname }` breadcrumb shape to `<BreadcrumbJsonLd>`'s `items`. */
 export function breadcrumbItems(items: { name: string; pathname: string }[]) {
-  return items.map((item) => ({ name: item.name, item: absoluteUrl(item.pathname) }));
+  return items.map((item) => ({
+    name: item.name,
+    item: absoluteUrl(item.pathname),
+  }));
 }
 
 /**
@@ -111,6 +115,34 @@ export function itemListJsonLd(
       position: index + 1,
       name: item.name,
       url: absoluteUrl(item.pathname),
+    })),
+  };
+}
+
+export type FaqPageJsonLd = {
+  "@context": "https://schema.org";
+  "@type": "FAQPage";
+  mainEntity: {
+    "@type": "Question";
+    name: string;
+    acceptedAnswer: { "@type": "Answer"; text: string };
+  }[];
+};
+
+/**
+ * FAQPage structured data — the single highest-leverage schema for AI search
+ * citation (Princeton GEO study: up to +40% visibility). Feed it the same
+ * `{ question, answer }` pairs rendered by `<MarketingFaq>` so the page and
+ * the markup never diverge.
+ */
+export function faqPageJsonLd(items: { question: string; answer: string }[]): FaqPageJsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
     })),
   };
 }
