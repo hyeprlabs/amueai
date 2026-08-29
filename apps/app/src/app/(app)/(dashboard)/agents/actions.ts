@@ -10,24 +10,26 @@ import { agentSettingsSchema } from "./[id]/settings/agent-settings-schema";
 
 const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
+  system_prompt: z.string().trim().min(1).max(4000).optional(),
 });
 
 /**
- * Called directly (not via a <form action>) from the client RHF form in
- * create-agent-dialog.tsx - returned rather than redirected, same reasoning
- * as updateAgent below, so the client stays in control of navigation.
+ * Called directly (not via a <form action>) from client RHF forms
+ * (create-agent-dialog.tsx and the /new onboarding wizard) - returned
+ * rather than redirected, same reasoning as updateAgent below, so the
+ * client stays in control of navigation.
  */
 export async function createAgent(input: unknown) {
   const { orgId } = await auth();
   if (!orgId) throw new Error("No active organization");
 
-  const { name } = createAgentSchema.parse(input);
+  const { name, system_prompt } = createAgentSchema.parse(input);
 
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
     .from("agents")
-    .insert({ org_id: orgId, name })
+    .insert({ org_id: orgId, name, ...(system_prompt ? { system_prompt } : {}) })
     .select("id")
     .single();
 
