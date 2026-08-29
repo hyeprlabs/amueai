@@ -12,7 +12,6 @@ import { homeFaqItems } from "@/components/marketing/home-faq-items";
 import { siteConfig, siteTitle } from "@/config/site";
 import { createMetadata } from "@/lib/seo";
 import { faqPageJsonLd, organizationJsonLdProps, webSiteJsonLd } from "@/lib/next-seo";
-import { waitlistFlag } from "@/lib/flags";
 
 export const metadata: Metadata = createMetadata({
   title: { absolute: siteTitle },
@@ -20,9 +19,7 @@ export const metadata: Metadata = createMetadata({
   pathname: "/",
 });
 
-export default async function Page() {
-  const waitlistEnabled = await waitlistFlag();
-
+export default function Page() {
   return (
     <>
       <OrganizationJsonLd {...organizationJsonLdProps()} scriptKey="organization" />
@@ -31,7 +28,7 @@ export default async function Page() {
 
       <HeroSection />
       <LogosSection />
-      <Channels waitlistEnabled={waitlistEnabled} />
+      <Channels />
       <FeatureSection1 />
       <FeatureSection2 />
       <MarketingFaq items={homeFaqItems} />

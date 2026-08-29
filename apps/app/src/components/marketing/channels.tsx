@@ -39,7 +39,7 @@ const data: Channel[] = [
   },
 ];
 
-export function Channels({ waitlistEnabled = false }: { waitlistEnabled?: boolean }) {
+export function Channels() {
   return (
     <div className="mb-12 lg:mb-24 mx-auto w-full max-w-5xl border-t">
       <div className="mx-auto max-w-3xl text-center my-6">
@@ -83,22 +83,18 @@ export function Channels({ waitlistEnabled = false }: { waitlistEnabled?: boolea
             </div>
           </div>
         ))}
-        {/* Links to /features/channels, which the proxy redirects home
-         * while waitlisted. */}
-        {!waitlistEnabled && (
-          <div className="relative flex items-center justify-center p-1 sm:col-span-2 lg:col-span-4">
-            <Button
-              className="group text-xs"
-              size="sm"
-              variant="link"
-              render={<Link href="/features/channels" />}
-              nativeButton={false}
-            >
-              View all channels
-              <ArrowUpRightIcon data-icon="inline-end" />
-            </Button>
-          </div>
-        )}
+        <div className="relative flex items-center justify-center p-1 sm:col-span-2 lg:col-span-4">
+          <Button
+            className="group text-xs"
+            size="sm"
+            variant="link"
+            render={<Link href="/features/channels" />}
+            nativeButton={false}
+          >
+            View all channels
+            <ArrowUpRightIcon data-icon="inline-end" />
+          </Button>
+        </div>
       </div>
     </div>
   );
