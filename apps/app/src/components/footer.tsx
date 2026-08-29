@@ -10,7 +10,7 @@ import { LegalDropdown } from "@/components/legal-dropdown";
 import { Button } from "@/components/ui/button";
 import { FullWidthDivider } from "@/components/full-width-divider";
 
-export function Footer() {
+export function Footer({ waitlistEnabled = false }: { waitlistEnabled?: boolean }) {
   return (
     <footer
       className={cn(
@@ -20,7 +20,15 @@ export function Footer() {
     >
       <FullWidthDivider position="top" />
       <div className="grid max-w-5xl grid-cols-6 gap-6 p-4">
-        <div className="col-span-6 flex flex-col gap-4 pt-5 md:col-span-4">
+        <div
+          className={cn(
+            "col-span-6 flex flex-col gap-4 pt-5",
+            // The Resources/Company columns only exist for pages the proxy
+            // redirects home while waitlisted — drop them and let this
+            // column take the full width instead of leaving it empty.
+            !waitlistEnabled && "md:col-span-4",
+          )}
+        >
           <Link aria-label={`${siteConfig.name} home`} className="w-max" href="/">
             <Logo className="h-5" />
           </Link>
@@ -43,26 +51,30 @@ export function Footer() {
           </div>
           <LegalDropdown />
         </div>
-        <div className="col-span-3 w-full md:col-span-1">
-          <span className="text-muted-foreground text-xs">Resources</span>
-          <div className="mt-2 flex flex-col gap-2">
-            {resources.map(({ href, title }) => (
-              <Link className="w-max text-sm hover:underline" href={href} key={title}>
-                {title}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <div className="col-span-3 w-full md:col-span-1">
-          <span className="text-muted-foreground text-xs">Company</span>
-          <div className="mt-2 flex flex-col gap-2">
-            {company.map(({ href, title }) => (
-              <Link className="w-max text-sm hover:underline" href={href} key={title}>
-                {title}
-              </Link>
-            ))}
-          </div>
-        </div>
+        {!waitlistEnabled && (
+          <>
+            <div className="col-span-3 w-full md:col-span-1">
+              <span className="text-muted-foreground text-xs">Resources</span>
+              <div className="mt-2 flex flex-col gap-2">
+                {resources.map(({ href, title }) => (
+                  <Link className="w-max text-sm hover:underline" href={href} key={title}>
+                    {title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div className="col-span-3 w-full md:col-span-1">
+              <span className="text-muted-foreground text-xs">Company</span>
+              <div className="mt-2 flex flex-col gap-2">
+                {company.map(({ href, title }) => (
+                  <Link className="w-max text-sm hover:underline" href={href} key={title}>
+                    {title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
       <FullWidthDivider />
       <div className="flex items-center justify-center gap-2 py-4">

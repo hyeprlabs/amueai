@@ -22,7 +22,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
       >
         {/* `main` and `footer` stay siblings so both keep their landmark roles. */}
         <main className="grow">{children}</main>
-        <Footer />
+        <Footer waitlistEnabled={waitlistEnabled} />
       </div>
     </div>
   );

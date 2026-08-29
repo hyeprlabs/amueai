@@ -38,7 +38,9 @@ export function Header({ waitlistEnabled }: { waitlistEnabled: boolean }) {
           >
             <Logo className="h-4" />
           </Link>
-          <DesktopNav />
+          {/* Every link in here points at a page the proxy redirects home
+           * while waitlisted, so it's dead weight until launch. */}
+          {!waitlistEnabled && <DesktopNav />}
         </div>
         <HeaderActions waitlistEnabled={waitlistEnabled} />
         <MobileNav waitlistEnabled={waitlistEnabled} />

@@ -45,31 +45,35 @@ export function MobileNav({ waitlistEnabled }: { waitlistEnabled: boolean }) {
             )}
             data-slot={open ? "open" : "closed"}
           >
-            <div className="flex w-full flex-col gap-y-2">
-              <span className="text-sm">Features</span>
-              {featureLinks.map((link) => (
-                <LinkItem
-                  className="rounded-lg p-2 active:bg-muted dark:active:bg-muted/50"
-                  key={`feature-${link.label}`}
-                  {...link}
-                />
-              ))}
-              <span className="text-sm">Company</span>
-              {companyLinks.map((link) => (
-                <LinkItem
-                  className="rounded-lg p-2 active:bg-muted dark:active:bg-muted/50"
-                  key={`company-${link.label}`}
-                  {...link}
-                />
-              ))}
-              {companyLinks2.map((link) => (
-                <LinkItem
-                  className="rounded-lg p-2 active:bg-muted dark:active:bg-muted/50"
-                  key={`company-${link.label}`}
-                  {...link}
-                />
-              ))}
-            </div>
+            {/* Every link below points at a page the proxy redirects home
+             * while waitlisted, so it's dead weight until launch. */}
+            {!waitlistEnabled && (
+              <div className="flex w-full flex-col gap-y-2">
+                <span className="text-sm">Features</span>
+                {featureLinks.map((link) => (
+                  <LinkItem
+                    className="rounded-lg p-2 active:bg-muted dark:active:bg-muted/50"
+                    key={`feature-${link.label}`}
+                    {...link}
+                  />
+                ))}
+                <span className="text-sm">Company</span>
+                {companyLinks.map((link) => (
+                  <LinkItem
+                    className="rounded-lg p-2 active:bg-muted dark:active:bg-muted/50"
+                    key={`company-${link.label}`}
+                    {...link}
+                  />
+                ))}
+                {companyLinks2.map((link) => (
+                  <LinkItem
+                    className="rounded-lg p-2 active:bg-muted dark:active:bg-muted/50"
+                    key={`company-${link.label}`}
+                    {...link}
+                  />
+                ))}
+              </div>
+            )}
             {waitlistEnabled ? (
               <div className="mt-5 flex flex-col gap-2">
                 <Button
