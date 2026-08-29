@@ -1,14 +1,12 @@
 import type { ReactNode } from "react";
 import {
   LayoutGridIcon,
-  BarChart3Icon,
-  BriefcaseIcon,
   BotIcon,
-  UsersIcon,
-  PlugIcon,
-  KeyRoundIcon,
+  MessageSquareTextIcon,
+  HammerIcon,
+  BarChart3Icon,
+  RadioTowerIcon,
   SettingsIcon,
-  CreditCardIcon,
   HelpCircleIcon,
   BookOpenIcon,
 } from "lucide-react";
@@ -40,54 +38,31 @@ export const navGroups: SidebarNavGroup[] = [
         path: "/agents",
         icon: <BotIcon />,
       },
-      {
-        title: "Analytics",
-        path: "/analytics",
-        icon: <BarChart3Icon />,
-      },
-      {
-        title: "Projects",
-        path: "#/projects",
-        icon: <BriefcaseIcon />,
-      },
-    ],
-  },
-  {
-    label: "Workspace",
-    items: [
-      {
-        title: "Team",
-        path: "#/team",
-        icon: <UsersIcon />,
-      },
-      {
-        title: "Integrations",
-        path: "#/integrations",
-        icon: <PlugIcon />,
-      },
-      {
-        title: "API Keys",
-        path: "#/api-keys",
-        icon: <KeyRoundIcon />,
-      },
-    ],
-  },
-  {
-    label: "Administration",
-    items: [
-      {
-        title: "Settings",
-        path: "/settings",
-        icon: <SettingsIcon />,
-      },
-      {
-        title: "Billing",
-        path: "#/billing",
-        icon: <CreditCardIcon />,
-      },
     ],
   },
 ];
+
+const AGENT_TABS = [
+  { title: "Playground", segment: "playground", icon: <MessageSquareTextIcon /> },
+  { title: "Build", segment: "build", icon: <HammerIcon /> },
+  { title: "Analytics", segment: "analytics", icon: <BarChart3Icon /> },
+  { title: "Channels", segment: "channels", icon: <RadioTowerIcon /> },
+  { title: "Settings", segment: "settings", icon: <SettingsIcon /> },
+] as const;
+
+/** The agent id from a `/agents/<id>/...` pathname, or undefined on `/agents` itself or elsewhere. */
+export function getActiveAgentId(pathname: string): string | undefined {
+  return pathname.match(/^\/agents\/([^/]+)(?:\/|$)/)?.[1];
+}
+
+/** The sidebar's Playground/Build/Analytics/Channels/Settings sub-nav for one agent. */
+export function getAgentSubNav(agentId: string): SidebarNavItem[] {
+  return AGENT_TABS.map((tab) => ({
+    title: tab.title,
+    path: `/agents/${agentId}/${tab.segment}`,
+    icon: tab.icon,
+  }));
+}
 
 export const footerNavLinks: SidebarNavItem[] = [
   {

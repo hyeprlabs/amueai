@@ -38,19 +38,25 @@ export async function createAgent(input: unknown) {
   return data;
 }
 
+const updateAgentSchema = agentSettingsSchema.partial();
+
 /**
- * Called directly (not via a <form action>) from the client RHF form in
- * agent-settings-form.tsx, which already validated `input` against the
- * same agentSettingsSchema - re-validating here isn't for a better client
- * error, it's because this is the actual trust boundary: a Server Action
- * is a public RPC endpoint, and the shape/model-id checks below still
- * matter even though a real client always sends valid data.
+ * Called directly (not via a <form action>) from two separate client RHF
+ * forms that each save a slice of the same agent row - the General
+ * settings form (name + temperature) and the Playground's personality
+ * panel (model + instructions) - which already validated `input` against
+ * the matching picked schema. Accepting a partial payload here (rather
+ * than requiring every field) is what lets those two forms stay
+ * independent; re-validating at all isn't for a better client error, it's
+ * because this is the actual trust boundary: a Server Action is a public
+ * RPC endpoint, and the shape/model-id checks below still matter even
+ * though a real client always sends valid data.
  */
 export async function updateAgent(agentId: string, input: unknown) {
   const { orgId } = await auth();
   if (!orgId) throw new Error("No active organization");
 
-  const values = agentSettingsSchema.parse(input);
+  const values = updateAgentSchema.parse(input);
 
   const supabase = await createServerSupabaseClient();
 
@@ -59,16 +65,18 @@ export async function updateAgent(agentId: string, input: unknown) {
   // <select> options, but this action can still be called directly with
   // any string - only trust a submitted model id that's either live in
   // the Gateway catalog or already this agent's stored model.
-  const { data: current } = await supabase
-    .from("agents")
-    .select("model")
-    .eq("id", agentId)
-    .single();
-  const gatewayModels = await getGatewayChatModels();
-  const isKnownModel =
-    values.model === current?.model || gatewayModels.some((model) => model.id === values.model);
-  if (!isKnownModel) {
-    throw new Error(`Unknown model: ${values.model}`);
+  if (values.model !== undefined) {
+    const { data: current } = await supabase
+      .from("agents")
+      .select("model")
+      .eq("id", agentId)
+      .single();
+    const gatewayModels = await getGatewayChatModels();
+    const isKnownModel =
+      values.model === current?.model || gatewayModels.some((model) => model.id === values.model);
+    if (!isKnownModel) {
+      throw new Error(`Unknown model: ${values.model}`);
+    }
   }
 
   const { error } = await supabase.from("agents").update(values).eq("id", agentId);

@@ -4,20 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { parseAsInteger, useQueryState } from "nuqs";
-import {
-  AtSignIcon,
-  CheckIcon,
-  FileStackIcon,
-  GlobeIcon,
-  HashIcon,
-  MailIcon,
-  MessageCircleIcon,
-  SendIcon,
-} from "lucide-react";
+import { CheckIcon, FileStackIcon, GlobeIcon } from "lucide-react";
 import { Controller, useForm, type SubmitErrorHandler } from "react-hook-form";
 import { z } from "zod";
 
 import { cn } from "@/lib/utils";
+import { CHANNELS } from "@/lib/channels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -89,51 +81,6 @@ function deriveAgentName(values: OnboardingValues) {
   return "New agent";
 }
 
-const CHANNELS = [
-  {
-    id: "website",
-    label: "Website widget",
-    description: "A chat bubble embedded on your site.",
-    icon: GlobeIcon,
-    badge: "Included",
-  },
-  {
-    id: "slack",
-    label: "Slack",
-    description: "Answer questions inside Slack channels.",
-    icon: HashIcon,
-    badge: "Coming soon",
-  },
-  {
-    id: "whatsapp",
-    label: "WhatsApp",
-    description: "Chat with customers on WhatsApp.",
-    icon: MessageCircleIcon,
-    badge: "Coming soon",
-  },
-  {
-    id: "instagram",
-    label: "Instagram",
-    description: "Reply to Instagram DMs automatically.",
-    icon: AtSignIcon,
-    badge: "Coming soon",
-  },
-  {
-    id: "messenger",
-    label: "Messenger",
-    description: "Connect to Facebook Messenger.",
-    icon: SendIcon,
-    badge: "Coming soon",
-  },
-  {
-    id: "email",
-    label: "Email",
-    description: "Draft replies to incoming support emails.",
-    icon: MailIcon,
-    badge: "Coming soon",
-  },
-] as const;
-
 const STEP_COPY: Record<number, { title: string; description: string }> = {
   1: {
     title: "How would you like to train your AI Agent?",
@@ -196,7 +143,7 @@ export function NewAgentForm() {
         }).catch(() => {});
       }
 
-      router.push(`/agents/${agent.id}/sources`);
+      router.push(`/agents/${agent.id}/build/sources`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError("root.serverError", { type: "server", message });

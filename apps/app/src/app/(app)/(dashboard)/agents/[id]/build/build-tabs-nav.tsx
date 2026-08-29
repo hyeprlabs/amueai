@@ -6,25 +6,12 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { segment: "playground", label: "Playground" },
-  { segment: "build", label: "Build" },
-  { segment: "analytics", label: "Analytics" },
-  { segment: "channels", label: "Channels" },
-  { segment: "settings", label: "Settings" },
+  { segment: "sources", label: "Sources" },
+  { segment: "embed", label: "Embed" },
 ] as const;
 
-/**
- * Visually matches <Tabs>/<TabsList>/<TabsTrigger>, but each "tab" is a
- * real <Link> to its own route rather than a Base UI Tab switching a
- * same-page panel - the content lives in
- * agents/[id]/{playground,build,analytics,channels,settings}/page.tsx
- * (build further splits into its own sources/embed sub-tabs), each
- * independently linkable/bookmarkable/back-buttonable. Base UI's Tabs
- * parts aren't reused here since their styling leans on group-data-*
- * selectors keyed to a <Tabs.Root> ancestor's own state, which a plain nav
- * of links has no equivalent for.
- */
-export function AgentTabsNav({ agentId }: { agentId: string }) {
+/** Same real-<Link>-per-tab pattern as AgentTabsNav, one level down. */
+export function BuildTabsNav({ agentId }: { agentId: string }) {
   const pathname = usePathname();
 
   return (
@@ -33,7 +20,7 @@ export function AgentTabsNav({ agentId }: { agentId: string }) {
       className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-[3px]"
     >
       {TABS.map((tab) => {
-        const href = `/agents/${agentId}/${tab.segment}`;
+        const href = `/agents/${agentId}/build/${tab.segment}`;
         const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
         return (

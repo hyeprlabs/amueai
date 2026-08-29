@@ -251,6 +251,39 @@ describe("updateAgent", () => {
     fakeSupabase.failNextQuery("update", "update failed");
     await expect(updateAgent("agent-1", validInput)).rejects.toThrow("Failed to update agent");
   });
+
+  it("saves a partial payload (General settings: name + temperature only)", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+
+    const saved = await updateAgent("agent-1", { name: "Renamed", temperature: 1 });
+
+    expect(saved).toEqual({ name: "Renamed", temperature: 1 });
+    expect(fakeSupabase.agents[0]).toMatchObject({ name: "Renamed", temperature: 1 });
+    // Untouched fields keep their prior values - a partial update must
+    // never null out columns it wasn't given.
+    expect(fakeSupabase.agents[0]).toMatchObject({ model: "openai/gpt-4o-mini" });
+    expect(getGatewayChatModelsMock).not.toHaveBeenCalled();
+  });
+
+  it("saves a partial payload (Playground personality: model + instructions only)", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+    getGatewayChatModelsMock.mockResolvedValue([
+      { id: "openai/gpt-4o", name: "GPT-4o", provider: "openai" },
+    ]);
+
+    const saved = await updateAgent("agent-1", {
+      model: "openai/gpt-4o",
+      system_prompt: "Be terse.",
+    });
+
+    expect(saved).toEqual({ model: "openai/gpt-4o", system_prompt: "Be terse." });
+    expect(fakeSupabase.agents[0]).toMatchObject({
+      model: "openai/gpt-4o",
+      system_prompt: "Be terse.",
+    });
+  });
 });
 
 describe("deleteAgent", () => {

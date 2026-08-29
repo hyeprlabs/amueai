@@ -3,14 +3,13 @@ import { notFound } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
-import { getGatewayChatModels } from "@/lib/gateway-models";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgentSettingsForm } from "./agent-settings-form";
 import { DeleteAgentButton } from "./delete-agent-button";
 
 export const metadata: Metadata = createMetadata({
   title: "Agent settings",
-  description: "Configure how this agent answers.",
+  description: "General settings for this agent.",
   pathname: "/agents",
   noIndex: true,
 });
@@ -21,37 +20,28 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
   const supabase = await createServerSupabaseClient();
   const { data: agent } = await supabase
     .from("agents")
-    .select("id, name, system_prompt, model, temperature")
+    .select("id, name, temperature")
     .eq("id", id)
     .single();
 
   if (!agent) notFound();
-
-  const gatewayModels = await getGatewayChatModels();
-  // The agent's current model might have been deprecated/removed from the
-  // Gateway catalog since it was picked - keep it selectable regardless so
-  // saving the rest of the form doesn't silently change the model.
-  const models = gatewayModels.some((model) => model.id === agent.model)
-    ? gatewayModels
-    : [{ id: agent.model, name: agent.model, provider: "current" }, ...gatewayModels];
 
   return (
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Settings</CardTitle>
-          <CardDescription>Base instructions, model, and temperature.</CardDescription>
+          <CardDescription>
+            Name and temperature. Model and instructions live in the Playground.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <AgentSettingsForm
             agentId={agent.id}
             defaultValues={{
               name: agent.name,
-              system_prompt: agent.system_prompt,
-              model: agent.model,
               temperature: agent.temperature,
             }}
-            models={models}
           />
         </CardContent>
       </Card>

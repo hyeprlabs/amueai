@@ -15,3 +15,16 @@ export const agentSettingsSchema = z.object({
 });
 
 export type AgentSettingsValues = z.infer<typeof agentSettingsSchema>;
+
+// The General settings form (name + temperature) and the Playground's
+// personality panel (model + instructions) each save a slice of the same
+// agent row through the same updateAgent action - picked from this one
+// schema so field-level validation never drifts between the two forms.
+export const agentGeneralSchema = agentSettingsSchema.pick({ name: true, temperature: true });
+export type AgentGeneralValues = z.infer<typeof agentGeneralSchema>;
+
+export const agentPersonalitySchema = agentSettingsSchema.pick({
+  model: true,
+  system_prompt: true,
+});
+export type AgentPersonalityValues = z.infer<typeof agentPersonalitySchema>;

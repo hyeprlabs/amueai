@@ -37,8 +37,8 @@ export default async function Page() {
             </EmptyMedia>
             <EmptyTitle>Select or create a workspace</EmptyTitle>
             <EmptyDescription>
-              AmueAI workspaces are Clerk organizations. Pick one from the switcher before
-              training an agent.
+              AmueAI workspaces are Clerk organizations. Pick one from the switcher before training
+              an agent.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>

@@ -15,7 +15,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { isNavItemActive, type SidebarNavGroup } from "@/components/dashboard/app-shared";
+import {
+  getActiveAgentId,
+  getAgentSubNav,
+  isNavItemActive,
+  type SidebarNavGroup,
+} from "@/components/dashboard/app-shared";
 import { ChevronRightIcon } from "lucide-react";
 
 /**
@@ -39,12 +44,22 @@ const NavLink = forwardRef<HTMLAnchorElement, ComponentProps<"a">>(function NavL
 
 export function NavGroup({ label, items }: SidebarNavGroup) {
   const pathname = usePathname();
+  const activeAgentId = getActiveAgentId(pathname);
 
   return (
     <SidebarGroup>
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
-        {items.map((item) => {
+        {items.map((rawItem) => {
+          // The sidebar can't statically list an agent's own sub-pages
+          // (Playground/Build/Analytics/Channels/Settings) since they're
+          // keyed by whichever agent id is currently open - swap them in
+          // here once the route reveals which agent that is.
+          const item =
+            rawItem.path === "/agents" && activeAgentId
+              ? { ...rawItem, subItems: getAgentSubNav(activeAgentId) }
+              : rawItem;
+
           const isActive = isNavItemActive(item.path, pathname);
           const subItemsActive =
             item.subItems?.map((subItem) => isNavItemActive(subItem.path, pathname)) ?? [];

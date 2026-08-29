@@ -13,7 +13,9 @@ export const metadata: Metadata = createMetadata({
   noIndex: true,
 });
 
-export default async function AgentSourcesPage({ params }: PageProps<"/agents/[id]/sources">) {
+export default async function AgentSourcesPage({
+  params,
+}: PageProps<"/agents/[id]/build/sources">) {
   const { id } = await params;
 
   const supabase = await createServerSupabaseClient();

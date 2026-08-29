@@ -14,7 +14,7 @@ export const metadata: Metadata = createMetadata({
 
 export default async function ConversationPage({
   params,
-}: PageProps<"/agents/[id]/conversations/[conversationId]">) {
+}: PageProps<"/agents/[id]/analytics/[conversationId]">) {
   const { conversationId } = await params;
 
   const supabase = await createServerSupabaseClient();

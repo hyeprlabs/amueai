@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MessageSquareTextIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -11,7 +10,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { AgentTabsNav } from "./agent-tabs-nav";
 
 export default async function AgentLayout({ children, params }: LayoutProps<"/agents/[id]">) {
@@ -23,7 +21,7 @@ export default async function AgentLayout({ children, params }: LayoutProps<"/ag
   if (!agent) notFound();
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex max-w-5xl flex-col gap-4">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -36,17 +34,11 @@ export default async function AgentLayout({ children, params }: LayoutProps<"/ag
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-medium">{agent.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            Train it on your data, test it, then embed it on your site.
-          </p>
-        </div>
-        <Button variant="outline" render={<Link href={`/agents/${agent.id}/conversations`} />}>
-          <MessageSquareTextIcon />
-          Conversations
-        </Button>
+      <div>
+        <h1 className="text-lg font-medium">{agent.name}</h1>
+        <p className="text-sm text-muted-foreground">
+          Train it on your data, test it, then embed it on your site.
+        </p>
       </div>
 
       <AgentTabsNav agentId={agent.id} />

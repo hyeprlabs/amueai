@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { findActiveNavItem, headerPageTitle, isNavItemActive } from "./app-shared";
+import {
+  findActiveNavItem,
+  getActiveAgentId,
+  getAgentSubNav,
+  headerPageTitle,
+  isNavItemActive,
+} from "./app-shared";
 
 describe("isNavItemActive", () => {
   it("matches the exact route", () => {
@@ -37,12 +43,9 @@ describe("findActiveNavItem", () => {
     expect(findActiveNavItem("/overview")?.title).toBe("Overview");
   });
 
-  it("finds Settings for its real route", () => {
-    expect(findActiveNavItem("/settings")?.title).toBe("Settings");
-  });
-
-  it("returns undefined for a route with no matching nav item", () => {
+  it("returns undefined for a route with no matching nav item (e.g. /settings, no longer in the sidebar)", () => {
     expect(findActiveNavItem("/profile")).toBeUndefined();
+    expect(findActiveNavItem("/settings")).toBeUndefined();
   });
 
   it("prefers the most specific match when multiple paths could apply", () => {
@@ -51,6 +54,46 @@ describe("findActiveNavItem", () => {
     // length specifically so a future deeper item wins over a shallower
     // one instead of whichever happens to appear first in navLinks.
     expect(findActiveNavItem("/agents/abc-123")?.path).toBe("/agents");
+  });
+});
+
+describe("getActiveAgentId", () => {
+  it("extracts the id from an agent sub-page", () => {
+    expect(getActiveAgentId("/agents/abc-123/playground")).toBe("abc-123");
+    expect(getActiveAgentId("/agents/abc-123/build/sources")).toBe("abc-123");
+  });
+
+  it("extracts the id for the agent's own bare route", () => {
+    expect(getActiveAgentId("/agents/abc-123")).toBe("abc-123");
+  });
+
+  it("returns undefined for the agents list itself", () => {
+    expect(getActiveAgentId("/agents")).toBeUndefined();
+  });
+
+  it("returns undefined outside /agents entirely", () => {
+    expect(getActiveAgentId("/overview")).toBeUndefined();
+  });
+});
+
+describe("getAgentSubNav", () => {
+  it("builds the 5 sidebar sub-tabs scoped to the given agent", () => {
+    const subNav = getAgentSubNav("abc-123");
+
+    expect(subNav.map((item) => item.title)).toEqual([
+      "Playground",
+      "Build",
+      "Analytics",
+      "Channels",
+      "Settings",
+    ]);
+    expect(subNav.map((item) => item.path)).toEqual([
+      "/agents/abc-123/playground",
+      "/agents/abc-123/build",
+      "/agents/abc-123/analytics",
+      "/agents/abc-123/channels",
+      "/agents/abc-123/settings",
+    ]);
   });
 });
 
