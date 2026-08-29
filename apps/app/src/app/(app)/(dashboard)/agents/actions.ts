@@ -12,11 +12,16 @@ const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
 });
 
-export async function createAgent(formData: FormData) {
+/**
+ * Called directly (not via a <form action>) from the client RHF form in
+ * create-agent-dialog.tsx - returned rather than redirected, same reasoning
+ * as updateAgent below, so the client stays in control of navigation.
+ */
+export async function createAgent(input: unknown) {
   const { orgId } = await auth();
   if (!orgId) throw new Error("No active organization");
 
-  const { name } = createAgentSchema.parse({ name: formData.get("name") });
+  const { name } = createAgentSchema.parse(input);
 
   const supabase = await createServerSupabaseClient();
 
@@ -28,7 +33,7 @@ export async function createAgent(formData: FormData) {
 
   if (error) throw new Error(`Failed to create agent: ${error.message}`);
 
-  redirect(`/agents/${data.id}/sources`);
+  return data;
 }
 
 /**

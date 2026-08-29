@@ -1,8 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,23 +17,34 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 
+const addSourceSchema = z.object({
+  url: z.string().trim().min(1, "URL is required").url("Enter a valid URL").max(2048),
+  label: z.string().trim().max(200, "Keep it under 200 characters").optional(),
+});
+
+type AddSourceValues = z.infer<typeof addSourceSchema>;
+
 export function AddSourceDialog({ agentId }: { agentId: string }) {
   const router = useRouter();
-
   const [open, setOpen] = useState(false);
-  const [label, setLabel] = useState("");
-  const [url, setUrl] = useState("");
-  const [pending, setPending] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setPending(true);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<AddSourceValues>({
+    resolver: zodResolver(addSourceSchema),
+    defaultValues: { url: "", label: "" },
+  });
 
+  const onSubmit = async ({ url, label }: AddSourceValues) => {
     try {
       const res = await fetch(`/api/agents/${agentId}/sources`, {
         method: "POST",
@@ -46,8 +60,7 @@ export function AddSourceDialog({ agentId }: { agentId: string }) {
         );
       }
 
-      setLabel("");
-      setUrl("");
+      reset();
       setOpen(false);
       router.refresh();
 
@@ -64,24 +77,20 @@ export function AddSourceDialog({ agentId }: { agentId: string }) {
         toast.add({ type: "success", title: "Source added" });
       }
     } catch (err) {
-      toast.add({
-        type: "error",
-        title: "Couldn't add source",
-        description: err instanceof Error ? err.message : "Something went wrong.",
-      });
-    } finally {
-      setPending(false);
+      const message = err instanceof Error ? err.message : "Something went wrong.";
+      setError("root.serverError", { type: "server", message });
+      toast.add({ type: "error", title: "Couldn't add source", description: message });
     }
-  }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
+    <Dialog open={open} onOpenChange={(next) => !isSubmitting && setOpen(next)}>
       <DialogTrigger render={<Button />}>
         <PlusIcon />
         Add URL
       </DialogTrigger>
-      <DialogContent showCloseButton={!pending}>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <DialogContent showCloseButton={!isSubmitting}>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>Add a URL source</DialogTitle>
             <DialogDescription>
@@ -89,43 +98,48 @@ export function AddSourceDialog({ agentId }: { agentId: string }) {
             </DialogDescription>
           </DialogHeader>
 
-          <Field>
+          {errors.root?.serverError && (
+            <p role="alert" className="text-sm text-destructive">
+              {errors.root.serverError.message}
+            </p>
+          )}
+
+          <Field data-invalid={!!errors.url}>
             <FieldLabel htmlFor="source-url">URL</FieldLabel>
             <Input
               id="source-url"
               type="url"
               placeholder="https://example.com/page"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              required
               autoFocus
+              {...register("url")}
             />
+            <FieldError errors={[errors.url]} />
           </Field>
 
-          <Field>
+          <Field data-invalid={!!errors.label}>
             <FieldLabel htmlFor="source-label">Label</FieldLabel>
             <Input
               id="source-label"
               placeholder="e.g. Refund policy"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
               maxLength={200}
+              {...register("label")}
             />
             <FieldDescription>Optional — defaults to the URL.</FieldDescription>
+            <FieldError errors={[errors.label]} />
           </Field>
 
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              disabled={pending}
+              disabled={isSubmitting}
               onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending}>
-              {pending && <Spinner />}
-              {pending ? "Fetching & embedding…" : "Add source"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Spinner />}
+              {isSubmitting ? "Fetching & embedding…" : "Add source"}
             </Button>
           </DialogFooter>
         </form>

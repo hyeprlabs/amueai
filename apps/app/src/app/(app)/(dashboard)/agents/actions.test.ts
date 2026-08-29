@@ -139,45 +139,31 @@ describe("createAgent", () => {
   it("throws when there's no active organization", async () => {
     authMock.mockResolvedValue({ orgId: null });
 
-    const formData = new FormData();
-    formData.set("name", "Acme Support");
-
-    await expect(createAgent(formData)).rejects.toThrow("No active organization");
+    await expect(createAgent({ name: "Acme Support" })).rejects.toThrow("No active organization");
   });
 
   it("rejects an empty name before ever touching the database", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
 
-    const formData = new FormData();
-    formData.set("name", "");
-
-    await expect(createAgent(formData)).rejects.toThrow();
+    await expect(createAgent({ name: "" })).rejects.toThrow();
     expect(fakeSupabase.agents).toHaveLength(0);
   });
 
-  it("creates the agent scoped to the active org and redirects to its sources tab", async () => {
+  it("creates the agent scoped to the active org and returns its id", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
 
-    const formData = new FormData();
-    formData.set("name", "Acme Support");
-
-    await createAgent(formData);
+    const created = await createAgent({ name: "Acme Support" });
 
     expect(fakeSupabase.agents).toHaveLength(1);
     expect(fakeSupabase.agents[0]).toMatchObject({ org_id: "org-1", name: "Acme Support" });
-    expect(redirectMock).toHaveBeenCalledWith(
-      `/agents/${(fakeSupabase.agents[0] as { id: string }).id}/sources`,
-    );
+    expect(created).toMatchObject({ id: (fakeSupabase.agents[0] as { id: string }).id });
   });
 
   it("surfaces a database failure as a plain Error", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
     fakeSupabase.failNextQuery("insert", "insert failed");
 
-    const formData = new FormData();
-    formData.set("name", "Acme Support");
-
-    await expect(createAgent(formData)).rejects.toThrow("Failed to create agent");
+    await expect(createAgent({ name: "Acme Support" })).rejects.toThrow("Failed to create agent");
   });
 });
 
