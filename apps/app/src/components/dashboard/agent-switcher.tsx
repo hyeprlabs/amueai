@@ -6,7 +6,13 @@ import { BotIcon, ChevronsUpDownIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { IconTile } from "@/components/ui/icon-tile";
-import { Select, SelectContent, SelectItem, SelectLabel } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+} from "@/components/ui/select";
 import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
 
 export type AgentSwitcherAgent = { id: string; name: string };
@@ -66,13 +72,15 @@ export function AgentSwitcher({
             <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" />
           </SelectPrimitive.Trigger>
           <SelectContent align="start" className="w-64">
-            <SelectLabel>Agents</SelectLabel>
-            {agents.map((agent) => (
-              <SelectItem key={agent.id} value={agent.id}>
-                <BotIcon className="text-muted-foreground" />
-                <span className="truncate">{agent.name}</span>
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel>Agents</SelectLabel>
+              {agents.map((agent) => (
+                <SelectItem key={agent.id} value={agent.id}>
+                  <BotIcon className="text-muted-foreground" />
+                  <span className="truncate">{agent.name}</span>
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
       </SidebarMenuItem>
