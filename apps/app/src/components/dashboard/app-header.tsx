@@ -3,18 +3,34 @@
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
+import { useAgentName } from "@/hooks/use-agent-name";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DecorIcon } from "@/components/decor-icon";
-import { AppBreadcrumbs } from "@/components/dashboard/app-breadcrumbs";
-import { headerPageTitle } from "@/components/dashboard/app-shared";
+import { AppBreadcrumbs, type BreadcrumbTrailItem } from "@/components/dashboard/app-breadcrumbs";
+import { getActiveAgentId, headerPageTitle } from "@/components/dashboard/app-shared";
 import { CustomSidebarTrigger } from "@/components/dashboard/custom-sidebar-trigger";
 import { UserDropdown } from "@/components/dashboard/user-dropdown";
 import { SendIcon, BellIcon } from "lucide-react";
 
 export function AppHeader() {
   const pathname = usePathname();
-  const activeItem = headerPageTitle(pathname);
+  const activeAgentId = getActiveAgentId(pathname);
+  const agentName = useAgentName(activeAgentId);
+
+  const trail: BreadcrumbTrailItem[] = activeAgentId
+    ? [
+        { title: "Agents", href: "/agents" },
+        // agentName resolves a moment after the id does (a client-side,
+        // RLS-scoped fetch - the header sits outside the layout that
+        // already has this name server-side) - just show one crumb until
+        // it lands rather than a placeholder like "…".
+        ...(agentName ? [{ title: agentName }] : []),
+      ]
+    : (() => {
+        const page = headerPageTitle(pathname);
+        return page ? [{ title: page.title }] : [];
+      })();
 
   return (
     <header
@@ -30,7 +46,7 @@ export function AppHeader() {
           className="mr-2 h-4 data-[orientation=vertical]:self-center"
           orientation="vertical"
         />
-        <AppBreadcrumbs page={activeItem} />
+        <AppBreadcrumbs trail={trail} />
       </div>
       <div className="flex items-center gap-3">
         <Button aria-label="Send" size="icon-sm" variant="outline">

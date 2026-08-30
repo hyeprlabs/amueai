@@ -96,6 +96,20 @@ describe("getAgentNavGroups", () => {
       "/agents/abc-123/settings",
     ]);
   });
+
+  it("gives Build its Sources/Embed sub-nav; no other tab has one", () => {
+    const groups = getAgentNavGroups("abc-123");
+    const [playground, build, analytics, channels, settings] = groups[0].items;
+
+    expect(build.subItems?.map((item) => ({ title: item.title, path: item.path }))).toEqual([
+      { title: "Sources", path: "/agents/abc-123/build/sources" },
+      { title: "Embed", path: "/agents/abc-123/build/embed" },
+    ]);
+    expect(playground.subItems).toBeUndefined();
+    expect(analytics.subItems).toBeUndefined();
+    expect(channels.subItems).toBeUndefined();
+    expect(settings.subItems).toBeUndefined();
+  });
 });
 
 describe("headerPageTitle", () => {

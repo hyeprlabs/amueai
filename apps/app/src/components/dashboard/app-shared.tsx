@@ -16,6 +16,7 @@ export type SidebarNavItem = {
   path?: string;
   icon?: ReactNode;
   isActive?: boolean;
+  subItems?: SidebarNavItem[];
 };
 
 export type SidebarNavGroup = {
@@ -42,14 +43,6 @@ export const primaryNavGroups: SidebarNavGroup[] = [
   },
 ];
 
-const AGENT_TABS = [
-  { title: "Playground", segment: "playground", icon: <MessageSquareTextIcon /> },
-  { title: "Build", segment: "build", icon: <HammerIcon /> },
-  { title: "Analytics", segment: "analytics", icon: <BarChart3Icon /> },
-  { title: "Channels", segment: "channels", icon: <RadioTowerIcon /> },
-  { title: "Settings", segment: "settings", icon: <SettingsIcon /> },
-] as const;
-
 /** The agent id from a `/agents/<id>/...` pathname, or undefined on `/agents` itself or elsewhere. */
 export function getActiveAgentId(pathname: string): string | undefined {
   return pathname.match(/^\/agents\/([^/]+)(?:\/|$)/)?.[1];
@@ -57,18 +50,32 @@ export function getActiveAgentId(pathname: string): string | undefined {
 
 /**
  * The sidebar's other face: flat Playground/Build/Analytics/Channels/
- * Settings nav for one agent, no collapsing, no parent "Agents" item - the
- * whole sidebar becomes this agent's nav while you're inside it (paired
- * with the AgentSwitcher rendered above it in AppSidebar).
+ * Settings nav for one agent - no parent "Agents" item, the whole sidebar
+ * becomes this agent's nav while you're inside it (paired with the
+ * AgentSwitcher rendered above it in AppSidebar). Build is the one item
+ * with its own sub-nav (Sources, Embed), expanded via NavGroup's
+ * collapsible branch rather than an in-page tab bar.
  */
 export function getAgentNavGroups(agentId: string): SidebarNavGroup[] {
+  const base = `/agents/${agentId}`;
+
   return [
     {
-      items: AGENT_TABS.map((tab) => ({
-        title: tab.title,
-        path: `/agents/${agentId}/${tab.segment}`,
-        icon: tab.icon,
-      })),
+      items: [
+        { title: "Playground", path: `${base}/playground`, icon: <MessageSquareTextIcon /> },
+        {
+          title: "Build",
+          path: `${base}/build`,
+          icon: <HammerIcon />,
+          subItems: [
+            { title: "Sources", path: `${base}/build/sources` },
+            { title: "Embed", path: `${base}/build/embed` },
+          ],
+        },
+        { title: "Analytics", path: `${base}/analytics`, icon: <BarChart3Icon /> },
+        { title: "Channels", path: `${base}/channels`, icon: <RadioTowerIcon /> },
+        { title: "Settings", path: `${base}/settings`, icon: <SettingsIcon /> },
+      ],
     },
   ];
 }

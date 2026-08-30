@@ -1,18 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { BotIcon, CheckIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { BotIcon } from "lucide-react";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { IconTile } from "@/components/ui/icon-tile";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
 
 export type AgentSwitcherAgent = { id: string; name: string };
@@ -20,8 +13,14 @@ export type AgentSwitcherAgent = { id: string; name: string };
 /**
  * The sidebar's agent-face header - swaps which agent the rest of the
  * sidebar's Playground/Build/Analytics/Channels/Settings nav points at.
- * Same shape as the classic shadcn "team switcher" sidebar block, just
- * scoped to agents instead of workspaces.
+ *
+ * Built on Select rather than DropdownMenu: an earlier DropdownMenu +
+ * DropdownMenuItem-rendered-as-<Link> version was unreliable (Base UI's
+ * Menu item/link composition, portal timing, take your pick). Select is
+ * the same primitive family already proven in this app for "pick one,
+ * something happens" (the model switcher, the theme switcher) - a plain
+ * value change here, handled with a `router.push`, sidesteps that
+ * fragility entirely instead of debugging it further.
  */
 export function AgentSwitcher({
   agents,
@@ -30,23 +29,22 @@ export function AgentSwitcher({
   agents: AgentSwitcherAgent[];
   currentAgentId: string;
 }) {
+  const router = useRouter();
   const currentAgent = agents.find((agent) => agent.id === currentAgentId);
+  const items = Object.fromEntries(agents.map((agent) => [agent.id, agent.name]));
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
-          {/*
-            No `render={<SidebarMenuButton />}` here on purpose - nesting one
-            polymorphic `useRender` component inside another (Menu.Trigger's
-            own render target) doubled up the ref/prop merging and threw on
-            open. A native trigger styled with the same button's own variant
-            classes gets the identical look without that fragile composition.
-          */}
-          <DropdownMenuTrigger
+        <Select
+          value={currentAgentId}
+          onValueChange={(next: unknown) => router.push(`/agents/${next}/overview`)}
+          items={items}
+        >
+          <SelectTrigger
             className={cn(
               sidebarMenuButtonVariants({ size: "lg" }),
-              "w-full border border-sidebar-border",
+              "w-full justify-start border border-sidebar-border",
             )}
           >
             <IconTile variant="soft" size="sm">
@@ -56,27 +54,15 @@ export function AgentSwitcher({
               <span className="truncate font-medium">{currentAgent?.name ?? "Agent"}</span>
               <span className="text-xs text-muted-foreground">Switch agent</span>
             </div>
-            <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
-            <DropdownMenuLabel>Agents</DropdownMenuLabel>
+          </SelectTrigger>
+          <SelectContent>
             {agents.map((agent) => (
-              <DropdownMenuItem
-                key={agent.id}
-                render={<Link href={`/agents/${agent.id}/overview`} />}
-              >
-                <BotIcon className="text-muted-foreground" />
-                <span className="truncate">{agent.name}</span>
-                {agent.id === currentAgentId && <CheckIcon className="ml-auto size-3.5" />}
-              </DropdownMenuItem>
+              <SelectItem key={agent.id} value={agent.id}>
+                {agent.name}
+              </SelectItem>
             ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href="/new" />}>
-              <PlusIcon />
-              New agent
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </SelectContent>
+        </Select>
       </SidebarMenuItem>
     </SidebarMenu>
   );

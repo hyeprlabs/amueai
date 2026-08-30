@@ -5,8 +5,14 @@ vi.mock("ai", () => ({
   gateway: { getAvailableModels: (...args: unknown[]) => getAvailableModelsMock(...args) },
 }));
 
-function languageModel(id: string, name: string, provider: string) {
-  return { id, name, modelType: "language", specification: { provider } };
+/** Defaults to a cheap-tier price so tests unconcerned with pricing don't need to think about it. */
+function languageModel(
+  id: string,
+  name: string,
+  provider: string,
+  pricing: { input: string; output: string } | null = { input: "0.00000015", output: "0.0000006" },
+) {
+  return { id, name, modelType: "language", specification: { provider }, pricing };
 }
 
 beforeEach(() => {
@@ -34,10 +40,10 @@ describe("getGatewayChatModels", () => {
   it("sorts by provider, then by name within a provider", async () => {
     getAvailableModelsMock.mockResolvedValue({
       models: [
-        languageModel("openai/gpt-4o", "GPT-4o", "openai"),
-        languageModel("anthropic/claude-haiku", "Claude Haiku", "anthropic"),
         languageModel("openai/gpt-4o-mini", "GPT-4o mini", "openai"),
-        languageModel("anthropic/claude-opus", "Claude Opus", "anthropic"),
+        languageModel("anthropic/claude-haiku", "Claude Haiku", "anthropic"),
+        languageModel("openai/gpt-4o-nano", "GPT-4o nano", "openai"),
+        languageModel("anthropic/claude-instant", "Claude Instant", "anthropic"),
       ],
     });
 
@@ -46,9 +52,9 @@ describe("getGatewayChatModels", () => {
 
     expect(models.map((m) => m.id)).toEqual([
       "anthropic/claude-haiku",
-      "anthropic/claude-opus",
-      "openai/gpt-4o",
+      "anthropic/claude-instant",
       "openai/gpt-4o-mini",
+      "openai/gpt-4o-nano",
     ]);
   });
 
@@ -90,5 +96,69 @@ describe("getGatewayChatModels", () => {
 
     expect(models).toEqual([]);
     consoleErrorSpy.mockRestore();
+  });
+
+  describe("cost cap - only the cheap tier is offered while there's no usage billing", () => {
+    it("excludes a flagship model priced above the input cap", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [
+          languageModel("openai/gpt-4o-mini", "GPT-4o mini", "openai"),
+          // $2.50/1M input - a real gpt-4o-class price, over the $1 cap.
+          languageModel("openai/gpt-4o", "GPT-4o", "openai", {
+            input: "0.0000025",
+            output: "0.00001",
+          }),
+        ],
+      });
+
+      const { getGatewayChatModels } = await import("./gateway-models");
+      const models = await getGatewayChatModels();
+
+      expect(models.map((m) => m.id)).toEqual(["openai/gpt-4o-mini"]);
+    });
+
+    it("excludes a model priced above the output cap even with cheap input", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [
+          // A reasoning-style model: cheap input, expensive output.
+          languageModel("openai/o1-mini", "o1-mini", "openai", {
+            input: "0.0000003",
+            output: "0.000012",
+          }),
+        ],
+      });
+
+      const { getGatewayChatModels } = await import("./gateway-models");
+      const models = await getGatewayChatModels();
+
+      expect(models).toEqual([]);
+    });
+
+    it("includes a model priced exactly at the caps", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [
+          languageModel("acme/on-the-line", "On The Line", "acme", {
+            input: "0.000001",
+            output: "0.000005",
+          }),
+        ],
+      });
+
+      const { getGatewayChatModels } = await import("./gateway-models");
+      const models = await getGatewayChatModels();
+
+      expect(models.map((m) => m.id)).toEqual(["acme/on-the-line"]);
+    });
+
+    it("excludes a model with no pricing info rather than assume it's cheap", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [languageModel("mystery/model", "Mystery Model", "mystery", null)],
+      });
+
+      const { getGatewayChatModels } = await import("./gateway-models");
+      const models = await getGatewayChatModels();
+
+      expect(models).toEqual([]);
+    });
   });
 });
