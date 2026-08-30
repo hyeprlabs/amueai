@@ -6,8 +6,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
 import type { UIMessage } from "ai";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
@@ -270,7 +268,11 @@ export const MessageBranchPage = ({ className, ...props }: MessageBranchPageProp
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
-const streamdownPlugins = { cjk, code, math, mermaid };
+// math/mermaid are deliberately left out: both execute real parsers
+// (KaTeX, mermaid's own layout engine) against whatever partial markdown
+// has streamed in so far, and a support agent's plain-prose answers have
+// no need for either - not worth the crash surface on incomplete input.
+const streamdownPlugins = { cjk, code };
 
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (

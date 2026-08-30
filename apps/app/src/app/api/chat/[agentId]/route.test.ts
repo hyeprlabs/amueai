@@ -7,8 +7,10 @@ vi.mock("ai", () => ({
   streamText: (...args: unknown[]) => streamTextMock(...args),
   createUIMessageStream: ({
     execute,
+    onError,
   }: {
     execute: (options: { writer: unknown }) => Promise<void>;
+    onError?: (err: unknown) => string;
   }) => {
     const written: unknown[] = [];
     const writer = {
@@ -16,18 +18,22 @@ vi.mock("ai", () => ({
       merge: () => {},
     };
     const ready = execute({ writer });
-    return { written, ready };
+    return { written, ready, onError };
   },
   createUIMessageStreamResponse: ({
     stream,
     headers,
   }: {
-    stream: { written: unknown[]; ready: Promise<void> };
+    stream: { written: unknown[]; ready: Promise<void>; onError?: (err: unknown) => string };
     headers?: Record<string, string>;
   }) => {
     const response = new Response(null, { status: 200, headers });
-    // Expose what was written for assertions without changing the Response API.
-    (response as Response & { __written: unknown[] }).__written = stream.written;
+    // Expose what was written (and the onError handler) for assertions
+    // without changing the Response API.
+    (
+      response as Response & { __written: unknown[]; __onError?: (err: unknown) => string }
+    ).__written = stream.written;
+    (response as Response & { __onError?: (err: unknown) => string }).__onError = stream.onError;
     return response;
   },
   toUIMessageStream: () => ({}),
@@ -159,6 +165,9 @@ function chatRequest(body: unknown) {
     body: JSON.stringify(body),
   });
 }
+
+const DEFAULT_FALLBACK_MESSAGE =
+  "Sorry, I ran into a problem answering that. Please try again in a moment.";
 
 const agent = {
   id: "agent-1",
@@ -409,6 +418,57 @@ describe("POST /api/chat/[agentId]", () => {
         title: "Exchange Policy",
       },
     ]);
+  });
+
+  it("still answers (from empty context) instead of failing the whole turn when retrieval throws", async () => {
+    fakeSupabase = makeFakeSupabase({ agents: [agent] });
+    embedMock.mockRejectedValueOnce(new Error("Gateway unavailable"));
+
+    const res = await POST(chatRequest({ message: "What's your refund policy?", visitorId: "v-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(streamTextMock).toHaveBeenCalled();
+    expect(streamTextMock.mock.calls[0][0].system).toContain("(no matching context found)");
+  });
+
+  it("still answers (skipping the source lookup) when the match_chunks RPC throws", async () => {
+    fakeSupabase = makeFakeSupabase({ agents: [agent] });
+    fakeSupabase.rpc.mockRejectedValueOnce(new Error("RPC timed out"));
+
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "v-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(streamTextMock).toHaveBeenCalled();
+  });
+
+  it("uses the agent's configured fallback message in the system prompt instead of leaving it unused", async () => {
+    fakeSupabase = makeFakeSupabase({
+      agents: [{ ...agent, fallback_message: "I don't have that info - try our support team!" }],
+      chunks: [],
+    });
+
+    await POST(chatRequest({ message: "Hi", visitorId: "v-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(streamTextMock.mock.calls[0][0].system).toContain(
+      "I don't have that info - try our support team!",
+    );
+  });
+
+  it("returns a friendly fallback (never a raw error) when the stream itself fails", async () => {
+    fakeSupabase = makeFakeSupabase({ agents: [agent] });
+
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "v-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    const onError = (res as Response & { __onError?: (err: unknown) => string }).__onError;
+    expect(onError?.(new Error("boom"))).toBe(DEFAULT_FALLBACK_MESSAGE);
   });
 
   it("writes no source-url parts when no chunks matched", async () => {

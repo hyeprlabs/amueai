@@ -23,6 +23,8 @@ const chatRequestSchema = z.object({
 });
 
 const EMBEDDING_MODEL = "openai/text-embedding-3-small";
+const DEFAULT_FALLBACK_MESSAGE =
+  "Sorry, I ran into a problem answering that. Please try again in a moment.";
 
 export async function POST(request: Request, { params }: { params: Promise<{ agentId: string }> }) {
   const { agentId } = await params;
@@ -104,21 +106,40 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     conversationId = conversation.id;
   }
 
-  const { embedding } = await embed({ model: EMBEDDING_MODEL, value: message });
+  // Retrieval is best-effort: a Gateway hiccup or a slow RPC here must never
+  // sink the whole turn - answering from an empty context (which the system
+  // prompt below already treats the same as "no matching chunks") beats the
+  // visitor getting no reply at all.
+  let context = "";
+  let sourceRows: { id: string; label: string; raw_content: string | null }[] = [];
+  try {
+    const { embedding } = await embed({ model: EMBEDDING_MODEL, value: message });
 
-  const { data: chunks } = await supabase.rpc("match_chunks", {
-    query_embedding: JSON.stringify(embedding),
-    match_agent_id: agent.id,
-    match_count: 6,
-  });
+    const { data: chunks } = await supabase.rpc("match_chunks", {
+      query_embedding: JSON.stringify(embedding),
+      match_agent_id: agent.id,
+      match_count: 6,
+    });
 
-  const context = (chunks ?? []).map((chunk) => chunk.content).join("\n---\n");
+    context = (chunks ?? []).map((chunk) => chunk.content).join("\n---\n");
 
-  const sourceIds = [...new Set((chunks ?? []).map((chunk) => chunk.source_id))];
-  const { data: sourceRows } =
-    sourceIds.length > 0
-      ? await supabase.from("sources").select("id, label, raw_content").in("id", sourceIds)
-      : { data: [] };
+    const sourceIds = [...new Set((chunks ?? []).map((chunk) => chunk.source_id))];
+    if (sourceIds.length > 0) {
+      const { data } = await supabase
+        .from("sources")
+        .select("id, label, raw_content")
+        .in("id", sourceIds);
+      sourceRows = data ?? [];
+    }
+  } catch (err) {
+    console.error(`[chat] retrieval failed for agent ${agent.id}, answering without context`, err);
+  }
+
+  // The agent's own configured message for "I don't know" - previously
+  // fetched but never actually used, so a customized fallback silently had
+  // no effect. Also reused below as the safe, user-facing text for any
+  // generation failure, since it's already written to sound like the agent.
+  const fallbackMessage = agent.fallback_message?.trim() || DEFAULT_FALLBACK_MESSAGE;
 
   const system = `${agent.system_prompt}
 
@@ -127,7 +148,7 @@ Context:
 ${context || "(no matching context found)"}
 ---
 
-Answer the user's question using only the context above. Never use outside knowledge, even if you're confident it's correct. If the context doesn't contain the answer, say plainly that you don't have that information - don't guess, and don't apologize at length.`;
+Answer the user's question using only the context above. Never use outside knowledge, even if you're confident it's correct. If the context doesn't contain the answer, respond with exactly this message and nothing else: "${fallbackMessage}"`;
 
   const conversationIdForClosure = conversationId;
 
@@ -146,7 +167,7 @@ Answer the user's question using only the context above. Never use outside knowl
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      for (const source of sourceRows ?? []) {
+      for (const source of sourceRows) {
         writer.write({
           type: "source-url",
           sourceId: source.id,
@@ -167,27 +188,42 @@ Answer the user's question using only the context above. Never use outside knowl
         // registered there makes the Gateway 400 every request with
         // "Quota entity ... was provided but no quota exists."
         providerOptions: { gateway: { user: agent.org_id, tags: [`org:${agent.org_id}`] } },
+        onError: ({ error }) => {
+          console.error(`[chat] generation failed for agent ${agent.id}`, error);
+        },
         onFinish: async ({ text }) => {
-          await supabase.from("messages").insert([
-            {
-              org_id: agent.org_id,
-              agent_id: agent.id,
-              conversation_id: conversationIdForClosure,
-              role: "user",
-              content: message,
-            },
-            {
-              org_id: agent.org_id,
-              agent_id: agent.id,
-              conversation_id: conversationIdForClosure,
-              role: "assistant",
-              content: text,
-            },
-          ]);
+          try {
+            await supabase.from("messages").insert([
+              {
+                org_id: agent.org_id,
+                agent_id: agent.id,
+                conversation_id: conversationIdForClosure,
+                role: "user",
+                content: message,
+              },
+              {
+                org_id: agent.org_id,
+                agent_id: agent.id,
+                conversation_id: conversationIdForClosure,
+                role: "assistant",
+                content: text,
+              },
+            ]);
+          } catch (err) {
+            console.error(`[chat] failed to persist turn for agent ${agent.id}`, err);
+          }
         },
       });
 
       writer.merge(toUIMessageStream({ stream: result.stream }));
+    },
+    // Anything uncaught above (a Gateway outage, the merge itself erroring
+    // mid-stream) lands here instead of leaving the visitor with a silent,
+    // blank turn - surfaced as the same fallback copy the agent is already
+    // configured to show for "I don't know", so it never leaks internals.
+    onError: (err) => {
+      console.error(`[chat] stream failed for agent ${agent.id}`, err);
+      return fallbackMessage;
     },
   });
 

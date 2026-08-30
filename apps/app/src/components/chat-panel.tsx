@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowUpIcon } from "lucide-react";
-import { Fragment, useState, type FormEvent } from "react";
+import { Component, Fragment, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import {
   Conversation,
@@ -15,7 +15,41 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
+
+function formatTimestamp(ms: number) {
+  return new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+/**
+ * Streamdown re-parses the full message on every streaming delta, so one
+ * malformed chunk can throw mid-stream. Without a boundary that throw
+ * unmounts the whole ChatPanel - killing scroll, the input, and every other
+ * message with it - instead of just that one reply falling back to plain
+ * text. Resets on the next delta/retry rather than freezing on the bubble
+ * that first crashed.
+ */
+class MessageErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: { children: ReactNode }) {
+    if (this.state.hasError && prevProps.children !== this.props.children) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
 
 /**
  * The chat UI both the Playground's ChatWidget and the public embed render,
@@ -39,6 +73,19 @@ export function ChatPanel({
 }) {
   const [input, setInput] = useState("");
 
+  // Message ids never change once assigned, so this doubles as a stable
+  // per-message "sent at" clock without needing a timestamp from the wire.
+  const timestamps = useRef(new Map<string, number>());
+  const getTimestamp = (id: string) => {
+    let time = timestamps.current.get(id);
+    if (time === undefined) {
+      time = Date.now();
+      timestamps.current.set(id, time);
+    }
+    return time;
+  };
+  const errorTimestamp = useRef<number | null>(null);
+
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: `/api/chat/${agentId}`,
@@ -51,6 +98,12 @@ export function ChatPanel({
     }),
   });
 
+  if (error) {
+    errorTimestamp.current ??= Date.now();
+  } else {
+    errorTimestamp.current = null;
+  }
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const text = input.trim();
@@ -60,12 +113,16 @@ export function ChatPanel({
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <Conversation>
-        <ConversationContent>
+    <div className="flex h-full min-h-0 flex-col">
+      <Conversation className="min-h-0">
+        <ConversationContent className="gap-3 p-3">
           {messages.length === 0 && <ConversationEmptyState description={emptyState} />}
           {messages.map((message) => {
             const sourceParts = message.parts.filter((part) => part.type === "source-url");
+            const rawText = message.parts
+              .filter((part) => part.type === "text")
+              .map((part) => part.text)
+              .join("");
 
             return (
               <Fragment key={message.id}>
@@ -83,29 +140,44 @@ export function ChatPanel({
                     </SourcesContent>
                   </Sources>
                 )}
-                <Message from={message.role}>
-                  <MessageContent>
-                    {message.parts.map((part, i) =>
-                      part.type === "text" ? (
-                        <MessageResponse key={i}>{part.text}</MessageResponse>
-                      ) : null,
-                    )}
+                <Message className="gap-0.5" from={message.role}>
+                  <MessageContent className="px-3 py-2 text-xs leading-relaxed">
+                    <MessageErrorBoundary fallback={<p className="whitespace-pre-wrap">{rawText}</p>}>
+                      {message.parts.map((part, i) =>
+                        part.type === "text" ? (
+                          <MessageResponse key={i}>{part.text}</MessageResponse>
+                        ) : null,
+                      )}
+                    </MessageErrorBoundary>
                   </MessageContent>
+                  <span
+                    className={cn(
+                      "px-1 text-[10px] text-muted-foreground",
+                      message.role === "user" ? "text-right" : "text-left",
+                    )}
+                  >
+                    {formatTimestamp(getTimestamp(message.id))}
+                  </span>
                 </Message>
               </Fragment>
             );
           })}
           {status === "submitted" && (
             <Message from="assistant">
-              <MessageContent>
+              <MessageContent className="px-3 py-2 text-xs">
                 <Shimmer>Thinking…</Shimmer>
               </MessageContent>
             </Message>
           )}
           {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error.message}
-            </p>
+            <Message className="gap-0.5" from="assistant">
+              <MessageContent className="px-3 py-2 text-xs leading-relaxed">
+                <p className="whitespace-pre-wrap">{error.message || "Something went wrong."}</p>
+              </MessageContent>
+              <span className="px-1 text-left text-[10px] text-muted-foreground">
+                {formatTimestamp(errorTimestamp.current ?? Date.now())}
+              </span>
+            </Message>
           )}
         </ConversationContent>
         <ConversationScrollButton />
