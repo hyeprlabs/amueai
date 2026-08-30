@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { BotIcon } from "lucide-react";
+import { Select as SelectPrimitive } from "@base-ui/react/select";
+import { BotIcon, ChevronsUpDownIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { IconTile } from "@/components/ui/icon-tile";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectLabel } from "@/components/ui/select";
 import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
 
 export type AgentSwitcherAgent = { id: string; name: string };
@@ -21,6 +22,14 @@ export type AgentSwitcherAgent = { id: string; name: string };
  * something happens" (the model switcher, the theme switcher) - a plain
  * value change here, handled with a `router.push`, sidesteps that
  * fragility entirely instead of debugging it further.
+ *
+ * The trigger uses the bare `SelectPrimitive.Trigger`, not this file's
+ * pre-styled `SelectTrigger` export - that one bakes in its own chrome
+ * (border-input, rounded-lg, a fixed h-8/h-7 via a `data-size` variant, a
+ * built-in chevron-down) which fights the sidebar button's own "lg" sizing
+ * classes instead of yielding to them, visibly shrinking the switcher.
+ * Styling the unstyled trigger with exactly the classes the old
+ * DropdownMenu-based version used reproduces that look precisely.
  */
 export function AgentSwitcher({
   agents,
@@ -41,10 +50,10 @@ export function AgentSwitcher({
           onValueChange={(next: unknown) => router.push(`/agents/${next}/overview`)}
           items={items}
         >
-          <SelectTrigger
+          <SelectPrimitive.Trigger
             className={cn(
               sidebarMenuButtonVariants({ size: "lg" }),
-              "w-full justify-start border border-sidebar-border",
+              "w-full border border-sidebar-border",
             )}
           >
             <IconTile variant="soft" size="sm">
@@ -54,11 +63,14 @@ export function AgentSwitcher({
               <span className="truncate font-medium">{currentAgent?.name ?? "Agent"}</span>
               <span className="text-xs text-muted-foreground">Switch agent</span>
             </div>
-          </SelectTrigger>
-          <SelectContent>
+            <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" />
+          </SelectPrimitive.Trigger>
+          <SelectContent align="start" className="w-64">
+            <SelectLabel>Agents</SelectLabel>
             {agents.map((agent) => (
               <SelectItem key={agent.id} value={agent.id}>
-                {agent.name}
+                <BotIcon className="text-muted-foreground" />
+                <span className="truncate">{agent.name}</span>
               </SelectItem>
             ))}
           </SelectContent>
