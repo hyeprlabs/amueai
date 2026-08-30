@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MessageSquareTextIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 
 export const metadata: Metadata = createMetadata({
   title: "Analytics",
@@ -58,27 +67,39 @@ export default async function AgentAnalyticsPage({ params }: PageProps<"/agents/
       </div>
 
       {!conversations || conversations.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-sm text-muted-foreground">
-          No conversations yet.
-        </div>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <MessageSquareTextIcon />
+            </EmptyMedia>
+            <EmptyTitle>No conversations yet</EmptyTitle>
+            <EmptyDescription>
+              Conversations show up here once visitors start chatting with this agent.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
-        <ul className="divide-y rounded-lg border">
-          {conversations.map((conversation) => (
-            <li key={conversation.id}>
-              <Link
-                href={`/agents/${id}/analytics/${conversation.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-muted/50"
-              >
-                <span className="font-mono text-xs text-muted-foreground">
-                  {conversation.visitor_id}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(conversation.created_at).toLocaleString()}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <Table className="rounded-lg border">
+          <TableBody>
+            {conversations.map((conversation) => (
+              <TableRow className="group" key={conversation.id}>
+                <TableCell className="p-0">
+                  <Link
+                    className="flex items-center justify-between px-4 py-3"
+                    href={`/agents/${id}/analytics/${conversation.id}`}
+                  >
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {conversation.visitor_id}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(conversation.created_at).toLocaleString()}
+                    </span>
+                  </Link>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
     </div>
   );

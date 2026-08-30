@@ -4,14 +4,12 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { useAgentName } from "@/hooks/use-agent-name";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DecorIcon } from "@/components/decor-icon";
 import { AppBreadcrumbs, type BreadcrumbTrailItem } from "@/components/dashboard/app-breadcrumbs";
 import { getActiveAgentId, headerPageTitle } from "@/components/dashboard/app-shared";
 import { CustomSidebarTrigger } from "@/components/dashboard/custom-sidebar-trigger";
 import { UserDropdown } from "@/components/dashboard/user-dropdown";
-import { SendIcon, BellIcon } from "lucide-react";
 
 export function AppHeader() {
   const pathname = usePathname();
@@ -49,13 +47,6 @@ export function AppHeader() {
         <AppBreadcrumbs trail={trail} />
       </div>
       <div className="flex items-center gap-3">
-        <Button aria-label="Send" size="icon-sm" variant="outline">
-          <SendIcon />
-        </Button>
-        <Button aria-label="Notifications" size="icon-sm" variant="outline">
-          <BellIcon />
-        </Button>
-        <Separator className="h-4 data-[orientation=vertical]:self-center" orientation="vertical" />
         <UserDropdown />
       </div>
     </header>

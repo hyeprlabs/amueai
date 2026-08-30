@@ -137,11 +137,10 @@ export async function getGatewayChatModels(): Promise<GatewayChatModel[]> {
       }))
       .sort(byProviderThenName),
     pricingById,
-    // Selection follows popularity rank, but the model switcher groups
-    // consecutive same-provider entries into one header (groupByProvider in
-    // model-switcher.tsx) - re-sort the final picks back to provider/name
-    // order so that grouping stays correct instead of splitting a provider
-    // into two headers.
+    // Selection follows popularity rank, but the model switcher's Model
+    // Selector groups models by provider - re-sort the final picks back to
+    // provider/name order so every one of a provider's models stays
+    // together instead of the popularity pass scattering them.
   ).sort(byProviderThenName);
 
   cache = { models: chatModels, expiresAt: Date.now() + CACHE_TTL_MS };

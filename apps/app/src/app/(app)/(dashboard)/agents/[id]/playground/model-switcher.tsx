@@ -78,8 +78,7 @@ export function ModelSwitcher({
 }) {
   const [open, setOpen] = useState(false);
   const [model, setModel] = useState(defaultModel);
-  const modelsById = Object.fromEntries(models.map((m) => [m.id, m]));
-  const selected = modelsById[model];
+  const selected = models.find((m) => m.id === model);
 
   // Providers in order of first appearance, so each renders as one group.
   const providers = [...new Set(models.map((m) => m.provider))];

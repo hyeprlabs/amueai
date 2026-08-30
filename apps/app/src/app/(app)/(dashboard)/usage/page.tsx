@@ -16,6 +16,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 
 export const metadata: Metadata = createMetadata({
   title: "Usage",
@@ -29,15 +30,20 @@ export default async function UsagePage() {
 
   if (!orgId) {
     return (
-      <div className="flex flex-col items-start gap-4 rounded-lg border border-dashed p-8">
-        <div>
-          <h1 className="text-lg font-medium">Select or create a workspace</h1>
-          <p className="text-sm text-muted-foreground">
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <BotIcon />
+          </EmptyMedia>
+          <EmptyTitle>Select or create a workspace</EmptyTitle>
+          <EmptyDescription>
             AmueAI workspaces are Clerk organizations. Pick one from the switcher to see its usage.
-          </p>
-        </div>
-        <OrganizationSwitcher hidePersonal />
-      </div>
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <OrganizationSwitcher hidePersonal />
+        </EmptyContent>
+      </Empty>
     );
   }
 
@@ -115,21 +121,25 @@ export default async function UsagePage() {
           <CardDescription>Jump back into an agent you&apos;ve set up.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ul className="divide-y">
-            {agents?.map((agent) => (
-              <li key={agent.id}>
-                <Link
-                  href={`/agents/${agent.id}/playground`}
-                  className="flex items-center justify-between py-2.5 text-sm hover:underline"
-                >
-                  <span className="font-medium">{agent.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(agent.created_at).toLocaleDateString()}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <Table>
+            <TableBody>
+              {agents?.map((agent) => (
+                <TableRow className="group" key={agent.id}>
+                  <TableCell className="p-0">
+                    <Link
+                      className="flex items-center justify-between px-2 py-2.5 text-sm group-hover:underline"
+                      href={`/agents/${agent.id}/playground`}
+                    >
+                      <span className="font-medium">{agent.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(agent.created_at).toLocaleDateString()}
+                      </span>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
