@@ -88,10 +88,6 @@ describe("getAgentSubPath", () => {
     expect(getAgentSubPath("/agents/abc-123/build/embed", "abc-123")).toBe("/build/embed");
   });
 
-  it("preserves overview", () => {
-    expect(getAgentSubPath("/agents/abc-123/overview", "abc-123")).toBe("/overview");
-  });
-
   it("collapses a data-specific detail page down to its tab, not the new agent's data", () => {
     // /analytics/<conversationId> is scoped to a conversation the OLD
     // agent had - keeping it verbatim would point the new agent at data
@@ -99,9 +95,9 @@ describe("getAgentSubPath", () => {
     expect(getAgentSubPath("/agents/abc-123/analytics/conv-999", "abc-123")).toBe("/analytics");
   });
 
-  it("falls back to overview for an unrecognized path", () => {
-    expect(getAgentSubPath("/agents/abc-123", "abc-123")).toBe("/overview");
-    expect(getAgentSubPath("/agents/abc-123/something-unknown", "abc-123")).toBe("/overview");
+  it("falls back to playground for an unrecognized path", () => {
+    expect(getAgentSubPath("/agents/abc-123", "abc-123")).toBe("/playground");
+    expect(getAgentSubPath("/agents/abc-123/something-unknown", "abc-123")).toBe("/playground");
   });
 });
 

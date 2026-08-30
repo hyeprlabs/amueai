@@ -11,6 +11,7 @@ import {
   PromptInputSelectValue,
 } from "@/components/ai-elements/prompt-input";
 import { ProviderIcon } from "@/components/icons/provider-icons";
+import { SelectSeparator } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { AUTO_MODEL_ID } from "@/lib/model-picker";
 import type { GatewayChatModel } from "@/lib/gateway-models";
@@ -65,7 +66,7 @@ export function ModelSwitcher({
             if (value === AUTO_MODEL_ID) {
               return (
                 <span className="flex items-center gap-1.5">
-                  <SparklesIcon className="size-3.5 shrink-0 text-pink-500" />
+                  <SparklesIcon className="size-4 shrink-0 text-pink-500" />
                   Auto
                 </span>
               );
@@ -73,7 +74,7 @@ export function ModelSwitcher({
             const selected = modelsById[value];
             return selected ? (
               <span className="flex items-center gap-1.5">
-                <ProviderIcon provider={selected.provider} className="size-3.5 shrink-0" />
+                <ProviderIcon provider={selected.provider} className="size-4 shrink-0" />
                 {selected.name}
               </span>
             ) : (
@@ -82,14 +83,15 @@ export function ModelSwitcher({
           }}
         </PromptInputSelectValue>
       </PromptInputSelectTrigger>
-      <PromptInputSelectContent>
+      <PromptInputSelectContent className="min-w-64">
         <PromptInputSelectItem value={AUTO_MODEL_ID}>
-          <SparklesIcon className="size-3.5 shrink-0 text-pink-500" />
+          <SparklesIcon className="size-4 shrink-0 text-pink-500" />
           Auto
         </PromptInputSelectItem>
+        <SelectSeparator />
         {models.map((m) => (
           <PromptInputSelectItem key={m.id} value={m.id}>
-            <ProviderIcon provider={m.provider} className="size-3.5 shrink-0" />
+            <ProviderIcon provider={m.provider} className="size-4 shrink-0" />
             {m.name}
           </PromptInputSelectItem>
         ))}

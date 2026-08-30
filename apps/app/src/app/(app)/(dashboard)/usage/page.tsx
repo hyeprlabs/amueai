@@ -119,7 +119,7 @@ export default async function UsagePage() {
             {agents?.map((agent) => (
               <li key={agent.id}>
                 <Link
-                  href={`/agents/${agent.id}/overview`}
+                  href={`/agents/${agent.id}/playground`}
                   className="flex items-center justify-between py-2.5 text-sm hover:underline"
                 >
                   <span className="font-medium">{agent.name}</span>

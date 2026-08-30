@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { BotIcon, ChevronsUpDownIcon } from "lucide-react";
+import { BotIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -13,7 +14,12 @@ import {
   SelectItem,
   SelectLabel,
 } from "@/components/ui/select";
-import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  sidebarMenuButtonVariants,
+} from "@/components/ui/sidebar";
 import { getAgentSubPath } from "@/components/dashboard/app-shared";
 
 export type AgentSwitcherAgent = { id: string; name: string };
@@ -87,6 +93,12 @@ export function AgentSwitcher({
             </SelectGroup>
           </SelectContent>
         </Select>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton render={<Link href="/new" />} size="sm">
+          <PlusIcon />
+          <span>Add Agent</span>
+        </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
   );

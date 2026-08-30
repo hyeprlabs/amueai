@@ -10,6 +10,11 @@ vi.mock("next/navigation", () => ({
   redirect: (...args: unknown[]) => redirectMock(...args),
 }));
 
+const revalidatePathMock = vi.fn();
+vi.mock("next/cache", () => ({
+  revalidatePath: (...args: unknown[]) => revalidatePathMock(...args),
+}));
+
 const getGatewayChatModelsMock = vi.fn();
 vi.mock("@/lib/gateway-models", () => ({
   AUTO_MODEL_ID: "auto",
@@ -132,6 +137,7 @@ function makeFakeSupabase(initialAgents: Record<string, unknown>[]) {
 beforeEach(() => {
   authMock.mockReset();
   redirectMock.mockReset();
+  revalidatePathMock.mockReset();
   getGatewayChatModelsMock.mockReset();
   fakeSupabase = makeFakeSupabase([]);
 });
@@ -319,11 +325,22 @@ describe("deleteAgent", () => {
     expect(redirectMock).not.toHaveBeenCalled();
   });
 
+  it("busts the dashboard layout's Router Cache so the sidebar/lists drop the deleted agent", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    fakeSupabase.agents.push({ id: "agent-1", org_id: "org-1", name: "Acme Support" });
+
+    await deleteAgent("agent-1");
+
+    expect(revalidatePathMock).toHaveBeenCalledWith("/agents", "layout");
+  });
+
   it("surfaces a database failure as a plain Error", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
     fakeSupabase.agents.push({ id: "agent-1", org_id: "org-1", name: "Acme Support" });
     fakeSupabase.failNextQuery("delete", "delete failed");
 
     await expect(deleteAgent("agent-1")).rejects.toThrow("Failed to delete agent");
+    // Never revalidate on a failed delete - there's nothing to refresh.
+    expect(revalidatePathMock).not.toHaveBeenCalled();
   });
 });

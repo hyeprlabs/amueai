@@ -33,6 +33,7 @@ export function DeleteAgentButton({ agentId, agentName }: { agentId: string; age
       // cleanup is what threw here before.
       setOpen(false);
       router.push("/agents");
+      router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       toast.add({ type: "error", title: "Couldn't delete agent", description: message });
@@ -54,8 +55,8 @@ export function DeleteAgentButton({ agentId, agentName }: { agentId: string; age
             Anyone using its embedded widget will stop getting answers. This can&apos;t be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="mt-4">
-          <AlertDialogCancel disabled={isDeleting} />
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <Button variant="destructive" disabled={isDeleting} onClick={handleDelete}>
             {isDeleting && <Spinner />}
             {isDeleting ? "Deleting…" : "Delete agent"}

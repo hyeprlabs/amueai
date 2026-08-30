@@ -105,7 +105,7 @@ export default async function AgentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {agents.map((agent) => (
-            <Link key={agent.id} href={`/agents/${agent.id}/overview`} className="group">
+            <Link key={agent.id} href={`/agents/${agent.id}/playground`} className="group">
               <Card className="flex-row items-center gap-3 p-4 transition-shadow group-hover:shadow-md group-hover:ring-foreground/20">
                 <IconTile variant="soft">
                   <BotIcon />

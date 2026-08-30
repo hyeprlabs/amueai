@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -139,4 +140,11 @@ export async function deleteAgent(agentId: string) {
   // messages all cascade on agents.id - deleting the agent row is enough.
   const { error } = await supabase.from("agents").delete().eq("id", agentId);
   if (error) throw new Error(`Failed to delete agent: ${error.message}`);
+
+  // Busts the Router Cache for the whole dashboard layout - the agents
+  // list, Usage's "jump back in" list, and the sidebar's agent switcher
+  // (fetched by the shared (dashboard) layout) all read the agents table.
+  // Without this, navigating back to any of them after this client-side
+  // delete could still show the just-deleted agent until a hard refresh.
+  revalidatePath("/agents", "layout");
 }
