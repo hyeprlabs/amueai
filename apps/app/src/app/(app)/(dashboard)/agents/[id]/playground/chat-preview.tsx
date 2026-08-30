@@ -1,28 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { BotIcon, RotateCcwIcon } from "lucide-react";
+import { useRef } from "react";
 
-import { ChatPanel } from "@/components/chat-panel";
-import { Button } from "@/components/ui/button";
-import { IconTile } from "@/components/ui/icon-tile";
+import { ChatWidget } from "@/components/chat-widget";
 import type { AgentBrand } from "@/lib/branding";
 import type { GatewayChatModel } from "@/lib/gateway-models";
 import { ModelSwitcher } from "./model-switcher";
 
-function newSession() {
-  return {
-    conversationId: crypto.randomUUID(),
-    visitorId: `dashboard-test-${crypto.randomUUID()}`,
-  };
-}
-
 /**
- * A dark, widget-styled live preview of this agent - what a visitor sees on
- * the embed, not a bare test harness. Scoped to a dark theme with the
- * `.dark` class (this app's `dark:` variant is `&:is(.dark *)`, so it flips
- * every semantic token underneath without touching the real embed's own
- * light-by-default styling elsewhere).
+ * The Playground's live preview - not a bare test harness, the actual
+ * ChatWidget shown the way a visitor meets it on the real embed: closed by
+ * default, opened from its own floating bubble. Bounded to this frame
+ * (ChatWidget's `containerRef`) instead of the real widget's fixed-to-
+ * viewport behavior, so it reads as "here's your site's corner", not as
+ * something covering the dashboard itself.
  */
 export function ChatPreview({
   agentId,
@@ -37,43 +28,19 @@ export function ChatPreview({
   models: GatewayChatModel[];
   defaultModel: string;
 }) {
-  const [session, setSession] = useState(newSession);
+  const frameRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="dark flex h-[36rem] flex-col overflow-hidden rounded-xl bg-background ring-1 ring-foreground/10">
-      <div className="flex items-center gap-2 border-b px-4 py-3">
-        {brand?.logo ? (
-          // Firecrawl returns an arbitrary third-party logo URL, which
-          // next/image would need whitelisted in remotePatterns per
-          // customer domain - impossible for user-supplied sites.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={brand.logo}
-            alt=""
-            className="size-6 shrink-0 rounded-full bg-background object-contain"
-          />
-        ) : (
-          <IconTile variant="soft" size="sm">
-            <BotIcon />
-          </IconTile>
-        )}
-        <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
-        <Button
-          aria-label="Reset conversation"
-          size="icon-sm"
-          variant="ghost"
-          onClick={() => setSession(newSession())}
-        >
-          <RotateCcwIcon />
-        </Button>
-      </div>
-
-      <div className="min-h-0 flex-1">
-        <ChatPanel
-          key={session.conversationId}
+    <div
+      className="relative isolate h-[40rem] overflow-hidden rounded-xl border bg-muted/30"
+      ref={frameRef}
+    >
+      <div className="absolute right-4 bottom-4">
+        <ChatWidget
           agentId={agentId}
-          conversationId={session.conversationId}
-          visitorId={session.visitorId}
+          agentName={agentName}
+          brand={brand}
+          containerRef={frameRef}
           toolbarStart={
             <ModelSwitcher agentId={agentId} models={models} defaultModel={defaultModel} />
           }

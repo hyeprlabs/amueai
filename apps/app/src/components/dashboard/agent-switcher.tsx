@@ -54,7 +54,7 @@ export function AgentSwitcher({
         <DropdownMenu>
           <DropdownMenuTrigger
             className={cn(
-              sidebarMenuButtonVariants({ size: "lg" }),
+              sidebarMenuButtonVariants({ size: "lg", variant: "outline" }),
               "w-full data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground",
             )}
           >
