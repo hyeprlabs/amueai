@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowUpIcon } from "lucide-react";
-import { Fragment } from "react";
+import { Fragment, useState, type FormEvent } from "react";
 
 import {
   Conversation,
@@ -12,14 +12,9 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  type PromptInputMessage,
-} from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { InputGroupAddon } from "@/components/ui/input-group";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 
 /**
@@ -42,6 +37,8 @@ export function ChatPanel({
   /** The public widget hides source citations from visitors; the dashboard keeps them visible. */
   showSources?: boolean;
 }) {
+  const [input, setInput] = useState("");
+
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: `/api/chat/${agentId}`,
@@ -54,9 +51,12 @@ export function ChatPanel({
     }),
   });
 
-  const handleSubmit = (message: PromptInputMessage) => {
-    if (!message.text.trim()) return;
-    sendMessage({ text: message.text });
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const text = input.trim();
+    if (!text || status !== "ready") return;
+    setInput("");
+    sendMessage({ text });
   };
 
   return (
@@ -112,14 +112,26 @@ export function ChatPanel({
       </Conversation>
 
       <div className="px-3 pb-3">
-        <PromptInput className="[&>[data-slot=input-group]]:rounded-full" onSubmit={handleSubmit}>
-          <PromptInputTextarea placeholder="Ask a question…" />
-          <InputGroupAddon align="inline-end">
-            <PromptInputSubmit className="rounded-full" status={status}>
+        <form className="relative" onSubmit={handleSubmit}>
+          <Input
+            className="h-11 rounded-full pe-11 shadow-sm"
+            disabled={status !== "ready"}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Ask a question…"
+            value={input}
+          />
+          <div className="absolute inset-y-0 end-1.5 flex items-center justify-center">
+            <Button
+              aria-label="Send message"
+              className="size-8 rounded-full"
+              disabled={!input.trim() || status !== "ready"}
+              size="icon-sm"
+              type="submit"
+            >
               <ArrowUpIcon />
-            </PromptInputSubmit>
-          </InputGroupAddon>
-        </PromptInput>
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

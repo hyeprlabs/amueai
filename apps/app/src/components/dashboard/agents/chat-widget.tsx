@@ -15,10 +15,10 @@ function newSession(prefix: string) {
 
 /**
  * The chat, packaged as a visitor sees it on the real embed once they've
- * opened it: a small floating card, always open here (no bubble to toggle -
- * this is a preview of the opened state, not the toggle interaction
- * itself). Source citations are hidden - visitors don't need footnotes,
- * only the answer.
+ * opened it: a small floating card. The bubble/toggle interaction itself
+ * lives in the caller (ChatPreview's Popover) - this component is just the
+ * opened panel. Source citations are hidden - visitors don't need
+ * footnotes, only the answer.
  */
 export function ChatWidget({ agentId, agentName }: { agentId: string; agentName: string }) {
   const [session, setSession] = useState(() => newSession("widget"));
