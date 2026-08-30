@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SparklesIcon } from "lucide-react";
 
 import {
   PromptInputSelect,
@@ -12,7 +13,7 @@ import {
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { SelectGroup, SelectLabel } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import type { GatewayChatModel } from "@/lib/gateway-models";
+import { AUTO_MODEL_ID, type GatewayChatModel } from "@/lib/gateway-models";
 import { updateAgent } from "../../actions";
 
 /** Groups a flat, provider-sorted model list into one group per provider. */
@@ -51,7 +52,10 @@ export function ModelSwitcher({
 }) {
   const [model, setModel] = useState(defaultModel);
   const groups = groupByProvider(models);
-  const items = Object.fromEntries(models.map((m) => [m.id, m.name]));
+  const items = {
+    [AUTO_MODEL_ID]: "Auto",
+    ...Object.fromEntries(models.map((m) => [m.id, m.name])),
+  };
   const modelsById = Object.fromEntries(models.map((m) => [m.id, m]));
 
   const handleChange = async (next: unknown) => {
@@ -73,6 +77,14 @@ export function ModelSwitcher({
       <PromptInputSelectTrigger>
         <PromptInputSelectValue placeholder="Select a model">
           {(value: string) => {
+            if (value === AUTO_MODEL_ID) {
+              return (
+                <span className="flex items-center gap-1.5">
+                  <SparklesIcon className="size-3.5 shrink-0 text-pink-500" />
+                  Auto
+                </span>
+              );
+            }
             const selected = modelsById[value];
             return selected ? (
               <span className="flex items-center gap-1.5">
@@ -86,6 +98,12 @@ export function ModelSwitcher({
         </PromptInputSelectValue>
       </PromptInputSelectTrigger>
       <PromptInputSelectContent>
+        <SelectGroup>
+          <PromptInputSelectItem value={AUTO_MODEL_ID}>
+            <SparklesIcon className="size-3.5 shrink-0 text-pink-500" />
+            Auto
+          </PromptInputSelectItem>
+        </SelectGroup>
         {groups.map((group) => (
           <SelectGroup key={group.provider}>
             <SelectLabel className="flex items-center gap-1.5 capitalize">

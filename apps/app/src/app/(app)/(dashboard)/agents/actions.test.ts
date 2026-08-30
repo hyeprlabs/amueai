@@ -12,6 +12,7 @@ vi.mock("next/navigation", () => ({
 
 const getGatewayChatModelsMock = vi.fn();
 vi.mock("@/lib/gateway-models", () => ({
+  AUTO_MODEL_ID: "auto",
   getGatewayChatModels: (...args: unknown[]) => getGatewayChatModelsMock(...args),
 }));
 
@@ -224,6 +225,18 @@ describe("updateAgent", () => {
     const saved = await updateAgent("agent-1", { ...validInput, model: "openai/gpt-4-deprecated" });
 
     expect(saved.model).toBe("openai/gpt-4-deprecated");
+  });
+
+  it("accepts the 'auto' sentinel even though it's never in the Gateway catalog", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+    getGatewayChatModelsMock.mockResolvedValue([
+      { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "openai" },
+    ]);
+
+    const saved = await updateAgent("agent-1", { ...validInput, model: "auto" });
+
+    expect(saved.model).toBe("auto");
   });
 
   it("rejects a model that's neither live nor the agent's current model - a forged request", async () => {

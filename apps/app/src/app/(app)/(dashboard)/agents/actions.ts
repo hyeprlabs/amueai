@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getGatewayChatModels } from "@/lib/gateway-models";
+import { AUTO_MODEL_ID, getGatewayChatModels } from "@/lib/gateway-models";
 import { extractUrlBranding } from "@/lib/branding";
 import { agentSettingsSchema } from "./[id]/settings/agent-settings-schema";
 
@@ -104,7 +104,9 @@ export async function updateAgent(agentId: string, input: unknown) {
       .single();
     const gatewayModels = await getGatewayChatModels();
     const isKnownModel =
-      values.model === current?.model || gatewayModels.some((model) => model.id === values.model);
+      values.model === AUTO_MODEL_ID ||
+      values.model === current?.model ||
+      gatewayModels.some((model) => model.id === values.model);
     if (!isKnownModel) {
       throw new Error(`Unknown model: ${values.model}`);
     }

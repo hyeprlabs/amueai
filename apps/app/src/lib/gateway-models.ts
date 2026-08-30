@@ -145,3 +145,26 @@ export async function getGatewayChatModels(): Promise<GatewayChatModel[]> {
   cache = { models: chatModels, expiresAt: Date.now() + CACHE_TTL_MS };
   return chatModels;
 }
+
+/** Picker sentinel for "let the app pick" - never a real Gateway model id, so it's never sent to streamText directly. */
+export const AUTO_MODEL_ID = "auto";
+
+/**
+ * Resolves the `AUTO_MODEL_ID` sentinel to a real model id at chat time:
+ * whichever of the offered top 5 ranks highest by the same popularity
+ * patterns used to select them (the returned list itself is re-sorted
+ * alphabetically for the provider-grouped picker, so re-rank rather than
+ * just taking the first entry). Falls back to the first offered model if
+ * none matches a pattern, and to undefined only if the Gateway list is
+ * empty - callers should keep the agent's previous model in that case
+ * rather than write a sentinel string into a `model` column meant to hold
+ * a real Gateway id.
+ */
+export async function resolveAutoModelId(): Promise<string | undefined> {
+  const models = await getGatewayChatModels();
+  const byPopularity = POPULAR_CHEAP_MODEL_PATTERNS.map((pattern) =>
+    models.find((model) => pattern.test(model.id)),
+  ).find((model): model is GatewayChatModel => Boolean(model));
+
+  return byPopularity?.id ?? models[0]?.id;
+}

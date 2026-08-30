@@ -10,6 +10,7 @@ import { z } from "zod";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
 import { checkChatRateLimit } from "@/lib/rate-limit";
+import { AUTO_MODEL_ID, resolveAutoModelId } from "@/lib/gateway-models";
 
 // Public, unauthenticated route - the widget and the dashboard test-chat
 // panel both call this. No Clerk session, so RLS provides no protection
@@ -130,6 +131,19 @@ Answer the user's question using only the context above. Never use outside knowl
 
   const conversationIdForClosure = conversationId;
 
+  // "auto" is a picker sentinel (model-switcher.tsx), never a real Gateway
+  // model id - resolve it to one here, at chat time, so a later Gateway
+  // catalog change (a model deprecated, cheaper models rotating in) takes
+  // effect on an agent's very next message instead of only at save time.
+  // Falling back to the sentinel itself if resolution fails would send an
+  // invalid model id to streamText - falling back to the agent's own
+  // stored value (only meaningful if it was never "auto" to begin with)
+  // isn't right either, so surface the failure instead of guessing.
+  const chatModel = agent.model === AUTO_MODEL_ID ? await resolveAutoModelId() : agent.model;
+  if (!chatModel) {
+    return NextResponse.json({ error: "No chat model is currently available" }, { status: 503 });
+  }
+
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       for (const source of sourceRows ?? []) {
@@ -142,7 +156,7 @@ Answer the user's question using only the context above. Never use outside knowl
       }
 
       const result = streamText({
-        model: agent.model,
+        model: chatModel,
         temperature: agent.temperature,
         system,
         prompt: message,

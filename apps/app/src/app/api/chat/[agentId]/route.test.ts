@@ -38,6 +38,12 @@ vi.mock("@/lib/rate-limit", () => ({
   checkChatRateLimit: (...args: unknown[]) => checkChatRateLimitMock(...args),
 }));
 
+const resolveAutoModelIdMock = vi.fn();
+vi.mock("@/lib/gateway-models", () => ({
+  AUTO_MODEL_ID: "auto",
+  resolveAutoModelId: (...args: unknown[]) => resolveAutoModelIdMock(...args),
+}));
+
 let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
 vi.mock("@/lib/supabase/server", () => ({
   createServiceRoleSupabaseClient: () => fakeSupabase,
@@ -167,6 +173,7 @@ beforeEach(() => {
   embedMock.mockReset();
   streamTextMock.mockReset();
   checkChatRateLimitMock.mockReset();
+  resolveAutoModelIdMock.mockReset();
 
   embedMock.mockResolvedValue({ embedding: [0.1, 0.2, 0.3] });
   checkChatRateLimitMock.mockResolvedValue(true);
@@ -430,6 +437,29 @@ describe("POST /api/chat/[agentId]", () => {
     expect(call.providerOptions.gateway).not.toHaveProperty("quotaEntityId");
     expect(call.providerOptions.gateway.user).toBe("org-1");
     expect(call.providerOptions.gateway.tags).toContain("org:org-1");
+  });
+
+  it("resolves the 'auto' sentinel to a real model id before calling the Gateway", async () => {
+    fakeSupabase = makeFakeSupabase({ agents: [{ ...agent, model: "auto" }] });
+    resolveAutoModelIdMock.mockResolvedValue("anthropic/claude-3-5-haiku");
+
+    await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(streamTextMock.mock.calls[0][0].model).toBe("anthropic/claude-3-5-haiku");
+  });
+
+  it("returns a 503 instead of calling the Gateway with an invalid model when 'auto' can't be resolved", async () => {
+    fakeSupabase = makeFakeSupabase({ agents: [{ ...agent, model: "auto" }] });
+    resolveAutoModelIdMock.mockResolvedValue(undefined);
+
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(res.status).toBe(503);
+    expect(streamTextMock).not.toHaveBeenCalled();
   });
 
   it("persists both the user and assistant turns once the stream finishes", async () => {

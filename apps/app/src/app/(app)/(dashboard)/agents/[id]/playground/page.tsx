@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { LinkIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
-import { getGatewayChatModels } from "@/lib/gateway-models";
+import { AUTO_MODEL_ID, getGatewayChatModels } from "@/lib/gateway-models";
+import type { AgentBrand } from "@/lib/branding";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgentInstructionsForm } from "./agent-instructions-form";
-import { TestChat } from "./test-chat";
+import { ChatPreview } from "./chat-preview";
 
 export const metadata: Metadata = createMetadata({
   title: "Playground",
@@ -21,45 +23,71 @@ export default async function AgentPlaygroundPage({
   const { id } = await params;
 
   const supabase = await createServerSupabaseClient();
-  const { data: agent } = await supabase
-    .from("agents")
-    .select("id, system_prompt, model")
-    .eq("id", id)
-    .single();
+  const [{ data: agent }, { count: sourceCount }] = await Promise.all([
+    supabase.from("agents").select("id, name, system_prompt, model, brand").eq("id", id).single(),
+    supabase.from("sources").select("id", { count: "exact", head: true }).eq("agent_id", id),
+  ]);
 
   if (!agent) notFound();
 
+  const brand = agent.brand as AgentBrand | null;
+
   const gatewayModels = await getGatewayChatModels();
   // The agent's current model might have been deprecated/removed from the
-  // Gateway catalog since it was picked - keep it selectable regardless so
-  // switching models never silently strands the agent on an invalid one.
-  const models = gatewayModels.some((model) => model.id === agent.model)
-    ? gatewayModels
-    : [{ id: agent.model, name: agent.model, provider: "current" }, ...gatewayModels];
+  // Gateway catalog since it was picked, or it might be the "auto" sentinel
+  // (never itself a Gateway id) - either way keep it selectable so switching
+  // models never silently strands the agent on an invalid one.
+  const models =
+    agent.model === AUTO_MODEL_ID || gatewayModels.some((model) => model.id === agent.model)
+      ? gatewayModels
+      : [{ id: agent.model, name: agent.model, provider: "current" }, ...gatewayModels];
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-lg font-medium">Playground</h1>
         <p className="text-sm text-muted-foreground">
-          Calls the same API the public widget uses. Switch models right from the chat.
+          A live preview of what visitors see. Switch models right from the chat.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <TestChat agentId={id} models={models} defaultModel={agent.model} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4">
+          <Card className="gap-3 py-4">
+            <CardHeader className="px-4">
+              <CardTitle className="text-sm">Data sources</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4">
+              <div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2 text-sm">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <LinkIcon className="size-4" />
+                  Links
+                </span>
+                <span className="font-medium">{sourceCount ?? 0}</span>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="gap-3 py-4">
-          <CardHeader className="px-4">
-            <CardTitle className="text-sm">Instructions</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 px-4">
-            <AgentInstructionsForm
-              agentId={agent.id}
-              defaultValues={{ system_prompt: agent.system_prompt }}
-            />
-          </CardContent>
-        </Card>
+          <Card className="flex-1 gap-3 py-4">
+            <CardHeader className="px-4">
+              <CardTitle className="text-sm">Instructions</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 px-4">
+              <AgentInstructionsForm
+                agentId={agent.id}
+                defaultValues={{ system_prompt: agent.system_prompt }}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        <ChatPreview
+          agentId={id}
+          agentName={agent.name}
+          brand={brand}
+          models={models}
+          defaultModel={agent.model}
+        />
       </div>
     </div>
   );

@@ -183,6 +183,41 @@ describe("getGatewayChatModels", () => {
     });
   });
 
+  describe("resolveAutoModelId", () => {
+    it("picks the offered model ranking highest by popularity, not just the first alphabetically", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [
+          // Alphabetically first, but the anthropic haiku pattern outranks it.
+          languageModel("acme/aardvark", "Aardvark", "acme"),
+          languageModel("anthropic/claude-3-5-haiku", "Claude 3.5 Haiku", "anthropic"),
+        ],
+      });
+
+      const { resolveAutoModelId } = await import("./gateway-models");
+      expect(await resolveAutoModelId()).toBe("anthropic/claude-3-5-haiku");
+    });
+
+    it("falls back to the first offered model when none match a popularity pattern", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [
+          languageModel("acme/aardvark", "Aardvark", "acme"),
+          languageModel("acme/zebra", "Zebra", "acme"),
+        ],
+      });
+
+      const { resolveAutoModelId } = await import("./gateway-models");
+      expect(await resolveAutoModelId()).toBe("acme/aardvark");
+    });
+
+    it("resolves to undefined when the Gateway list is empty", async () => {
+      getAvailableModelsMock.mockRejectedValue(new Error("Gateway unavailable"));
+      vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const { resolveAutoModelId } = await import("./gateway-models");
+      expect(await resolveAutoModelId()).toBeUndefined();
+    });
+  });
+
   describe("cost cap - only the cheap tier is offered while there's no usage billing", () => {
     it("excludes a flagship model priced above the input cap", async () => {
       getAvailableModelsMock.mockResolvedValue({
