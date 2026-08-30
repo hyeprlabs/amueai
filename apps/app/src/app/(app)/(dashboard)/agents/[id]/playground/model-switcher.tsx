@@ -13,7 +13,8 @@ import {
 import { ProviderIcon } from "@/components/icons/provider-icons";
 import { SelectGroup, SelectLabel } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import { AUTO_MODEL_ID, type GatewayChatModel } from "@/lib/gateway-models";
+import { AUTO_MODEL_ID } from "@/lib/model-picker";
+import type { GatewayChatModel } from "@/lib/gateway-models";
 import { updateAgent } from "../../actions";
 
 /** Groups a flat, provider-sorted model list into one group per provider. */

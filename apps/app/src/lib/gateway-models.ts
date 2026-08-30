@@ -2,6 +2,8 @@ import "server-only";
 
 import { gateway } from "ai";
 
+export { AUTO_MODEL_ID } from "@/lib/model-picker";
+
 export type GatewayChatModel = {
   id: string;
   name: string;
@@ -145,9 +147,6 @@ export async function getGatewayChatModels(): Promise<GatewayChatModel[]> {
   cache = { models: chatModels, expiresAt: Date.now() + CACHE_TTL_MS };
   return chatModels;
 }
-
-/** Picker sentinel for "let the app pick" - never a real Gateway model id, so it's never sent to streamText directly. */
-export const AUTO_MODEL_ID = "auto";
 
 /**
  * Resolves the `AUTO_MODEL_ID` sentinel to a real model id at chat time:
