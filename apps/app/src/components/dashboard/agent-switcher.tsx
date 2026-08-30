@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -72,21 +73,25 @@ export function AgentSwitcher({
             side="bottom"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">Agents</DropdownMenuLabel>
-            {agents.map((agent) => (
-              <DropdownMenuItem
-                className="gap-2 p-2"
-                key={agent.id}
-                onClick={() =>
-                  router.push(`/agents/${agent.id}${getAgentSubPath(pathname, currentAgentId)}`)
-                }
-              >
-                <div className="flex size-6 items-center justify-center rounded-md border">
-                  <BotIcon className="size-3.5 shrink-0" />
-                </div>
-                {agent.name}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Agents
+              </DropdownMenuLabel>
+              {agents.map((agent) => (
+                <DropdownMenuItem
+                  className="gap-2 p-2"
+                  key={agent.id}
+                  onClick={() =>
+                    router.push(`/agents/${agent.id}${getAgentSubPath(pathname, currentAgentId)}`)
+                  }
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md border">
+                    <BotIcon className="size-3.5 shrink-0" />
+                  </div>
+                  {agent.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 p-2" onClick={() => router.push("/new")}>
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
