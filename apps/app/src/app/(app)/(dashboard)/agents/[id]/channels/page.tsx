@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RadioTowerIcon } from "lucide-react";
 
 import { createMetadata } from "@/lib/seo";
-import { ComingSoon } from "@/components/dashboard/coming-soon";
+import { DashboardEmpty } from "@/components/dashboard/dashboard-empty";
 
 export const metadata: Metadata = createMetadata({
   title: "Channels",
@@ -19,7 +19,7 @@ export default function AgentChannelsPage() {
         <p className="text-sm text-muted-foreground">Where this agent answers questions.</p>
       </div>
 
-      <ComingSoon
+      <DashboardEmpty
         description="Deploy this agent to Slack, WhatsApp, and more from here soon."
         icon={<RadioTowerIcon />}
         title="Channels coming soon"

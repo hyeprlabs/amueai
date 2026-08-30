@@ -16,8 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { updateAgent } from "../../actions";
-import { agentGeneralSchema, type AgentGeneralValues } from "./agent-settings-schema";
+import { updateAgent } from "@/app/(app)/(dashboard)/agents/actions";
+import { agentGeneralSchema, type AgentGeneralValues } from "@/components/dashboard/agents/agent-settings-schema";
 
 export function AgentSettingsForm({
   agentId,

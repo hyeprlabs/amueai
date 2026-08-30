@@ -7,7 +7,7 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { AUTO_MODEL_ID, getGatewayChatModels } from "@/lib/gateway-models";
 import { extractUrlBranding } from "@/lib/branding";
-import { agentSettingsSchema } from "./[id]/settings/agent-settings-schema";
+import { agentSettingsSchema } from "@/components/dashboard/agents/agent-settings-schema";
 
 const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -62,10 +62,20 @@ export async function captureAgentBrand(agentId: string, input: unknown) {
   if (!brand) return null;
 
   const supabase = await createServerSupabaseClient();
-  // RLS scopes this to the caller's org, so a forged agentId from another
-  // org matches no row and writes nothing.
-  const { error } = await supabase.from("agents").update({ brand }).eq("id", agentId);
+  // RLS scopes this to the caller's org, so a forged/stale agentId from
+  // another org matches no row and writes nothing - select it back so that
+  // case surfaces as a real error instead of a brand that silently never
+  // saved.
+  const { data: updated, error } = await supabase
+    .from("agents")
+    .update({ brand })
+    .eq("id", agentId)
+    .select("id")
+    .maybeSingle();
   if (error) throw new Error(`Failed to save brand: ${error.message}`);
+  if (!updated) {
+    throw new Error("Agent not found - it may have been deleted or belong to another workspace.");
+  }
 
   return brand;
 }
@@ -113,9 +123,21 @@ export async function updateAgent(agentId: string, input: unknown) {
     }
   }
 
-  const { error } = await supabase.from("agents").update(values).eq("id", agentId);
+  // .update() alone returns { error: null } even when RLS excludes every
+  // row - e.g. the org was switched in another tab after this form loaded,
+  // or a stale id is resubmitted. Selecting the row back is what turns that
+  // into a real failure instead of a false "Settings saved" toast.
+  const { data: updated, error } = await supabase
+    .from("agents")
+    .update(values)
+    .eq("id", agentId)
+    .select("id")
+    .maybeSingle();
 
   if (error) throw new Error(`Failed to update agent: ${error.message}`);
+  if (!updated) {
+    throw new Error("Agent not found - it may have been deleted or belong to another workspace.");
+  }
 
   // Returned (not redirected) - the form stays mounted and rebases its own
   // baseline with resetDefaultValues once this resolves.
@@ -123,7 +145,7 @@ export async function updateAgent(agentId: string, input: unknown) {
 }
 
 /**
- * Called directly (not via a <form action>) from DeleteAgentButton's
+ * Called directly (not via a <form action>) from DeleteAgentDialog's
  * client handler, same reasoning as createAgent/updateAgent above: a
  * `redirect()` thrown from inside this action while the confirm dialog
  * is still open raced the dialog's own unmount/close-animation cleanup
@@ -138,8 +160,19 @@ export async function deleteAgent(agentId: string) {
 
   // RLS scopes this to the active org, and sources/chunks/conversations/
   // messages all cascade on agents.id - deleting the agent row is enough.
-  const { error } = await supabase.from("agents").delete().eq("id", agentId);
+  // As in updateAgent, .delete() alone returns { error: null } even when
+  // RLS matches nothing, so select the row back to confirm it actually
+  // existed in this org before treating the delete as successful.
+  const { data: deleted, error } = await supabase
+    .from("agents")
+    .delete()
+    .eq("id", agentId)
+    .select("id")
+    .maybeSingle();
   if (error) throw new Error(`Failed to delete agent: ${error.message}`);
+  if (!deleted) {
+    throw new Error("Agent not found - it may have already been deleted or belong to another workspace.");
+  }
 
   // Busts the Router Cache for the whole dashboard layout - the agents
   // list, Usage's "jump back in" list, and the sidebar's agent switcher

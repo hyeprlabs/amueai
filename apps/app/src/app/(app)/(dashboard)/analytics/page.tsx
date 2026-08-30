@@ -4,14 +4,7 @@ import { BarChart3Icon } from "lucide-react";
 
 import { createMetadata } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { DashboardEmpty } from "@/components/dashboard/dashboard-empty";
 
 export const metadata: Metadata = createMetadata({
   title: "Analytics",
@@ -22,24 +15,16 @@ export const metadata: Metadata = createMetadata({
 
 export default function AnalyticsPage() {
   return (
-    <Empty className="min-h-96 border">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <BarChart3Icon />
-        </EmptyMedia>
-        <EmptyTitle>Analytics coming soon</EmptyTitle>
-        <EmptyDescription>
-          Conversation volume, resolution rate, and agent performance will show up here once your
-          agents start getting used.
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <Button
-          nativeButton={false}
-          render={<Link href="/agents">View your agents</Link>}
-          variant="outline"
-        />
-      </EmptyContent>
-    </Empty>
+    <DashboardEmpty
+      description="Conversation volume, resolution rate, and agent performance will show up here once your agents start getting used."
+      icon={<BarChart3Icon />}
+      title="Analytics coming soon"
+    >
+      <Button
+        nativeButton={false}
+        render={<Link href="/agents">View your agents</Link>}
+        variant="outline"
+      />
+    </DashboardEmpty>
   );
 }

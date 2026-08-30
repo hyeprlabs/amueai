@@ -7,7 +7,7 @@ import {
   getAgentSubPath,
   headerPageTitle,
   isNavItemActive,
-} from "./app-shared";
+} from "./nav-config";
 
 describe("isNavItemActive", () => {
   it("matches the exact route", () => {

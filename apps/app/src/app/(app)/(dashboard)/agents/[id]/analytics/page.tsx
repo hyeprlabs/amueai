@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BarChart3Icon } from "lucide-react";
 
 import { createMetadata } from "@/lib/seo";
-import { ComingSoon } from "@/components/dashboard/coming-soon";
+import { DashboardEmpty } from "@/components/dashboard/dashboard-empty";
 
 export const metadata: Metadata = createMetadata({
   title: "Analytics",
@@ -19,7 +19,7 @@ export default function AgentAnalyticsPage() {
         <p className="text-sm text-muted-foreground">Conversation activity for this agent.</p>
       </div>
 
-      <ComingSoon
+      <DashboardEmpty
         description="Conversation history and usage charts are on the way."
         icon={<BarChart3Icon />}
         title="Analytics coming soon"

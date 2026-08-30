@@ -1,4 +1,4 @@
-import { ChatWidget } from "@/components/chat-widget";
+import { ChatWidget } from "@/components/dashboard/agents/chat-widget";
 
 /**
  * The Playground's live preview - the actual ChatWidget, always open, shown

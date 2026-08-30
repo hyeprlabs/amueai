@@ -23,13 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { DashboardEmpty } from "@/components/dashboard/dashboard-empty";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -88,7 +82,7 @@ function StatusBadge({ source }: { source: SourceRow }) {
 }
 
 /** Live queued/processing/ready/failed status via Supabase Realtime. */
-export function SourcesList({
+export function SourcesTable({
   agentId,
   initialSources,
 }: {
@@ -171,15 +165,11 @@ export function SourcesList({
 
   if (sources.length === 0) {
     return (
-      <Empty className="border border-dashed py-8">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <DatabaseIcon />
-          </EmptyMedia>
-          <EmptyTitle>No sources yet</EmptyTitle>
-          <EmptyDescription>Add a URL to train this agent on a page.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <DashboardEmpty
+        description="Add a URL to train this agent on a page."
+        icon={<DatabaseIcon />}
+        title="No sources yet"
+      />
     );
   }
 

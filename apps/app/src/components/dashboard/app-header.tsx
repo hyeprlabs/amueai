@@ -7,8 +7,8 @@ import { useAgentName } from "@/hooks/use-agent-name";
 import { Separator } from "@/components/ui/separator";
 import { DecorIcon } from "@/components/decor-icon";
 import { AppBreadcrumbs, type BreadcrumbTrailItem } from "@/components/dashboard/app-breadcrumbs";
-import { getActiveAgentId, headerPageTitle } from "@/components/dashboard/app-shared";
-import { CustomSidebarTrigger } from "@/components/dashboard/custom-sidebar-trigger";
+import { getActiveAgentId, headerPageTitle } from "@/components/dashboard/nav-config";
+import { SidebarToggle } from "@/components/dashboard/sidebar-toggle";
 import { UserDropdown } from "@/components/dashboard/user-dropdown";
 
 export function AppHeader() {
@@ -39,7 +39,7 @@ export function AppHeader() {
     >
       <DecorIcon className="hidden md:block" position="bottom-left" />
       <div className="flex items-center gap-3">
-        <CustomSidebarTrigger />
+        <SidebarToggle />
         <Separator
           className="mr-2 h-4 data-[orientation=vertical]:self-center"
           orientation="vertical"

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { LinkIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireAgent } from "@/lib/agents";
 import { createMetadata } from "@/lib/seo";
 import { AUTO_MODEL_ID, getGatewayChatModels } from "@/lib/gateway-models";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AgentInstructionsForm } from "./agent-instructions-form";
-import { ChatPreview } from "./chat-preview";
-import { ModelSwitcher } from "./model-switcher";
+import { AgentInstructionsForm } from "@/components/dashboard/agents/agent-instructions-form";
+import { ChatPreview } from "@/components/dashboard/agents/chat-preview";
+import { ModelSwitcher } from "@/components/dashboard/agents/model-switcher";
 
 export const metadata: Metadata = createMetadata({
   title: "Playground",
@@ -23,12 +23,12 @@ export default async function AgentPlaygroundPage({
   const { id } = await params;
 
   const supabase = await createServerSupabaseClient();
-  const [{ data: agent }, { count: sourceCount }] = await Promise.all([
+  const [{ data }, { count: sourceCount }] = await Promise.all([
     supabase.from("agents").select("id, name, system_prompt, model").eq("id", id).single(),
     supabase.from("sources").select("id", { count: "exact", head: true }).eq("agent_id", id),
   ]);
 
-  if (!agent) notFound();
+  const agent = requireAgent(data);
 
   const gatewayModels = await getGatewayChatModels();
   // The agent's current model might have been deprecated/removed from the

@@ -4,8 +4,6 @@ import {
   BotIcon,
   GaugeIcon,
   HammerIcon,
-  HelpCircleIcon,
-  BookOpenIcon,
   MessageSquareTextIcon,
   RadioTowerIcon,
   SettingsIcon,
@@ -15,7 +13,6 @@ export type SidebarNavItem = {
   title: string;
   path?: string;
   icon?: ReactNode;
-  isActive?: boolean;
   subItems?: SidebarNavItem[];
 };
 
@@ -27,7 +24,6 @@ export type SidebarNavGroup = {
 /** The sidebar's default face: everything not scoped to one agent. */
 export const primaryNavGroups: SidebarNavGroup[] = [
   {
-    label: "Product",
     items: [
       {
         title: "Agents",
@@ -105,28 +101,12 @@ export function getAgentSubPath(pathname: string, agentId: string): string {
   return match ? match.slice(base.length) : "/playground";
 }
 
-export const footerNavLinks: SidebarNavItem[] = [
-  {
-    title: "Help Center",
-    path: "#/help",
-    icon: <HelpCircleIcon />,
-  },
-  {
-    title: "Documentation",
-    path: "#/documentation",
-    icon: <BookOpenIcon />,
-  },
-];
-
-const navLinks: SidebarNavItem[] = [
-  ...primaryNavGroups.flatMap((group) => group.items),
-  ...footerNavLinks,
-];
+const navLinks: SidebarNavItem[] = primaryNavGroups.flatMap((group) => group.items);
 
 /**
- * Real nav paths only ("#/foo" entries are stubs with no page behind them
- * yet, so they can never be "active"). Matches the item's own route or
- * anything nested under it (e.g. "/agents" stays active on "/agents/123").
+ * Matches the item's own route or anything nested under it (e.g. "/agents"
+ * stays active on "/agents/123"). A "#/foo" placeholder - a nav entry with
+ * no page behind it yet - can never be active.
  */
 export function isNavItemActive(itemPath: string | undefined, pathname: string): boolean {
   if (!itemPath || itemPath.startsWith("#")) return false;

@@ -8,11 +8,11 @@ import { Field, FieldDescription, FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
-import { updateAgent } from "../../actions";
+import { updateAgent } from "@/app/(app)/(dashboard)/agents/actions";
 import {
   agentInstructionsSchema,
   type AgentInstructionsValues,
-} from "../settings/agent-settings-schema";
+} from "@/components/dashboard/agents/agent-settings-schema";
 
 export function AgentInstructionsForm({
   agentId,

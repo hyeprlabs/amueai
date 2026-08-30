@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AddSourceDialog } from "./add-source-form";
-import { SourcesList } from "./sources-list";
+import { AddSourceDialog } from "@/components/dashboard/agents/add-source-dialog";
+import { SourcesTable } from "@/components/dashboard/agents/sources-table";
 
 export const metadata: Metadata = createMetadata({
   title: "Sources",
@@ -39,7 +39,7 @@ export default async function AgentSourcesPage({
         </div>
       </CardHeader>
       <CardContent>
-        <SourcesList agentId={id} initialSources={sources ?? []} />
+        <SourcesTable agentId={id} initialSources={sources ?? []} />
       </CardContent>
     </Card>
   );

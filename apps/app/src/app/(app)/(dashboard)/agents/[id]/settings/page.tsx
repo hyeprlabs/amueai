@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireAgent } from "@/lib/agents";
 import { createMetadata } from "@/lib/seo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AgentSettingsForm } from "./agent-settings-form";
-import { DeleteAgentButton } from "./delete-agent-button";
+import { AgentSettingsForm } from "@/components/dashboard/agents/agent-settings-form";
+import { DeleteAgentDialog } from "@/components/dashboard/agents/delete-agent-dialog";
 
 export const metadata: Metadata = createMetadata({
   title: "Agent settings",
@@ -18,13 +18,13 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
   const { id } = await params;
 
   const supabase = await createServerSupabaseClient();
-  const { data: agent } = await supabase
+  const { data } = await supabase
     .from("agents")
     .select("id, name, temperature")
     .eq("id", id)
     .single();
 
-  if (!agent) notFound();
+  const agent = requireAgent(data);
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
@@ -55,7 +55,7 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DeleteAgentButton agentId={agent.id} agentName={agent.name} />
+          <DeleteAgentDialog agentId={agent.id} agentName={agent.name} />
         </CardContent>
       </Card>
     </div>

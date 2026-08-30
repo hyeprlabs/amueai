@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { AUTO_MODEL_ID } from "@/lib/model-picker";
 import type { GatewayChatModel } from "@/lib/gateway-models";
-import { updateAgent } from "../../actions";
+import { updateAgent } from "@/app/(app)/(dashboard)/agents/actions";
 
 /**
  * Best-effort human label for a Gateway provider id ("google-vertex" ->

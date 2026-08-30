@@ -17,9 +17,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { deleteAgent } from "../../actions";
+import { deleteAgent } from "@/app/(app)/(dashboard)/agents/actions";
 
-export function DeleteAgentButton({ agentId, agentName }: { agentId: string; agentName: string }) {
+export function DeleteAgentDialog({ agentId, agentName }: { agentId: string; agentName: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
-import { OrganizationSwitcher } from "@clerk/nextjs";
 import { BotIcon, ChevronRightIcon, PlusIcon, TriangleAlertIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -9,14 +8,8 @@ import { createMetadata } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IconTile } from "@/components/ui/icon-tile";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { DashboardEmpty } from "@/components/dashboard/dashboard-empty";
+import { NoWorkspace } from "@/components/dashboard/no-workspace";
 
 export const metadata: Metadata = createMetadata({
   title: "Agents",
@@ -28,24 +21,7 @@ export const metadata: Metadata = createMetadata({
 export default async function AgentsPage() {
   const { orgId } = await auth();
 
-  if (!orgId) {
-    return (
-      <Empty className="border border-dashed">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <BotIcon />
-          </EmptyMedia>
-          <EmptyTitle>Select or create a workspace</EmptyTitle>
-          <EmptyDescription>
-            AmueAI workspaces are Clerk organizations. Pick one from the switcher to see its agents.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <OrganizationSwitcher hidePersonal />
-        </EmptyContent>
-      </Empty>
-    );
-  }
+  if (!orgId) return <NoWorkspace />;
 
   const supabase = await createServerSupabaseClient();
   const { data: agents, error } = await supabase
@@ -55,15 +31,12 @@ export default async function AgentsPage() {
 
   if (error) {
     return (
-      <Empty className="border border-dashed border-destructive/30 bg-destructive/5">
-        <EmptyHeader>
-          <EmptyMedia variant="icon" className="bg-destructive/10 text-destructive">
-            <TriangleAlertIcon />
-          </EmptyMedia>
-          <EmptyTitle>Couldn&apos;t load agents</EmptyTitle>
-          <EmptyDescription className="text-destructive">{error.message}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <DashboardEmpty
+        description={error.message}
+        icon={<TriangleAlertIcon />}
+        title="Couldn't load agents"
+        variant="destructive"
+      />
     );
   }
 
@@ -77,7 +50,7 @@ export default async function AgentsPage() {
           </p>
         </div>
         {agents.length > 0 && (
-          <Button render={<Link href="/new" />} nativeButton={false}>
+          <Button nativeButton={false} render={<Link href="/new" />}>
             <PlusIcon />
             New agent
           </Button>
@@ -85,27 +58,20 @@ export default async function AgentsPage() {
       </div>
 
       {agents.length === 0 ? (
-        <Empty className="border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <BotIcon />
-            </EmptyMedia>
-            <EmptyTitle>No agents yet</EmptyTitle>
-            <EmptyDescription>
-              Create your first agent, then add text or URL sources to train it.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button render={<Link href="/new" />} nativeButton={false}>
-              <PlusIcon />
-              New agent
-            </Button>
-          </EmptyContent>
-        </Empty>
+        <DashboardEmpty
+          description="Create your first agent, then add URL sources to train it."
+          icon={<BotIcon />}
+          title="No agents yet"
+        >
+          <Button nativeButton={false} render={<Link href="/new" />}>
+            <PlusIcon />
+            New agent
+          </Button>
+        </DashboardEmpty>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {agents.map((agent) => (
-            <Link key={agent.id} href={`/agents/${agent.id}/playground`} className="group">
+            <Link className="group" href={`/agents/${agent.id}/playground`} key={agent.id}>
               <Card className="flex-row items-center gap-3 p-4 transition-shadow group-hover:shadow-md group-hover:ring-foreground/20">
                 <IconTile variant="soft">
                   <BotIcon />

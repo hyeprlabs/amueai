@@ -18,7 +18,7 @@ import {
   SidebarMenuSubItem,
   sidebarMenuButtonVariants,
 } from "@/components/ui/sidebar";
-import { isNavItemActive, type SidebarNavGroup } from "@/components/dashboard/app-shared";
+import { isNavItemActive, type SidebarNavGroup } from "@/components/dashboard/nav-config";
 
 /**
  * Used as a Base UI `render` element (SidebarMenuButton clones it via

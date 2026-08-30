@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { IconTile } from "@/components/ui/icon-tile";
 import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
-import { getAgentSubPath } from "@/components/dashboard/app-shared";
+import { getAgentSubPath } from "@/components/dashboard/nav-config";
 
 export type AgentSwitcherAgent = { id: string; name: string };
 

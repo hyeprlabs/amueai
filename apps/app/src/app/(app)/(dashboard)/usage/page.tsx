@@ -1,22 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
-import { OrganizationSwitcher } from "@clerk/nextjs";
 import { BotIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DashboardEmpty } from "@/components/dashboard/dashboard-empty";
+import { NoWorkspace } from "@/components/dashboard/no-workspace";
 
 export const metadata: Metadata = createMetadata({
   title: "Usage",
@@ -28,24 +21,7 @@ export const metadata: Metadata = createMetadata({
 export default async function UsagePage() {
   const { orgId } = await auth();
 
-  if (!orgId) {
-    return (
-      <Empty className="border border-dashed">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <BotIcon />
-          </EmptyMedia>
-          <EmptyTitle>Select or create a workspace</EmptyTitle>
-          <EmptyDescription>
-            AmueAI workspaces are Clerk organizations. Pick one from the switcher to see its usage.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <OrganizationSwitcher hidePersonal />
-        </EmptyContent>
-      </Empty>
-    );
-  }
+  if (!orgId) return <NoWorkspace />;
 
   const supabase = await createServerSupabaseClient();
 
@@ -60,30 +36,20 @@ export default async function UsagePage() {
 
   if (!agentCount) {
     return (
-      <Empty className="min-h-96 border">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <BotIcon />
-          </EmptyMedia>
-          <EmptyTitle>No agents yet</EmptyTitle>
-          <EmptyDescription>
-            Create your first agent to start training it on your data.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <Button nativeButton={false} render={<Link href="/new">Create an agent</Link>} />
-        </EmptyContent>
-      </Empty>
+      <DashboardEmpty
+        description="Create your first agent to start training it on your data."
+        icon={<BotIcon />}
+        title="No agents yet"
+      >
+        <Button nativeButton={false} render={<Link href="/new">Create an agent</Link>} />
+      </DashboardEmpty>
     );
   }
 
-  const { count: sourceCount } = await supabase
-    .from("sources")
-    .select("id", { count: "exact", head: true });
-
-  const { count: conversationCount } = await supabase
-    .from("conversations")
-    .select("id", { count: "exact", head: true });
+  const [{ count: sourceCount }, { count: conversationCount }] = await Promise.all([
+    supabase.from("sources").select("id", { count: "exact", head: true }),
+    supabase.from("conversations").select("id", { count: "exact", head: true }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">

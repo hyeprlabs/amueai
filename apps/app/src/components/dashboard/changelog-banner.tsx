@@ -13,7 +13,7 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function LatestChange({ change }: { change?: Change }) {
+export function ChangelogBanner({ change }: { change?: Change }) {
   const [isOpen, setIsOpen] = useState(true);
 
   // Runs client-side only (localStorage isn't available during the server
@@ -37,7 +37,7 @@ export function LatestChange({ change }: { change?: Change }) {
   return (
     <div
       className={cn(
-        "group/latest-change min-w-(--sidebar-width) size-full min-h-27 justify-center border-t",
+        "group/changelog-banner min-w-(--sidebar-width) size-full min-h-27 justify-center border-t",
         "relative flex size-full flex-col gap-1 overflow-hidden px-4 pt-3 pb-1",
         !isOpen && "pointer-events-none opacity-0",
         "will-change-[opacity] transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0",

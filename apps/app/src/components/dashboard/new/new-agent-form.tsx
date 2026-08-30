@@ -30,7 +30,7 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { captureAgentBrand, createAgent } from "../(dashboard)/agents/actions";
+import { captureAgentBrand, createAgent } from "@/app/(app)/(dashboard)/agents/actions";
 
 const TOTAL_STEPS = 3;
 

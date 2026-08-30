@@ -34,7 +34,7 @@ const { createAgent, updateAgent, deleteAgent } = await import("./actions");
  * update/eq, delete/eq) - enough to exercise the real auth/validation/
  * model-allowlist control flow without a live Supabase project.
  */
-function makeFakeSupabase(initialAgents: Record<string, unknown>[]) {
+function makeFakeSupabase(initialAgents: Record<string, unknown>[], activeOrgId?: string) {
   const agents = [...initialAgents];
   // Keyed by op so a forced failure targets, e.g., only the final update
   // and not the select that runs before it in the same function - updateAgent
@@ -51,6 +51,13 @@ function makeFakeSupabase(initialAgents: Record<string, unknown>[]) {
     } = { filters: [] };
 
     function matches(row: Record<string, unknown>) {
+      // Every real query against "agents" is implicitly scoped to the
+      // caller's active org by RLS, regardless of which .eq() filters the
+      // action code itself adds - simulate that here so a row seeded under
+      // a different org behaves like RLS excluded it (no error, no match).
+      if (activeOrgId !== undefined && row.org_id !== undefined && row.org_id !== activeOrgId) {
+        return false;
+      }
       return state.filters.every(([col, val]) => row[col] === val);
     }
 
@@ -70,14 +77,15 @@ function makeFakeSupabase(initialAgents: Record<string, unknown>[]) {
       if (state.op === "update") {
         const matched = agents.filter(matches);
         for (const row of matched) Object.assign(row, state.updatePayload);
-        return { data: null, error: null };
+        return { data: matched, error: null };
       }
 
       if (state.op === "delete") {
+        const matched = agents.filter(matches);
         const remaining = agents.filter((row) => !matches(row));
         agents.length = 0;
         agents.push(...remaining);
-        return { data: null, error: null };
+        return { data: matched, error: null };
       }
 
       // select
@@ -115,6 +123,14 @@ function makeFakeSupabase(initialAgents: Record<string, unknown>[]) {
             ? { data: row, error: null }
             : { data: null, error: error ?? { message: "not found" } },
         );
+      },
+      // Like single(), but a no-match is a plain `{ data: null }` rather than
+      // an error - the real Postgrest behavior updateAgent/deleteAgent rely
+      // on to tell "RLS excluded every row" apart from a real db error.
+      maybeSingle() {
+        const { data, error } = execute();
+        const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
+        return Promise.resolve({ data: row ?? null, error });
       },
       // oxlint-disable-next-line no-thenable
       then(onFulfilled: (result: { data: unknown; error: unknown }) => unknown) {
@@ -303,6 +319,31 @@ describe("updateAgent", () => {
       system_prompt: "Be terse.",
     });
   });
+
+  it("rejects instead of silently no-op'ing when RLS excludes every row (e.g. the org was switched mid-session)", async () => {
+    authMock.mockResolvedValue({ orgId: "org-2" });
+    // Seeded under a different org than the caller's active one and the fake
+    // client is scoped to "org-2", so RLS excludes this row entirely - the
+    // update matches nothing and Postgrest itself still reports
+    // { error: null }, same as the real thing.
+    fakeSupabase = makeFakeSupabase(
+      [
+        {
+          id: "agent-1",
+          org_id: "org-1",
+          name: "Acme Support",
+          system_prompt: "Be helpful.",
+          model: "openai/gpt-4o-mini",
+          temperature: 0.3,
+        },
+      ],
+      "org-2",
+    );
+
+    await expect(updateAgent("agent-1", { name: "Renamed" })).rejects.toThrow("Agent not found");
+    // Never report success for a write that touched nothing.
+    expect((fakeSupabase.agents[0] as { name: string }).name).toBe("Acme Support");
+  });
 });
 
 describe("deleteAgent", () => {
@@ -341,6 +382,20 @@ describe("deleteAgent", () => {
 
     await expect(deleteAgent("agent-1")).rejects.toThrow("Failed to delete agent");
     // Never revalidate on a failed delete - there's nothing to refresh.
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects instead of silently no-op'ing when RLS excludes every row (e.g. the org was switched mid-session)", async () => {
+    authMock.mockResolvedValue({ orgId: "org-2" });
+    fakeSupabase = makeFakeSupabase(
+      [{ id: "agent-1", org_id: "org-1", name: "Acme Support" }],
+      "org-2",
+    );
+
+    await expect(deleteAgent("agent-1")).rejects.toThrow("Agent not found");
+    // The row belongs to another org - it must survive untouched, and
+    // nothing should be revalidated for a delete that didn't happen.
+    expect(fakeSupabase.agents).toHaveLength(1);
     expect(revalidatePathMock).not.toHaveBeenCalled();
   });
 });
