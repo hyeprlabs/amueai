@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { BotIcon, ChevronsUpDownIcon } from "lucide-react";
 
@@ -14,6 +14,7 @@ import {
   SelectLabel,
 } from "@/components/ui/select";
 import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
+import { getAgentSubPath } from "@/components/dashboard/app-shared";
 
 export type AgentSwitcherAgent = { id: string; name: string };
 
@@ -45,6 +46,7 @@ export function AgentSwitcher({
   currentAgentId: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const currentAgent = agents.find((agent) => agent.id === currentAgentId);
   const items = Object.fromEntries(agents.map((agent) => [agent.id, agent.name]));
 
@@ -53,7 +55,9 @@ export function AgentSwitcher({
       <SidebarMenuItem>
         <Select
           value={currentAgentId}
-          onValueChange={(next: unknown) => router.push(`/agents/${next}/overview`)}
+          onValueChange={(next: unknown) =>
+            router.push(`/agents/${next}${getAgentSubPath(pathname, currentAgentId)}`)
+          }
           items={items}
         >
           <SelectPrimitive.Trigger

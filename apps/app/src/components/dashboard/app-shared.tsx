@@ -80,6 +80,33 @@ export function getAgentNavGroups(agentId: string): SidebarNavGroup[] {
   ];
 }
 
+/**
+ * The tab (of another agent's) equivalent to where `pathname` currently is,
+ * as a path suffix like "/build/sources" - so the agent switcher can land
+ * the newly picked agent on the same tab instead of always resetting to
+ * Overview. Matched against the known static tabs (playground, build [+
+ * sources/embed], analytics, channels, settings, overview) rather than
+ * just slicing the pathname, because a page like `/agents/<id>/analytics/
+ * <conversationId>` carries an opaque id scoped to the OLD agent - keeping
+ * it verbatim would point the new agent at a conversation it never had.
+ * Falls back to "/overview" when the current path isn't a recognized tab.
+ */
+export function getAgentSubPath(pathname: string, agentId: string): string {
+  const base = `/agents/${agentId}`;
+  const tabs = getAgentNavGroups(agentId).flatMap((group) =>
+    group.items.flatMap((item) => [item, ...(item.subItems ?? [])]),
+  );
+  const knownPaths = [`${base}/overview`, ...tabs.map((item) => item.path)].filter(
+    (path): path is string => Boolean(path),
+  );
+
+  const match = knownPaths
+    .filter((path) => pathname === path || pathname.startsWith(`${path}/`))
+    .sort((a, b) => b.length - a.length)[0];
+
+  return match ? match.slice(base.length) : "/overview";
+}
+
 export const footerNavLinks: SidebarNavItem[] = [
   {
     title: "Help Center",

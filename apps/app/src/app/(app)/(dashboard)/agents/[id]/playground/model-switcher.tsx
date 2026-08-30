@@ -11,25 +11,10 @@ import {
   PromptInputSelectValue,
 } from "@/components/ai-elements/prompt-input";
 import { ProviderIcon } from "@/components/icons/provider-icons";
-import { SelectGroup, SelectLabel } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { AUTO_MODEL_ID } from "@/lib/model-picker";
 import type { GatewayChatModel } from "@/lib/gateway-models";
 import { updateAgent } from "../../actions";
-
-/** Groups a flat, provider-sorted model list into one group per provider. */
-function groupByProvider(models: GatewayChatModel[]) {
-  const groups: { provider: string; models: GatewayChatModel[] }[] = [];
-  for (const model of models) {
-    const group = groups.at(-1);
-    if (group?.provider === model.provider) {
-      group.models.push(model);
-    } else {
-      groups.push({ provider: model.provider, models: [model] });
-    }
-  }
-  return groups;
-}
 
 /**
  * The model this agent answers with, switched live from right inside the
@@ -52,7 +37,6 @@ export function ModelSwitcher({
   defaultModel: string;
 }) {
   const [model, setModel] = useState(defaultModel);
-  const groups = groupByProvider(models);
   const items = {
     [AUTO_MODEL_ID]: "Auto",
     ...Object.fromEntries(models.map((m) => [m.id, m.name])),
@@ -99,24 +83,15 @@ export function ModelSwitcher({
         </PromptInputSelectValue>
       </PromptInputSelectTrigger>
       <PromptInputSelectContent>
-        <SelectGroup>
-          <PromptInputSelectItem value={AUTO_MODEL_ID}>
-            <SparklesIcon className="size-3.5 shrink-0 text-pink-500" />
-            Auto
+        <PromptInputSelectItem value={AUTO_MODEL_ID}>
+          <SparklesIcon className="size-3.5 shrink-0 text-pink-500" />
+          Auto
+        </PromptInputSelectItem>
+        {models.map((m) => (
+          <PromptInputSelectItem key={m.id} value={m.id}>
+            <ProviderIcon provider={m.provider} className="size-3.5 shrink-0" />
+            {m.name}
           </PromptInputSelectItem>
-        </SelectGroup>
-        {groups.map((group) => (
-          <SelectGroup key={group.provider}>
-            <SelectLabel className="flex items-center gap-1.5 capitalize">
-              <ProviderIcon provider={group.provider} className="size-3.5 shrink-0" />
-              {group.provider}
-            </SelectLabel>
-            {group.models.map((m) => (
-              <PromptInputSelectItem key={m.id} value={m.id}>
-                {m.name}
-              </PromptInputSelectItem>
-            ))}
-          </SelectGroup>
         ))}
       </PromptInputSelectContent>
     </PromptInputSelect>
