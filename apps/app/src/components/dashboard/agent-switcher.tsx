@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { IconTile } from "@/components/ui/icon-tile";
 import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
 import { getAgentSubPath } from "@/components/dashboard/app-shared";
 
@@ -55,12 +56,12 @@ export function AgentSwitcher({
           <DropdownMenuTrigger
             className={cn(
               sidebarMenuButtonVariants({ size: "lg", variant: "outline" }),
-              "w-full data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground",
+              "w-full bg-transparent data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground",
             )}
           >
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              <BotIcon className="size-4" />
-            </div>
+            <IconTile size="sm" variant="frame">
+              <BotIcon />
+            </IconTile>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{activeAgent?.name ?? "Agent"}</span>
               <span className="truncate text-xs">Switch agent</span>
@@ -85,18 +86,18 @@ export function AgentSwitcher({
                     router.push(`/agents/${agent.id}${getAgentSubPath(pathname, currentAgentId)}`)
                   }
                 >
-                  <div className="flex size-6 items-center justify-center rounded-md border">
-                    <BotIcon className="size-3.5 shrink-0" />
-                  </div>
+                  <IconTile size="xs" variant="outline">
+                    <BotIcon />
+                  </IconTile>
                   {agent.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 p-2" onClick={() => router.push("/new")}>
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <PlusIcon className="size-4" />
-              </div>
+              <IconTile size="xs" variant="outline">
+                <PlusIcon />
+              </IconTile>
               <div className="font-medium text-muted-foreground">Add Agent</div>
             </DropdownMenuItem>
           </DropdownMenuContent>
