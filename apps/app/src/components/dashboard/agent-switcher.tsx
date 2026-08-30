@@ -1,25 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { BotIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { IconTile } from "@/components/ui/icon-tile";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-} from "@/components/ui/select";
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  sidebarMenuButtonVariants,
-} from "@/components/ui/sidebar";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SidebarMenu, SidebarMenuItem, sidebarMenuButtonVariants } from "@/components/ui/sidebar";
 import { getAgentSubPath } from "@/components/dashboard/app-shared";
 
 export type AgentSwitcherAgent = { id: string; name: string };
@@ -27,22 +20,21 @@ export type AgentSwitcherAgent = { id: string; name: string };
 /**
  * The sidebar's agent-face header - swaps which agent the rest of the
  * sidebar's Playground/Build/Analytics/Channels/Settings nav points at.
+ * Same shape as shadcn's classic TeamSwitcher block, scoped to agents.
  *
- * Built on Select rather than DropdownMenu: an earlier DropdownMenu +
- * DropdownMenuItem-rendered-as-<Link> version was unreliable (Base UI's
- * Menu item/link composition, portal timing, take your pick). Select is
- * the same primitive family already proven in this app for "pick one,
- * something happens" (the model switcher, the theme switcher) - a plain
- * value change here, handled with a `router.push`, sidesteps that
- * fragility entirely instead of debugging it further.
+ * Two things are done deliberately differently from a copy-paste of that
+ * block, both learned the hard way from an earlier version of this exact
+ * component that crashed in production:
  *
- * The trigger uses the bare `SelectPrimitive.Trigger`, not this file's
- * pre-styled `SelectTrigger` export - that one bakes in its own chrome
- * (border-input, rounded-lg, a fixed h-8/h-7 via a `data-size` variant, a
- * built-in chevron-down) which fights the sidebar button's own "lg" sizing
- * classes instead of yielding to them, visibly shrinking the switcher.
- * Styling the unstyled trigger with exactly the classes the old
- * DropdownMenu-based version used reproduces that look precisely.
+ * 1. The trigger is `DropdownMenuTrigger` styled directly with the sidebar
+ *    button's own variant classes, not `DropdownMenuTrigger asChild`
+ *    wrapping a `<SidebarMenuButton>`. Nesting one polymorphic `render`-
+ *    based component inside another's render target (here, Menu.Trigger's)
+ *    doubles up ref/prop merging and broke the trigger outright - applying
+ *    the same classes to a plain element gets an identical look for free.
+ * 2. Every item navigates via a plain `onClick` (router.push), not a
+ *    `<Link>` rendered through the item - Base UI's Menu item/link
+ *    composition was the other half of that same crash.
  */
 export function AgentSwitcher({
   agents,
@@ -53,52 +45,57 @@ export function AgentSwitcher({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const currentAgent = agents.find((agent) => agent.id === currentAgentId);
-  const items = Object.fromEntries(agents.map((agent) => [agent.id, agent.name]));
+  const activeAgent = agents.find((agent) => agent.id === currentAgentId);
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <Select
-          value={currentAgentId}
-          onValueChange={(next: unknown) =>
-            router.push(`/agents/${next}${getAgentSubPath(pathname, currentAgentId)}`)
-          }
-          items={items}
-        >
-          <SelectPrimitive.Trigger
+        <DropdownMenu>
+          <DropdownMenuTrigger
             className={cn(
               sidebarMenuButtonVariants({ size: "lg" }),
-              "w-full border border-sidebar-border",
+              "w-full data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground",
             )}
           >
-            <IconTile variant="soft" size="sm">
-              <BotIcon />
-            </IconTile>
-            <div className="flex min-w-0 flex-1 flex-col text-left leading-tight">
-              <span className="truncate font-medium">{currentAgent?.name ?? "Agent"}</span>
-              <span className="text-xs text-muted-foreground">Switch agent</span>
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              <BotIcon className="size-4" />
             </div>
-            <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" />
-          </SelectPrimitive.Trigger>
-          <SelectContent align="start" className="w-64">
-            <SelectGroup>
-              <SelectLabel>Agents</SelectLabel>
-              {agents.map((agent) => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  <BotIcon className="text-muted-foreground" />
-                  <span className="truncate">{agent.name}</span>
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <SidebarMenuButton render={<Link href="/new" />} size="sm">
-          <PlusIcon />
-          <span>Add Agent</span>
-        </SidebarMenuButton>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{activeAgent?.name ?? "Agent"}</span>
+              <span className="truncate text-xs">Switch agent</span>
+            </div>
+            <ChevronsUpDownIcon className="ml-auto" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-(--anchor-width) min-w-56 rounded-lg"
+            side="bottom"
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="text-xs text-muted-foreground">Agents</DropdownMenuLabel>
+            {agents.map((agent) => (
+              <DropdownMenuItem
+                className="gap-2 p-2"
+                key={agent.id}
+                onClick={() =>
+                  router.push(`/agents/${agent.id}${getAgentSubPath(pathname, currentAgentId)}`)
+                }
+              >
+                <div className="flex size-6 items-center justify-center rounded-md border">
+                  <BotIcon className="size-3.5 shrink-0" />
+                </div>
+                {agent.name}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="gap-2 p-2" onClick={() => router.push("/new")}>
+              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                <PlusIcon className="size-4" />
+              </div>
+              <div className="font-medium text-muted-foreground">Add Agent</div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
   );

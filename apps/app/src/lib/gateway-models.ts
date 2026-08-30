@@ -49,9 +49,9 @@ const MAX_MODELS_OFFERED = 5;
  * is approximated with a curated, ranked list of the cheap-tier model
  * families people actually reach for elsewhere: gpt-4o-mini-class, Claude
  * Haiku, Gemini Flash, DeepSeek, then Llama/Mistral. Matched by id prefix
- * (provider ids and naming are stable across the catalog, same approach as
- * provider-icons.tsx's brand matching) rather than an exact id, since exact
- * model slugs get superseded over time (e.g. gpt-4o-mini -> gpt-4.1-mini).
+ * (provider ids and naming are stable across the catalog) rather than an
+ * exact id, since exact model slugs get superseded over time (e.g.
+ * gpt-4o-mini -> gpt-4.1-mini).
  */
 const POPULAR_CHEAP_MODEL_PATTERNS: RegExp[] = [
   /^openai\/gpt-4[o.]/i,
