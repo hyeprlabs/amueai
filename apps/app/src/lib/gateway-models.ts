@@ -39,6 +39,61 @@ function isAffordable(pricing: { input: string; output: string } | null | undefi
   );
 }
 
+const MAX_MODELS_OFFERED = 5;
+
+/**
+ * The Gateway's metadata has no usage/popularity field to rank by (there's
+ * no usage billing in this MVP to derive one from either), so "most used"
+ * is approximated with a curated, ranked list of the cheap-tier model
+ * families people actually reach for elsewhere: gpt-4o-mini-class, Claude
+ * Haiku, Gemini Flash, DeepSeek, then Llama/Mistral. Matched by id prefix
+ * (provider ids and naming are stable across the catalog, same approach as
+ * provider-icons.tsx's brand matching) rather than an exact id, since exact
+ * model slugs get superseded over time (e.g. gpt-4o-mini -> gpt-4.1-mini).
+ */
+const POPULAR_CHEAP_MODEL_PATTERNS: RegExp[] = [
+  /^openai\/gpt-4[o.]/i,
+  /^anthropic\/claude-.*haiku/i,
+  /^google\/gemini-.*flash/i,
+  /^deepseek\//i,
+  /^(meta|mistral)\//i,
+];
+
+/**
+ * Picks the top `MAX_MODELS_OFFERED` from an already-affordable, already-
+ * sorted model list: one best match per popularity pattern in rank order,
+ * then whichever cheapest remaining models are needed to fill out the rest
+ * so the picker always offers a full set even if the catalog doesn't have
+ * a hit for every pattern.
+ */
+function pickTopModels(
+  models: GatewayChatModel[],
+  pricingById: Map<string, { input: string; output: string }>,
+): GatewayChatModel[] {
+  const remaining = new Set(models);
+  const picked: GatewayChatModel[] = [];
+
+  for (const pattern of POPULAR_CHEAP_MODEL_PATTERNS) {
+    if (picked.length >= MAX_MODELS_OFFERED) break;
+    const match = models.find((model) => remaining.has(model) && pattern.test(model.id));
+    if (match) {
+      picked.push(match);
+      remaining.delete(match);
+    }
+  }
+
+  if (picked.length < MAX_MODELS_OFFERED) {
+    const byPrice = (model: GatewayChatModel) => {
+      const pricing = pricingById.get(model.id);
+      return Number(pricing?.input) + Number(pricing?.output);
+    };
+    const cheapestRemaining = [...remaining].sort((a, b) => byPrice(a) - byPrice(b));
+    picked.push(...cheapestRemaining.slice(0, MAX_MODELS_OFFERED - picked.length));
+  }
+
+  return picked;
+}
+
 /**
  * The cheap-tier chat-capable models currently routable through the AI
  * Gateway, for populating the model picker and validating a submitted
@@ -61,14 +116,31 @@ export async function getGatewayChatModels(): Promise<GatewayChatModel[]> {
     return [];
   }
 
-  const chatModels = models
-    .filter((model) => model.modelType === "language" && isAffordable(model.pricing))
-    .map((model) => ({
-      id: model.id,
-      name: model.name,
-      provider: model.specification.provider,
-    }))
-    .sort((a, b) => a.provider.localeCompare(b.provider) || a.name.localeCompare(b.name));
+  const affordable = models.filter(
+    (model) => model.modelType === "language" && isAffordable(model.pricing),
+  );
+  const pricingById = new Map(
+    affordable.map((model) => [model.id, model.pricing as { input: string; output: string }]),
+  );
+
+  const byProviderThenName = (a: GatewayChatModel, b: GatewayChatModel) =>
+    a.provider.localeCompare(b.provider) || a.name.localeCompare(b.name);
+
+  const chatModels = pickTopModels(
+    affordable
+      .map((model) => ({
+        id: model.id,
+        name: model.name,
+        provider: model.specification.provider,
+      }))
+      .sort(byProviderThenName),
+    pricingById,
+    // Selection follows popularity rank, but the model switcher groups
+    // consecutive same-provider entries into one header (groupByProvider in
+    // model-switcher.tsx) - re-sort the final picks back to provider/name
+    // order so that grouping stays correct instead of splitting a provider
+    // into two headers.
+  ).sort(byProviderThenName);
 
   cache = { models: chatModels, expiresAt: Date.now() + CACHE_TTL_MS };
   return chatModels;

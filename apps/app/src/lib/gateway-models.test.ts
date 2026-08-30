@@ -98,6 +98,91 @@ describe("getGatewayChatModels", () => {
     consoleErrorSpy.mockRestore();
   });
 
+  describe("top 5 - no usage data to rank by, so a curated popular-family list stands in", () => {
+    it("caps the list at 5 even when more affordable models exist", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [
+          languageModel("openai/gpt-4o-mini", "GPT-4o mini", "openai"),
+          languageModel("anthropic/claude-3-5-haiku", "Claude 3.5 Haiku", "anthropic"),
+          languageModel("google/gemini-2.0-flash", "Gemini 2.0 Flash", "google"),
+          languageModel("deepseek/deepseek-chat", "DeepSeek Chat", "deepseek"),
+          languageModel("mistral/mistral-small", "Mistral Small", "mistral"),
+          languageModel("acme/random-model", "Random Model", "acme"),
+          languageModel("acme/another-model", "Another Model", "acme"),
+        ],
+      });
+
+      const { getGatewayChatModels } = await import("./gateway-models");
+      const models = await getGatewayChatModels();
+
+      expect(models).toHaveLength(5);
+    });
+
+    it("prefers one match per popular family over other affordable models once the quota is full", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [
+          languageModel("openai/gpt-4o-mini", "GPT-4o mini", "openai"),
+          languageModel("anthropic/claude-3-5-haiku", "Claude 3.5 Haiku", "anthropic"),
+          languageModel("google/gemini-2.0-flash", "Gemini 2.0 Flash", "google"),
+          languageModel("deepseek/deepseek-chat", "DeepSeek Chat", "deepseek"),
+          languageModel("mistral/mistral-small", "Mistral Small", "mistral"),
+          // Not part of any popular family - only relevant as filler, and
+          // the quota is already full without it.
+          languageModel("acme/random-model", "Random Model", "acme"),
+        ],
+      });
+
+      const { getGatewayChatModels } = await import("./gateway-models");
+      const models = await getGatewayChatModels();
+
+      expect(models.map((m) => m.id)).toEqual([
+        "anthropic/claude-3-5-haiku",
+        "deepseek/deepseek-chat",
+        "google/gemini-2.0-flash",
+        "mistral/mistral-small",
+        "openai/gpt-4o-mini",
+      ]);
+    });
+
+    it("fills remaining slots with the cheapest leftover models when fewer than 5 families match", async () => {
+      getAvailableModelsMock.mockResolvedValue({
+        models: [
+          languageModel("openai/gpt-4o-mini", "GPT-4o mini", "openai"),
+          languageModel("anthropic/claude-3-5-haiku", "Claude 3.5 Haiku", "anthropic"),
+          languageModel("acme/pricier-filler", "Pricier Filler", "acme", {
+            input: "0.0000008",
+            output: "0.000004",
+          }),
+          languageModel("acme/cheaper-filler", "Cheaper Filler", "acme", {
+            input: "0.0000001",
+            output: "0.0000005",
+          }),
+          languageModel("acme/cheapest-filler", "Cheapest Filler", "acme", {
+            input: "0.00000005",
+            output: "0.0000002",
+          }),
+          // Would be the 4th filler, but only 3 slots remain after the 2
+          // family matches - the priciest filler loses out.
+          languageModel("acme/excluded-filler", "Excluded Filler", "acme", {
+            input: "0.0000009",
+            output: "0.0000045",
+          }),
+        ],
+      });
+
+      const { getGatewayChatModels } = await import("./gateway-models");
+      const models = await getGatewayChatModels();
+
+      expect(models.map((m) => m.id)).toEqual([
+        "acme/cheaper-filler",
+        "acme/cheapest-filler",
+        "acme/pricier-filler",
+        "anthropic/claude-3-5-haiku",
+        "openai/gpt-4o-mini",
+      ]);
+    });
+  });
+
   describe("cost cap - only the cheap tier is offered while there's no usage billing", () => {
     it("excludes a flagship model priced above the input cap", async () => {
       getAvailableModelsMock.mockResolvedValue({
