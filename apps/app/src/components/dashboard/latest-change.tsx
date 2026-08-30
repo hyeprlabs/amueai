@@ -1,17 +1,38 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
 import type { Change } from "@/payload-types";
 
+const DISMISSED_UNTIL_KEY = "amueai_latest_change_dismissed_date";
+
+/** Today's date as YYYY-MM-DD - the same shape the sidebar's own open/closed cookie compares against, so "dismissed today" reads the same way across this app. */
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function LatestChange({ change }: { change?: Change }) {
   const [isOpen, setIsOpen] = useState(true);
+
+  // Runs client-side only (localStorage isn't available during the server
+  // render), so this starts open and can flip closed once mounted - a
+  // one-frame flash is an acceptable cost for a low-stakes changelog
+  // banner, rather than plumbing this through cookies/SSR like the
+  // sidebar's own open state.
+  useEffect(() => {
+    if (localStorage.getItem(DISMISSED_UNTIL_KEY) === today()) setIsOpen(false);
+  }, []);
 
   if (!change) return null;
 
   const href = `/changelog#${change.slug}`;
+
+  const dismiss = () => {
+    localStorage.setItem(DISMISSED_UNTIL_KEY, today());
+    setIsOpen(false);
+  };
 
   return (
     <div
@@ -41,7 +62,7 @@ export function LatestChange({ change }: { change?: Change }) {
       <Button
         aria-label="Dismiss"
         className="absolute top-2 right-2 z-10 size-6 rounded-full opacity-0 transition-opacity group-hover/latest-change:opacity-100"
-        onClick={() => setIsOpen(false)}
+        onClick={dismiss}
         size="icon-sm"
         variant="ghost"
       >

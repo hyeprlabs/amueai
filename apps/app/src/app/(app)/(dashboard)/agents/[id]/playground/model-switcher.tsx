@@ -52,13 +52,12 @@ function providerLabel(provider: string): string {
 }
 
 /**
- * The model this agent answers with, switched live from right inside the
- * Playground's chat composer - the AI Elements Model Selector (the same
- * searchable command-palette pattern as its own docs example), wired to
- * this app's real AI Gateway catalog instead of the docs' hardcoded list.
- * Brand marks come straight from models.dev (ModelSelectorLogo's own
- * built-in source) keyed by the Gateway's own provider id - no bespoke
- * icon set to maintain.
+ * The model this agent answers with, set from the Playground's settings
+ * rail - the AI Elements Model Selector (the same searchable command-
+ * palette pattern as its own docs example), wired to this app's real AI
+ * Gateway catalog instead of the docs' hardcoded list. Brand marks come
+ * straight from models.dev (ModelSelectorLogo's own built-in source) keyed
+ * by the Gateway's own provider id - no bespoke icon set to maintain.
  *
  * There's no separate save step: every request to /api/chat/[agentId]
  * reads the agent's model fresh from the database, so persisting the
@@ -100,7 +99,7 @@ export function ModelSwitcher({
   return (
     <ModelSelector onOpenChange={setOpen} open={open}>
       <ModelSelectorTrigger
-        render={<Button className="w-56 justify-between" size="sm" variant="outline" />}
+        render={<Button className="w-full justify-between" size="sm" variant="outline" />}
       >
         {model === AUTO_MODEL_ID ? (
           <SparklesIcon className="size-4 shrink-0 text-pink-500" />

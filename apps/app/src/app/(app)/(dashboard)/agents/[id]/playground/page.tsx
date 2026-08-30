@@ -5,10 +5,10 @@ import { LinkIcon } from "lucide-react";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 import { AUTO_MODEL_ID, getGatewayChatModels } from "@/lib/gateway-models";
-import type { AgentBrand } from "@/lib/branding";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgentInstructionsForm } from "./agent-instructions-form";
 import { ChatPreview } from "./chat-preview";
+import { ModelSwitcher } from "./model-switcher";
 
 export const metadata: Metadata = createMetadata({
   title: "Playground",
@@ -24,13 +24,11 @@ export default async function AgentPlaygroundPage({
 
   const supabase = await createServerSupabaseClient();
   const [{ data: agent }, { count: sourceCount }] = await Promise.all([
-    supabase.from("agents").select("id, name, system_prompt, model, brand").eq("id", id).single(),
+    supabase.from("agents").select("id, name, system_prompt, model").eq("id", id).single(),
     supabase.from("sources").select("id", { count: "exact", head: true }).eq("agent_id", id),
   ]);
 
   if (!agent) notFound();
-
-  const brand = agent.brand as AgentBrand | null;
 
   const gatewayModels = await getGatewayChatModels();
   // The agent's current model might have been deprecated/removed from the
@@ -46,9 +44,7 @@ export default async function AgentPlaygroundPage({
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-lg font-medium">Playground</h1>
-        <p className="text-sm text-muted-foreground">
-          A live preview of what visitors see. Switch models right from the chat.
-        </p>
+        <p className="text-sm text-muted-foreground">A live preview of what visitors see.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
@@ -68,6 +64,15 @@ export default async function AgentPlaygroundPage({
             </CardContent>
           </Card>
 
+          <Card className="gap-3 py-4">
+            <CardHeader className="px-4">
+              <CardTitle className="text-sm">Model</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4">
+              <ModelSwitcher agentId={agent.id} defaultModel={agent.model} models={models} />
+            </CardContent>
+          </Card>
+
           <Card className="flex-1 gap-3 py-4">
             <CardHeader className="px-4">
               <CardTitle className="text-sm">Instructions</CardTitle>
@@ -81,13 +86,7 @@ export default async function AgentPlaygroundPage({
           </Card>
         </div>
 
-        <ChatPreview
-          agentId={id}
-          agentName={agent.name}
-          brand={brand}
-          models={models}
-          defaultModel={agent.model}
-        />
+        <ChatPreview agentId={id} agentName={agent.name} />
       </div>
     </div>
   );

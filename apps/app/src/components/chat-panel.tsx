@@ -2,7 +2,8 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Fragment, type ReactNode } from "react";
+import { ArrowUpIcon } from "lucide-react";
+import { Fragment } from "react";
 
 import {
   Conversation,
@@ -13,34 +14,33 @@ import {
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
-  PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputTools,
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { InputGroupAddon } from "@/components/ui/input-group";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 
 /**
- * The chat UI both the dashboard test-chat panel and the public widget
- * render, wired to the same `/api/chat/[agentId]` endpoint. The caller
- * owns where conversationId/visitorId come from (a fresh id per session
- * for the dashboard, localStorage for the widget).
+ * The chat UI both the Playground's ChatWidget and the public embed render,
+ * wired to the same `/api/chat/[agentId]` endpoint. The caller owns where
+ * conversationId/visitorId come from (a fresh id per session for the
+ * dashboard, localStorage for the widget).
  */
 export function ChatPanel({
   agentId,
   conversationId,
   visitorId,
   emptyState = "Try asking this agent something from its sources.",
-  toolbarStart,
+  showSources = true,
 }: {
   agentId: string;
   conversationId: string;
   visitorId: string;
   emptyState?: string;
-  /** Extra controls (e.g. the dashboard's model switcher) shown left of the submit button. Omitted entirely for the public widget. */
-  toolbarStart?: ReactNode;
+  /** The public widget hides source citations from visitors; the dashboard keeps them visible. */
+  showSources?: boolean;
 }) {
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -69,7 +69,7 @@ export function ChatPanel({
 
             return (
               <Fragment key={message.id}>
-                {message.role === "assistant" && sourceParts.length > 0 && (
+                {showSources && message.role === "assistant" && sourceParts.length > 0 && (
                   <Sources>
                     <SourcesTrigger count={sourceParts.length} />
                     <SourcesContent>
@@ -111,17 +111,16 @@ export function ChatPanel({
         <ConversationScrollButton />
       </Conversation>
 
-      <PromptInput onSubmit={handleSubmit}>
-        <PromptInputTextarea placeholder="Ask a question…" />
-        {toolbarStart ? (
-          <PromptInputFooter>
-            <PromptInputTools>{toolbarStart}</PromptInputTools>
-            <PromptInputSubmit status={status} />
-          </PromptInputFooter>
-        ) : (
-          <PromptInputSubmit status={status} />
-        )}
-      </PromptInput>
+      <div className="px-3 pb-3">
+        <PromptInput className="[&>[data-slot=input-group]]:rounded-full" onSubmit={handleSubmit}>
+          <PromptInputTextarea placeholder="Ask a question…" />
+          <InputGroupAddon align="inline-end">
+            <PromptInputSubmit className="rounded-full" status={status}>
+              <ArrowUpIcon />
+            </PromptInputSubmit>
+          </InputGroupAddon>
+        </PromptInput>
+      </div>
     </div>
   );
 }
