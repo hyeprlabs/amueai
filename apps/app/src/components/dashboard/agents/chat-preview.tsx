@@ -11,7 +11,15 @@ import { ChatWidget } from "@/components/dashboard/agents/chat-widget";
  * on the embed, not just a static mock of the opened state. Starts open so
  * the preview is useful the moment this page loads.
  */
-export function ChatPreview({ agentId, agentName }: { agentId: string; agentName: string }) {
+export function ChatPreview({
+  agentId,
+  agentName,
+  welcomeMessage,
+}: {
+  agentId: string;
+  agentName: string;
+  welcomeMessage: string;
+}) {
   return (
     <div className="relative isolate h-[40rem] overflow-hidden rounded-xl border bg-muted/30">
       <Popover defaultOpen>
@@ -32,7 +40,7 @@ export function ChatPreview({ agentId, agentName }: { agentId: string; agentName
           side="top"
           sideOffset={12}
         >
-          <ChatWidget agentId={agentId} agentName={agentName} />
+          <ChatWidget agentId={agentId} agentName={agentName} welcomeMessage={welcomeMessage} />
         </PopoverContent>
       </Popover>
     </div>

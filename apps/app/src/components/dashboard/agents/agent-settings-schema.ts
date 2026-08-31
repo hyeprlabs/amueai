@@ -12,6 +12,7 @@ export const agentSettingsSchema = z.object({
     .number("Temperature is required")
     .min(0, "Must be at least 0")
     .max(2, "Must be at most 2"),
+  welcome_message: z.string().trim().min(1, "Welcome message is required").max(300),
 });
 
 export type AgentSettingsValues = z.infer<typeof agentSettingsSchema>;
@@ -23,7 +24,11 @@ export type AgentSettingsValues = z.infer<typeof agentSettingsSchema>;
 // switched live from the Playground's chat composer (model-switcher.tsx),
 // which saves a bare { model } straight through updateAgent's partial
 // schema.
-export const agentGeneralSchema = agentSettingsSchema.pick({ name: true, temperature: true });
+export const agentGeneralSchema = agentSettingsSchema.pick({
+  name: true,
+  temperature: true,
+  welcome_message: true,
+});
 export type AgentGeneralValues = z.infer<typeof agentGeneralSchema>;
 
 export const agentInstructionsSchema = agentSettingsSchema.pick({ system_prompt: true });

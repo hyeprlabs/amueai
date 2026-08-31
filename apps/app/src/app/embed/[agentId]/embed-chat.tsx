@@ -30,7 +30,13 @@ function useWidgetSession(agentId: string) {
   return ids;
 }
 
-export function EmbedChat({ agentId }: { agentId: string }) {
+export function EmbedChat({
+  agentId,
+  welcomeMessage,
+}: {
+  agentId: string;
+  welcomeMessage: string;
+}) {
   const session = useWidgetSession(agentId);
 
   if (!session) return null;
@@ -40,7 +46,7 @@ export function EmbedChat({ agentId }: { agentId: string }) {
       agentId={agentId}
       conversationId={session.conversationId}
       visitorId={session.visitorId}
-      emptyState="Ask me anything!"
+      welcomeMessage={welcomeMessage}
     />
   );
 }

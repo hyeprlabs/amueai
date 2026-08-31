@@ -7,6 +7,7 @@ const validValues = {
   system_prompt: "You are a helpful assistant. Only answer from the provided context.",
   model: "openai/gpt-4o-mini",
   temperature: 0.3,
+  welcome_message: "Hi! What can I help you with?",
 };
 
 describe("agentSettingsSchema", () => {
@@ -86,5 +87,31 @@ describe("agentSettingsSchema", () => {
   it("rejects a payload missing required fields", () => {
     expect(agentSettingsSchema.safeParse({}).success).toBe(false);
     expect(agentSettingsSchema.safeParse({ name: "Acme" }).success).toBe(false);
+  });
+
+  it("trims whitespace from welcome_message", () => {
+    const result = agentSettingsSchema.parse({
+      ...validValues,
+      welcome_message: "  Hi! What can I help you with?  ",
+    });
+    expect(result.welcome_message).toBe("Hi! What can I help you with?");
+  });
+
+  it("rejects an empty or whitespace-only welcome_message", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "" }).success,
+    ).toBe(false);
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "   " }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a welcome_message over 300 characters", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "a".repeat(301) }).success,
+    ).toBe(false);
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "a".repeat(300) }).success,
+    ).toBe(true);
   });
 });

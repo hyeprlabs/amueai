@@ -1,14 +1,21 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { ArrowUpIcon } from "lucide-react";
-import { Component, Fragment, useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  Component,
+  Fragment,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
@@ -61,13 +68,14 @@ export function ChatPanel({
   agentId,
   conversationId,
   visitorId,
-  emptyState = "Try asking this agent something from its sources.",
+  welcomeMessage,
   showSources = true,
 }: {
   agentId: string;
   conversationId: string;
   visitorId: string;
-  emptyState?: string;
+  /** Shown as the first assistant bubble, before the visitor has said anything. */
+  welcomeMessage: string;
   /** The public widget hides source citations from visitors; the dashboard keeps them visible. */
   showSources?: boolean;
 }) {
@@ -86,7 +94,18 @@ export function ChatPanel({
   };
   const errorTimestamp = useRef<number | null>(null);
 
+  // useChat only reads `messages` once, to seed initial state (verified
+  // against @ai-sdk/react's source - it builds the underlying Chat instance
+  // in a lazy ref and never re-reads options.messages after that), so a
+  // fresh array literal here on every render is safe and never resets an
+  // in-progress conversation back to just the greeting.
+  const initialMessages = useMemo<UIMessage[]>(
+    () => [{ id: "welcome", role: "assistant", parts: [{ type: "text", text: welcomeMessage }] }],
+    [welcomeMessage],
+  );
+
   const { messages, sendMessage, status, error } = useChat({
+    messages: initialMessages,
     transport: new DefaultChatTransport({
       api: `/api/chat/${agentId}`,
       prepareSendMessagesRequest: ({ messages }) => {
@@ -116,7 +135,6 @@ export function ChatPanel({
     <div className="flex h-full min-h-0 flex-col">
       <Conversation className="min-h-0">
         <ConversationContent className="gap-3 p-3">
-          {messages.length === 0 && <ConversationEmptyState description={emptyState} />}
           {messages.map((message) => {
             const sourceParts = message.parts.filter((part) => part.type === "source-url");
             const rawText = message.parts
@@ -141,7 +159,7 @@ export function ChatPanel({
                   </Sources>
                 )}
                 <Message className="gap-0.5" from={message.role}>
-                  <MessageContent className="px-3 py-2 text-xs leading-relaxed">
+                  <MessageContent className="text-xs leading-relaxed">
                     <MessageErrorBoundary fallback={<p className="whitespace-pre-wrap">{rawText}</p>}>
                       {message.parts.map((part, i) =>
                         part.type === "text" ? (
@@ -164,14 +182,14 @@ export function ChatPanel({
           })}
           {status === "submitted" && (
             <Message from="assistant">
-              <MessageContent className="px-3 py-2 text-xs">
+              <MessageContent className="text-xs">
                 <Shimmer>Thinking…</Shimmer>
               </MessageContent>
             </Message>
           )}
           {error && (
             <Message className="gap-0.5" from="assistant">
-              <MessageContent className="px-3 py-2 text-xs leading-relaxed">
+              <MessageContent className="text-xs leading-relaxed">
                 <p className="whitespace-pre-wrap">{error.message || "Something went wrong."}</p>
               </MessageContent>
               <span className="px-1 text-left text-[10px] text-muted-foreground">

@@ -20,7 +20,15 @@ function newSession(prefix: string) {
  * opened panel. Source citations are hidden - visitors don't need
  * footnotes, only the answer.
  */
-export function ChatWidget({ agentId, agentName }: { agentId: string; agentName: string }) {
+export function ChatWidget({
+  agentId,
+  agentName,
+  welcomeMessage,
+}: {
+  agentId: string;
+  agentName: string;
+  welcomeMessage: string;
+}) {
   const [session, setSession] = useState(() => newSession("widget"));
 
   return (
@@ -44,6 +52,7 @@ export function ChatWidget({ agentId, agentName }: { agentId: string; agentName:
           key={session.conversationId}
           showSources={false}
           visitorId={session.visitorId}
+          welcomeMessage={welcomeMessage}
         />
       </div>
     </div>

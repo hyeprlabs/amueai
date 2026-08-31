@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { updateAgent } from "@/app/(app)/(dashboard)/agents/actions";
@@ -66,6 +67,22 @@ export function AgentSettingsForm({
           <FieldLabel htmlFor="name">Name</FieldLabel>
           <Input id="name" maxLength={200} {...register("name")} />
           <FieldError errors={[errors.name]} />
+        </Field>
+
+        <FieldSeparator />
+
+        <Field data-invalid={!!errors.welcome_message}>
+          <FieldLabel htmlFor="welcome_message">Welcome message</FieldLabel>
+          <Textarea
+            id="welcome_message"
+            maxLength={300}
+            rows={2}
+            {...register("welcome_message")}
+          />
+          <FieldDescription>
+            The first thing visitors see, before they've asked anything.
+          </FieldDescription>
+          <FieldError errors={[errors.welcome_message]} />
         </Field>
 
         <FieldSeparator />

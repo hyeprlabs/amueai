@@ -20,7 +20,7 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
   const supabase = await createServerSupabaseClient();
   const { data } = await supabase
     .from("agents")
-    .select("id, name, temperature")
+    .select("id, name, temperature, welcome_message")
     .eq("id", id)
     .single();
 
@@ -31,7 +31,7 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
       <div>
         <h1 className="text-lg font-medium">Settings</h1>
         <p className="text-sm text-muted-foreground">
-          Name and temperature. Model and instructions live in the Playground.
+          Name, welcome message, and temperature. Model and instructions live in the Playground.
         </p>
       </div>
 
@@ -42,6 +42,7 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
             defaultValues={{
               name: agent.name,
               temperature: agent.temperature,
+              welcome_message: agent.welcome_message,
             }}
           />
         </CardContent>

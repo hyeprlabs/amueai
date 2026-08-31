@@ -24,7 +24,11 @@ export default async function AgentPlaygroundPage({
 
   const supabase = await createServerSupabaseClient();
   const [{ data }, { count: sourceCount }] = await Promise.all([
-    supabase.from("agents").select("id, name, system_prompt, model").eq("id", id).single(),
+    supabase
+      .from("agents")
+      .select("id, name, system_prompt, model, welcome_message")
+      .eq("id", id)
+      .single(),
     supabase.from("sources").select("id", { count: "exact", head: true }).eq("agent_id", id),
   ]);
 
@@ -86,7 +90,7 @@ export default async function AgentPlaygroundPage({
           </Card>
         </div>
 
-        <ChatPreview agentId={id} agentName={agent.name} />
+        <ChatPreview agentId={id} agentName={agent.name} welcomeMessage={agent.welcome_message} />
       </div>
     </div>
   );

@@ -85,8 +85,9 @@ const updateAgentSchema = agentSettingsSchema.partial();
 /**
  * Called directly (not via a <form action>) from two separate client RHF
  * forms that each save a slice of the same agent row - the General
- * settings form (name + temperature) and the Playground's personality
- * panel (model + instructions) - which already validated `input` against
+ * settings form (name + welcome message + temperature) and the
+ * Playground's personality panel (model + instructions) - which already
+ * validated `input` against
  * the matching picked schema. Accepting a partial payload here (rather
  * than requiring every field) is what lets those two forms stay
  * independent; re-validating at all isn't for a better client error, it's
