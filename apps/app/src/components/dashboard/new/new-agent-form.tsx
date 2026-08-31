@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { CheckIcon, FileStackIcon, GlobeIcon } from "lucide-react";
 import { Controller, useForm, type SubmitErrorHandler } from "react-hook-form";
 import { z } from "zod";
 
+import { useSupabaseClient } from "@/hooks/use-supabase-client";
 import { cn } from "@/lib/utils";
 import { CHANNELS } from "@/lib/channels";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +22,7 @@ import {
   FieldLabel,
   FieldTitle,
 } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
@@ -34,10 +37,15 @@ import { captureAgentBrand, createAgent } from "@/app/(app)/(dashboard)/agents/a
 
 const TOTAL_STEPS = 3;
 
+const ALLOWED_FILE_EXTENSIONS =
+  ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.rtf,.epub,.odt,.ods,.odp";
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+
 const onboardingSchema = z
   .object({
-    sourceType: z.enum(["website", "other"]),
+    sourceType: z.enum(["website", "file"]),
     websiteUrl: z.string().trim().max(2048),
+    file: z.custom<File | null>((value) => value === null || value instanceof File),
     systemPrompt: z
       .string()
       .trim()
@@ -45,26 +53,39 @@ const onboardingSchema = z
       .max(2000, "Keep it under 2000 characters"),
   })
   .superRefine((data, ctx) => {
-    if (data.sourceType !== "website") return;
-
-    const domain = stripProtocol(data.websiteUrl);
-    if (!domain) {
-      ctx.addIssue({ code: "custom", path: ["websiteUrl"], message: "Enter your website URL" });
+    if (data.sourceType === "website") {
+      const domain = stripProtocol(data.websiteUrl);
+      if (!domain) {
+        ctx.addIssue({ code: "custom", path: ["websiteUrl"], message: "Enter your website URL" });
+        return;
+      }
+      if (
+        !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(\/.*)?$/i.test(
+          domain,
+        )
+      ) {
+        ctx.addIssue({ code: "custom", path: ["websiteUrl"], message: "Enter a valid domain" });
+      }
       return;
     }
-    if (
-      !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(\/.*)?$/i.test(
-        domain,
-      )
-    ) {
-      ctx.addIssue({ code: "custom", path: ["websiteUrl"], message: "Enter a valid domain" });
+
+    if (data.sourceType === "file") {
+      if (!data.file) {
+        ctx.addIssue({ code: "custom", path: ["file"], message: "Choose a file" });
+      } else if (data.file.size > MAX_FILE_SIZE_BYTES) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["file"],
+          message: "File must be 20MB or smaller",
+        });
+      }
     }
   });
 
 type OnboardingValues = z.infer<typeof onboardingSchema>;
 
 const STEP_FIELDS: Record<number, (keyof OnboardingValues)[]> = {
-  1: ["sourceType", "websiteUrl"],
+  1: ["sourceType", "websiteUrl", "file"],
   2: ["systemPrompt"],
   3: [],
 };
@@ -77,6 +98,9 @@ function deriveAgentName(values: OnboardingValues) {
   if (values.sourceType === "website" && values.websiteUrl) {
     const domain = stripProtocol(values.websiteUrl).split("/")[0];
     if (domain) return domain.replace(/^www\./, "");
+  }
+  if (values.sourceType === "file" && values.file) {
+    return values.file.name.replace(/\.[^./]+$/, "");
   }
   return "New agent";
 }
@@ -98,9 +122,12 @@ const STEP_COPY: Record<number, { title: string; description: string }> = {
 
 export function NewAgentForm() {
   const router = useRouter();
+  const { orgId } = useAuth();
+  const supabase = useSupabaseClient();
   const [rawStep, setRawStep] = useQueryState("step", parseAsInteger.withDefault(1));
   const step = Math.min(Math.max(rawStep, 1), TOTAL_STEPS);
   const [selectedChannels, setSelectedChannels] = useState<string[]>(["website"]);
+  const fileInputId = useId();
 
   const {
     control,
@@ -111,7 +138,7 @@ export function NewAgentForm() {
     formState: { errors, isSubmitting },
   } = useForm<OnboardingValues>({
     resolver: zodResolver(onboardingSchema),
-    defaultValues: { sourceType: "website", websiteUrl: "", systemPrompt: "" },
+    defaultValues: { sourceType: "website", websiteUrl: "", file: null, systemPrompt: "" },
   });
 
   const goToStep = (next: number) => setRawStep(Math.min(Math.max(next, 1), TOTAL_STEPS));
@@ -144,10 +171,26 @@ export function NewAgentForm() {
           fetch(`/api/agents/${agent.id}/sources`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ label: url, url }),
+            body: JSON.stringify({ type: "url", label: url, url }),
           }),
           captureAgentBrand(agent.id, { url }),
         ]);
+      } else if (values.sourceType === "file" && values.file && orgId) {
+        // Best-effort, same as the website branch: a failed upload still
+        // leaves a usable agent behind, retryable from the sources tab.
+        const file = values.file;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const storagePath = `${orgId}/${agent.id}/${Date.now()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("sources")
+          .upload(storagePath, file, { contentType: file.type || undefined });
+        if (!uploadError) {
+          await fetch(`/api/agents/${agent.id}/sources`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "file", label: file.name, storagePath }),
+          });
+        }
       }
 
       router.push(`/agents/${agent.id}/build/sources`);
@@ -227,15 +270,37 @@ export function NewAgentForm() {
                   </Field>
                 </FieldLabel>
 
-                <FieldLabel htmlFor="source-other">
+                <FieldLabel htmlFor="source-file">
                   <Field orientation="horizontal" className="items-start gap-3">
-                    <RadioGroupItem value="other" id="source-other" className="mt-0.5" />
+                    <RadioGroupItem value="file" id="source-file" className="mt-0.5" />
                     <FieldContent>
                       <FieldTitle>
                         <FileStackIcon className="size-4 shrink-0 text-muted-foreground" />
-                        Other sources
+                        Upload a document
                       </FieldTitle>
-                      <FieldDescription>Add Notion, Files, Text and more</FieldDescription>
+                      <FieldDescription>
+                        PDF, Word, Excel, PowerPoint, CSV, EPUB, RTF, or OpenDocument.
+                      </FieldDescription>
+                      {field.value === "file" && (
+                        <div className="mt-2 space-y-1">
+                          <Controller
+                            control={control}
+                            name="file"
+                            render={({ field: fileField }) => (
+                              <Input
+                                id={fileInputId}
+                                name={fileField.name}
+                                ref={fileField.ref}
+                                type="file"
+                                accept={ALLOWED_FILE_EXTENSIONS}
+                                onBlur={fileField.onBlur}
+                                onChange={(e) => fileField.onChange(e.target.files?.[0] ?? null)}
+                              />
+                            )}
+                          />
+                          <FieldError errors={[errors.file]} />
+                        </div>
+                      )}
                     </FieldContent>
                   </Field>
                 </FieldLabel>

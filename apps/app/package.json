@@ -33,6 +33,7 @@
     "@streamdown/cjk": "^1.0.3",
     "@streamdown/code": "^1.1.1",
     "@supabase/supabase-js": "^2.112.4",
+    "@trigger.dev/sdk": "^4.5.15",
     "@types/canvas-confetti": "^1.9.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.3",
@@ -70,6 +71,7 @@
   "devDependencies": {
     "@next/env": "^16.3.3",
     "@tailwindcss/postcss": "^4",
+    "@trigger.dev/build": "^4.5.15",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -79,6 +81,7 @@
     "oxlint": "^1.78.0",
     "server-only": "^0.0.1",
     "tailwindcss": "^4",
+    "trigger.dev": "^4.5.15",
     "tsx": "4.22.4",
     "typescript": "^5",
     "vitest": "^4.1.11"

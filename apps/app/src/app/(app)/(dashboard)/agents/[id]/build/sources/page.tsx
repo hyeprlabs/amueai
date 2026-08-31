@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AddSourceDialog } from "@/components/dashboard/agents/add-source-dialog";
+import { AddSourceDialog } from "@/components/dashboard/agents/add-source-dialog-drawer";
 import { SourcesTable } from "@/components/dashboard/agents/sources-table";
 
 export const metadata: Metadata = createMetadata({

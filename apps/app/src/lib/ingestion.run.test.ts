@@ -10,10 +10,14 @@ vi.mock("ai", () => ({
 }));
 
 const scrapeMock = vi.fn();
+const parseMock = vi.fn();
 vi.mock("@mendable/firecrawl-js", () => ({
   default: class FirecrawlMock {
     scrape(...args: unknown[]) {
       return scrapeMock(...args);
+    }
+    parse(...args: unknown[]) {
+      return parseMock(...args);
     }
   },
 }));
@@ -133,12 +137,22 @@ function makeFakeSupabase(initialSources: Record<string, unknown>[]) {
     return builder;
   }
 
-  return { from, tables };
+  return {
+    from,
+    tables,
+    storage: {
+      from: (_bucket: string) => ({ download: (...args: unknown[]) => downloadMock(...args) }),
+    },
+  };
 }
+
+const downloadMock = vi.fn();
 
 beforeEach(() => {
   embedManyMock.mockReset();
   scrapeMock.mockReset();
+  parseMock.mockReset();
+  downloadMock.mockReset();
 });
 
 describe("runIngestion", () => {
@@ -147,6 +161,7 @@ describe("runIngestion", () => {
       {
         id: "src-1",
         org_id: "org-1",
+        type: "url",
         raw_content: "https://example.com/docs",
         status: "queued",
       },
@@ -190,6 +205,7 @@ describe("runIngestion", () => {
       {
         id: "src-2",
         org_id: "org-1",
+        type: "url",
         raw_content: "https://example.com/empty",
         status: "queued",
       },
@@ -210,6 +226,7 @@ describe("runIngestion", () => {
       {
         id: "src-3",
         org_id: "org-1",
+        type: "url",
         raw_content: "https://example.com/page",
         status: "queued",
       },
@@ -230,6 +247,7 @@ describe("runIngestion", () => {
       {
         id: "src-4",
         org_id: "org-1",
+        type: "url",
         raw_content: "https://example.com/page",
         status: "ready",
       },
@@ -257,6 +275,7 @@ describe("runIngestion", () => {
       {
         id: "src-5",
         org_id: "org-1",
+        type: "url",
         raw_content: "https://example.com/page",
         status: "processing",
       },
@@ -265,5 +284,54 @@ describe("runIngestion", () => {
     await expect(runIngestion(supabase as any, "src-5")).rejects.toThrow("already being processed");
     expect(scrapeMock).not.toHaveBeenCalled();
     expect(embedManyMock).not.toHaveBeenCalled();
+  });
+
+  it("downloads a file source from storage, parses it with Firecrawl, chunks, embeds, and stores", async () => {
+    const supabase = makeFakeSupabase([
+      {
+        id: "src-6",
+        org_id: "org-1",
+        type: "file",
+        storage_path: "org-1/agent-1/handbook.pdf",
+        status: "queued",
+      },
+    ]);
+    const fakeBlob = { type: "application/pdf" };
+    downloadMock.mockResolvedValue({ data: fakeBlob, error: null });
+    parseMock.mockResolvedValue({ markdown: "Handbook contents." });
+    embedManyMock.mockResolvedValue({ embeddings: [[0.5, 0.6]] });
+
+    await runIngestion(supabase as any, "src-6");
+
+    expect(downloadMock).toHaveBeenCalledWith("org-1/agent-1/handbook.pdf");
+    expect(parseMock).toHaveBeenCalledWith(
+      expect.objectContaining({ data: fakeBlob, filename: "handbook.pdf" }),
+      expect.objectContaining({ formats: ["markdown"] }),
+    );
+    expect(scrapeMock).not.toHaveBeenCalled();
+
+    const source = supabase.tables.sources.find((s) => s.id === "src-6");
+    expect(source?.status).toBe("ready");
+    expect(supabase.tables.chunks).toHaveLength(1);
+    expect(supabase.tables.chunks[0]?.content).toBe("Handbook contents.");
+  });
+
+  it("marks a file source failed when the storage download fails", async () => {
+    const supabase = makeFakeSupabase([
+      {
+        id: "src-7",
+        org_id: "org-1",
+        type: "file",
+        storage_path: "org-1/agent-1/missing.pdf",
+        status: "queued",
+      },
+    ]);
+    downloadMock.mockResolvedValue({ data: null, error: { message: "not found" } });
+
+    await expect(runIngestion(supabase as any, "src-7")).rejects.toThrow("Failed to download");
+
+    const source = supabase.tables.sources.find((s) => s.id === "src-7");
+    expect(source?.status).toBe("failed");
+    expect(parseMock).not.toHaveBeenCalled();
   });
 });

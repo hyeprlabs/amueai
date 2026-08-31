@@ -1,20 +1,31 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { runIngestion } from "@/lib/ingestion";
+// Type-only import so the ingestion task's code (Firecrawl, embedMany)
+// isn't bundled into this route handler - the task runs on Trigger.dev's
+// infrastructure, not here.
+import type { ingestSource } from "@/trigger/ingest-source";
 
-// Sources are URL-only for now. Ingestion (Firecrawl scrape -> chunk ->
-// embed -> store) runs inline, synchronously, before this route responds -
-// a Firecrawl scrape plus embedding comfortably fits in one request; this
-// just raises the ceiling past the Vercel Node function default.
-export const maxDuration = 60;
-
-const createSourceSchema = z.object({
-  label: z.string().trim().min(1).max(200),
-  url: z.string().trim().url().max(2048),
-});
+// File uploads go to the "sources" Storage bucket client-side first
+// (RLS-scoped to the org's own folder) - this route just records the
+// storage_path and hands the pipeline off to Trigger.dev. Either way the
+// route returns as soon as the source row is queued; ingestion runs in the
+// background and the sources table reflects real status via Realtime.
+const createSourceSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("url"),
+    label: z.string().trim().min(1).max(200),
+    url: z.string().trim().url().max(2048),
+  }),
+  z.object({
+    type: z.literal("file"),
+    label: z.string().trim().min(1).max(200),
+    storagePath: z.string().trim().min(1).max(1024),
+  }),
+]);
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { orgId } = await auth();
@@ -26,7 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { label, url } = parsed.data;
+  const { type, label } = parsed.data;
 
   const supabase = await createServerSupabaseClient();
 
@@ -35,10 +46,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: agent } = await supabase.from("agents").select("id").eq("id", agentId).single();
   if (!agent) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
 
+  const raw_content = parsed.data.type === "url" ? parsed.data.url : null;
+  const storage_path = parsed.data.type === "file" ? parsed.data.storagePath : null;
+
   const { data: source, error: insertError } = await supabase
     .from("sources")
-    .insert({ org_id: orgId, agent_id: agentId, type: "url", label, raw_content: url })
-    .select("id, label, status, created_at")
+    .insert({ org_id: orgId, agent_id: agentId, type, label, raw_content, storage_path })
+    .select("id, label, type, status, created_at")
     .single();
 
   if (insertError || !source) {
@@ -48,22 +62,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  // Runs inline under the caller's own Clerk-scoped client - RLS already
-  // permits this org member to read/write this agent's sources/chunks,
-  // same as every other authenticated route. runIngestion sets the
-  // source's status itself (processing -> ready/failed) and never throws
-  // past this point in a way that should fail the request: the source row
-  // already exists either way, so the response just reports whatever
-  // state it landed in.
-  await runIngestion(supabase, source.id).catch((err) => {
-    console.error(`Inline ingestion failed for source ${source.id}`, err);
-  });
+  await tasks.trigger<typeof ingestSource>("ingest-source", { sourceId: source.id });
 
-  const { data: ingested } = await supabase
-    .from("sources")
-    .select("id, label, status, error_message, created_at")
-    .eq("id", source.id)
-    .single();
-
-  return NextResponse.json({ source: ingested ?? source }, { status: 201 });
+  return NextResponse.json({ source }, { status: 201 });
 }

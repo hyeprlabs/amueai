@@ -5,9 +5,9 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: (...args: unknown[]) => authMock(...args),
 }));
 
-const runIngestionMock = vi.fn();
-vi.mock("@/lib/ingestion", () => ({
-  runIngestion: (...args: unknown[]) => runIngestionMock(...args),
+const triggerMock = vi.fn();
+vi.mock("@trigger.dev/sdk", () => ({
+  tasks: { trigger: (...args: unknown[]) => triggerMock(...args) },
 }));
 
 let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
@@ -20,7 +20,7 @@ const { POST } = await import("./route");
 /**
  * A minimal in-memory stand-in for the exact supabase-js chains this route
  * uses across "agents" and "sources" (select/eq/single, insert/select/single) -
- * enough to exercise the real auth/validation/insert/ingestion control flow
+ * enough to exercise the real auth/validation/insert/enqueue control flow
  * without a live Supabase project.
  */
 function makeFakeSupabase(seed: {
@@ -106,7 +106,7 @@ function jsonRequest(body: unknown) {
 
 beforeEach(() => {
   authMock.mockReset();
-  runIngestionMock.mockReset();
+  triggerMock.mockReset();
   fakeSupabase = makeFakeSupabase({ agents: [{ id: "agent-1" }] });
 });
 
@@ -114,18 +114,30 @@ describe("POST /api/agents/[id]/sources", () => {
   it("rejects an unauthenticated request", async () => {
     authMock.mockResolvedValue({ orgId: null });
 
-    const res = await POST(jsonRequest({ label: "Docs", url: "https://example.com" }), {
-      params: Promise.resolve({ id: "agent-1" }),
-    });
+    const res = await POST(
+      jsonRequest({ type: "url", label: "Docs", url: "https://example.com" }),
+      { params: Promise.resolve({ id: "agent-1" }) },
+    );
 
     expect(res.status).toBe(401);
-    expect(runIngestionMock).not.toHaveBeenCalled();
+    expect(triggerMock).not.toHaveBeenCalled();
   });
 
   it("rejects a malformed URL with a 400 before touching the database", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
 
-    const res = await POST(jsonRequest({ label: "Docs", url: "not-a-url" }), {
+    const res = await POST(jsonRequest({ type: "url", label: "Docs", url: "not-a-url" }), {
+      params: Promise.resolve({ id: "agent-1" }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(fakeSupabase.tables.sources).toHaveLength(0);
+  });
+
+  it("rejects a file source with no storagePath", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+
+    const res = await POST(jsonRequest({ type: "file", label: "Handbook", storagePath: "" }), {
       params: Promise.resolve({ id: "agent-1" }),
     });
 
@@ -137,65 +149,68 @@ describe("POST /api/agents/[id]/sources", () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
     fakeSupabase = makeFakeSupabase({ agents: [] });
 
-    const res = await POST(jsonRequest({ label: "Docs", url: "https://example.com" }), {
-      params: Promise.resolve({ id: "missing-agent" }),
-    });
+    const res = await POST(
+      jsonRequest({ type: "url", label: "Docs", url: "https://example.com" }),
+      { params: Promise.resolve({ id: "missing-agent" }) },
+    );
 
     expect(res.status).toBe(404);
   });
 
-  it("creates the source, runs ingestion inline, and returns its post-ingestion status", async () => {
+  it("creates a url source, enqueues the ingest-source task, and returns it queued", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
-    runIngestionMock.mockImplementation(async (_supabase, sourceId: string) => {
-      const source = fakeSupabase.tables.sources.find((s) => s.id === sourceId);
-      if (source) source.status = "ready";
-    });
 
-    const res = await POST(jsonRequest({ label: "Docs", url: "https://example.com/docs" }), {
-      params: Promise.resolve({ id: "agent-1" }),
-    });
+    const res = await POST(
+      jsonRequest({ type: "url", label: "Docs", url: "https://example.com/docs" }),
+      { params: Promise.resolve({ id: "agent-1" }) },
+    );
     const body = await res.json();
 
     expect(res.status).toBe(201);
-    expect(body.source.status).toBe("ready");
-    expect(runIngestionMock).toHaveBeenCalledWith(fakeSupabase, body.source.id);
+    expect(body.source.status).toBe("queued");
+    expect(triggerMock).toHaveBeenCalledWith("ingest-source", { sourceId: body.source.id });
     expect(fakeSupabase.tables.sources[0]).toMatchObject({
       org_id: "org-1",
       agent_id: "agent-1",
       type: "url",
       label: "Docs",
       raw_content: "https://example.com/docs",
+      storage_path: null,
     });
   });
 
-  it("still returns 201 with the failed status when ingestion fails, instead of erroring the request", async () => {
+  it("creates a file source, enqueues the ingest-source task, and returns it queued", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
-    runIngestionMock.mockImplementation(async (_supabase, sourceId: string) => {
-      const source = fakeSupabase.tables.sources.find((s) => s.id === sourceId);
-      if (source) source.status = "failed";
-      throw new Error("Firecrawl returned no content");
-    });
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const res = await POST(jsonRequest({ label: "Docs", url: "https://example.com/empty" }), {
-      params: Promise.resolve({ id: "agent-1" }),
-    });
+    const res = await POST(
+      jsonRequest({ type: "file", label: "Handbook", storagePath: "org-1/agent-1/handbook.pdf" }),
+      { params: Promise.resolve({ id: "agent-1" }) },
+    );
     const body = await res.json();
 
     expect(res.status).toBe(201);
-    expect(body.source.status).toBe("failed");
-    consoleErrorSpy.mockRestore();
+    expect(body.source.status).toBe("queued");
+    expect(triggerMock).toHaveBeenCalledWith("ingest-source", { sourceId: body.source.id });
+    expect(fakeSupabase.tables.sources[0]).toMatchObject({
+      org_id: "org-1",
+      agent_id: "agent-1",
+      type: "file",
+      label: "Handbook",
+      raw_content: null,
+      storage_path: "org-1/agent-1/handbook.pdf",
+    });
   });
 
   it("surfaces an insert failure as a 500", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
     fakeSupabase.failNextInsert("insert failed");
 
-    const res = await POST(jsonRequest({ label: "Docs", url: "https://example.com" }), {
-      params: Promise.resolve({ id: "agent-1" }),
-    });
+    const res = await POST(
+      jsonRequest({ type: "url", label: "Docs", url: "https://example.com" }),
+      { params: Promise.resolve({ id: "agent-1" }) },
+    );
 
     expect(res.status).toBe(500);
-    expect(runIngestionMock).not.toHaveBeenCalled();
+    expect(triggerMock).not.toHaveBeenCalled();
   });
 });

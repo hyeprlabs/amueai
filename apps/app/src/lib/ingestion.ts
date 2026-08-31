@@ -15,10 +15,11 @@ const URL_FETCH_TIMEOUT_MS = 30_000;
 let firecrawlClient: Firecrawl | undefined;
 
 /**
- * Firecrawl fetches the target URL from its own infrastructure, not ours,
- * so it also owns SSRF protection, JS rendering, and anti-bot handling for
- * every source - this is the only ingestion path there is (sources are
- * URL-only for now).
+ * Firecrawl owns fetching and parsing for every source type: for URLs it
+ * fetches from its own infrastructure (SSRF protection, JS rendering,
+ * anti-bot handling included) via `/scrape`; for uploaded files it parses
+ * the bytes we hand it via `/parse`. No hand-rolled fetch/cheerio crawler
+ * or PDF/Office parsing library anywhere in this app.
  */
 export function getFirecrawlClient(): Firecrawl {
   if (!firecrawlClient) {
@@ -80,6 +81,36 @@ export async function extractUrlText(url: string): Promise<string> {
   return document.markdown.trim();
 }
 
+/**
+ * Downloads an uploaded file from the private `sources` Storage bucket and
+ * parses it with Firecrawl's `/v2/parse` (file-upload) endpoint, which
+ * converts PDF/Word/Excel/PowerPoint/CSV/EPUB into clean markdown the same
+ * way `.scrape()` does for URLs. Storage — not the request body — is the
+ * source of the bytes, since the file was already uploaded client-side to
+ * the org's own folder before this source row was created.
+ */
+export async function extractFileText(
+  supabase: SupabaseClient<Database>,
+  storagePath: string,
+): Promise<string> {
+  const { data: blob, error } = await supabase.storage.from("sources").download(storagePath);
+  if (error || !blob) {
+    throw new Error(`Failed to download ${storagePath} from storage: ${error?.message}`);
+  }
+
+  const filename = storagePath.split("/").pop() ?? storagePath;
+  const document = await getFirecrawlClient().parse(
+    { data: blob, filename, contentType: blob.type || undefined },
+    { formats: ["markdown"] },
+  );
+
+  if (!document.markdown) {
+    throw new Error(`Firecrawl returned no content for ${storagePath}`);
+  }
+
+  return document.markdown.trim();
+}
+
 /** Batches embedding calls — never one request per chunk. */
 export async function embedChunks(chunks: string[]): Promise<number[][]> {
   const embeddings: number[][] = [];
@@ -97,23 +128,27 @@ export async function embedChunks(chunks: string[]): Promise<number[][]> {
 }
 
 /**
- * Runs the full extract -> chunk -> embed -> store pipeline for one URL
- * source, flipping its status as it goes. Never leaves a source `ready` on
- * partial success, and never touches prior chunks until the new run fully
- * succeeds (so a failed retrain doesn't blank out a working agent).
+ * Runs the full extract -> chunk -> embed -> store pipeline for one source
+ * (URL or uploaded file), flipping its status as it goes. Never leaves a
+ * source `ready` on partial success, and never touches prior chunks until
+ * the new run fully succeeds (so a failed retrain doesn't blank out a
+ * working agent).
  */
 export async function runIngestion(supabase: SupabaseClient<Database>, sourceId: string) {
   const { data: source, error: fetchError } = await supabase
     .from("sources")
-    .select("id, org_id, raw_content")
+    .select("id, org_id, type, raw_content, storage_path")
     .eq("id", sourceId)
     .single();
 
   if (fetchError || !source) {
     throw new Error(`Source ${sourceId} not found: ${fetchError?.message}`);
   }
-  if (!source.raw_content) {
+  if (source.type === "url" && !source.raw_content) {
     throw new Error(`Source ${sourceId} has no URL`);
+  }
+  if (source.type === "file" && !source.storage_path) {
+    throw new Error(`Source ${sourceId} has no uploaded file`);
   }
 
   // Claims the source for this run: only flips to "processing" if it
@@ -136,7 +171,10 @@ export async function runIngestion(supabase: SupabaseClient<Database>, sourceId:
   }
 
   try {
-    const text = await extractUrlText(source.raw_content);
+    const text =
+      source.type === "file"
+        ? await extractFileText(supabase, source.storage_path!)
+        : await extractUrlText(source.raw_content!);
     const chunks = chunkText(text);
 
     if (chunks.length === 0) {

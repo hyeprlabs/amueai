@@ -5,9 +5,9 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: (...args: unknown[]) => authMock(...args),
 }));
 
-const runIngestionMock = vi.fn();
-vi.mock("@/lib/ingestion", () => ({
-  runIngestion: (...args: unknown[]) => runIngestionMock(...args),
+const triggerMock = vi.fn();
+vi.mock("@trigger.dev/sdk", () => ({
+  tasks: { trigger: (...args: unknown[]) => triggerMock(...args) },
 }));
 
 let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
@@ -46,7 +46,7 @@ function makeFakeSupabase(sources: Record<string, unknown>[]) {
 
 beforeEach(() => {
   authMock.mockReset();
-  runIngestionMock.mockReset();
+  triggerMock.mockReset();
 });
 
 describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
@@ -59,7 +59,7 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
     });
 
     expect(res.status).toBe(401);
-    expect(runIngestionMock).not.toHaveBeenCalled();
+    expect(triggerMock).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the source doesn't belong to this agent", async () => {
@@ -71,13 +71,12 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(runIngestionMock).not.toHaveBeenCalled();
+    expect(triggerMock).not.toHaveBeenCalled();
   });
 
-  it("re-runs ingestion for the matched source and reports ok regardless of outcome", async () => {
+  it("enqueues the ingest-source task for the matched source and reports ok", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
     fakeSupabase = makeFakeSupabase([{ id: "source-1", agent_id: "agent-1" }]);
-    runIngestionMock.mockResolvedValue(undefined);
 
     const res = await POST(new Request("http://localhost", { method: "POST" }), {
       params: Promise.resolve({ id: "agent-1", sourceId: "source-1" }),
@@ -86,20 +85,6 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
 
     expect(res.status).toBe(200);
     expect(body).toEqual({ ok: true });
-    expect(runIngestionMock).toHaveBeenCalledWith(fakeSupabase, "source-1");
-  });
-
-  it("still returns ok when ingestion rejects - the source's own status already reflects the failure", async () => {
-    authMock.mockResolvedValue({ orgId: "org-1" });
-    fakeSupabase = makeFakeSupabase([{ id: "source-1", agent_id: "agent-1" }]);
-    runIngestionMock.mockRejectedValue(new Error("Firecrawl returned no content"));
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    const res = await POST(new Request("http://localhost", { method: "POST" }), {
-      params: Promise.resolve({ id: "agent-1", sourceId: "source-1" }),
-    });
-
-    expect(res.status).toBe(200);
-    consoleErrorSpy.mockRestore();
+    expect(triggerMock).toHaveBeenCalledWith("ingest-source", { sourceId: "source-1" });
   });
 });
