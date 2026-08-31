@@ -420,6 +420,30 @@ describe("POST /api/chat/[agentId]", () => {
     ]);
   });
 
+  it("layers the agent's own system_prompt on top of the base grounding rules, never in place of them", async () => {
+    await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    const system = streamTextMock.mock.calls[0][0].system as string;
+    expect(system).toContain("Never fill gaps with outside knowledge");
+    expect(system).toContain("Additional instructions from the business:");
+    expect(system).toContain(agent.system_prompt);
+    // The business's own instructions must appear after the base rules,
+    // not replace or precede them.
+    expect(system.indexOf("Never fill gaps with outside knowledge")).toBeLessThan(
+      system.indexOf(agent.system_prompt),
+    );
+  });
+
+  it("tells the model not to use em dashes", async () => {
+    await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(streamTextMock.mock.calls[0][0].system).toContain("Do not use em dashes");
+  });
+
   it("still answers (from empty context) instead of failing the whole turn when retrieval throws", async () => {
     fakeSupabase = makeFakeSupabase({ agents: [agent] });
     embedMock.mockRejectedValueOnce(new Error("Gateway unavailable"));
