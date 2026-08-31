@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
+import { decodeRateLimitMessage, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 
 const embedMock = vi.fn();
 const streamTextMock = vi.fn();
@@ -189,7 +189,7 @@ beforeEach(() => {
   resolveAutoModelIdMock.mockReset();
 
   embedMock.mockResolvedValue({ embedding: [0.1, 0.2, 0.3] });
-  checkChatRateLimitMock.mockResolvedValue(true);
+  checkChatRateLimitMock.mockResolvedValue({ success: true, retryAt: undefined });
   streamTextMock.mockReturnValue({ stream: {} });
   fakeSupabase = makeFakeSupabase({ agents: [agent] });
 });
@@ -278,7 +278,7 @@ describe("POST /api/chat/[agentId]", () => {
   });
 
   it("returns 429 without calling the model when rate limited, with a plain-text body", async () => {
-    checkChatRateLimitMock.mockResolvedValue(false);
+    checkChatRateLimitMock.mockResolvedValue({ success: false, retryAt: undefined });
 
     const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
       params: Promise.resolve({ agentId: "agent-1" }),
@@ -290,6 +290,20 @@ describe("POST /api/chat/[agentId]", () => {
     // into `new Error(await response.text())`, so a JSON body would show
     // up as a raw, unparsed blob in the chat UI's error bubble.
     expect(await res.text()).toBe(RATE_LIMIT_MESSAGE);
+  });
+
+  it("encodes the exact reset time into the 429 body when our own limiter knows one", async () => {
+    checkChatRateLimitMock.mockResolvedValue({ success: false, retryAt: 1735699200000 });
+
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(res.status).toBe(429);
+    expect(decodeRateLimitMessage(await res.text())).toEqual({
+      text: RATE_LIMIT_MESSAGE,
+      retryAt: 1735699200000,
+    });
   });
 
   it("distinguishes a Gateway rate limit from other generation failures via the stream's onError", async () => {

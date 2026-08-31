@@ -6,6 +6,7 @@ import { ArrowUpIcon, ClockIcon } from "lucide-react";
 import {
   Component,
   Fragment,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -22,7 +23,7 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
+import { decodeRateLimitMessage, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 import { cn } from "@/lib/utils";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 
@@ -124,13 +125,42 @@ export function ChatPanel({
     errorTimestamp.current = null;
   }
 
+  // A rate limit from our own limiter carries an exact reset time; a
+  // Gateway/provider-side one doesn't, since "free tier" isn't a window
+  // that resets on a schedule - decode() just returns the plain text then.
+  const decodedError = error ? decodeRateLimitMessage(error.message) : undefined;
+  const retryAt = decodedError?.retryAt;
+
+  // Ticks once a second only while an exact retry time is pending, purely
+  // to keep the countdown text and the send button's disabled state
+  // live - both re-derive from `now` on every render, no separate timer
+  // logic needed once this fires.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!retryAt || retryAt <= Date.now()) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [retryAt]);
+  const secondsUntilRetry = retryAt ? Math.max(0, Math.ceil((retryAt - now) / 1000)) : 0;
+  const isRateLimitedNow = Boolean(retryAt && secondsUntilRetry > 0);
+
+  // `status` stays "error" once a request fails - it only moves back to
+  // "submitted" on the *next* sendMessage call, never on its own - so
+  // gating on `status === "ready"` alone locked the input forever after
+  // any failure. "Busy" (an actual request in flight) is the only state
+  // that should actually block sending.
+  const isBusy = status === "submitted" || status === "streaming";
+  const canSubmit = !isBusy && !isRateLimitedNow;
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const text = input.trim();
-    if (!text || status !== "ready") return;
+    if (!text || !canSubmit) return;
     setInput("");
     sendMessage({ text });
   };
+
+  const lastMessageId = messages.at(-1)?.id;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -147,8 +177,13 @@ export function ChatPanel({
             // limit, an outage) still leaves an empty assistant message
             // shell behind once the stream ends in error - the `error`
             // block below already shows that failure, so render nothing
-            // for the empty shell rather than an empty pill above it.
-            if (message.role === "assistant" && !rawText && sourceParts.length === 0) {
+            // for it: either it has no content at all, or (belt and
+            // braces, in case the SDK ever attaches placeholder content to
+            // that shell) it's the specific message the current error
+            // belongs to.
+            const isEmptyShell = !rawText && sourceParts.length === 0;
+            const isFailedTurn = Boolean(error) && message.id === lastMessageId;
+            if (message.role === "assistant" && (isEmptyShell || isFailedTurn)) {
               return null;
             }
 
@@ -196,11 +231,17 @@ export function ChatPanel({
             </Message>
           )}
           {error &&
-            (error.message === RATE_LIMIT_MESSAGE ? (
+            (decodedError?.text === RATE_LIMIT_MESSAGE ? (
               <Message className="gap-0.5" from="assistant">
                 <MessageContent className="flex-row items-center gap-1.5 border-amber-500/40 bg-amber-500/10 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
                   <ClockIcon className="size-3.5 shrink-0" />
-                  <p className="whitespace-pre-wrap">{error.message}</p>
+                  <p className="whitespace-pre-wrap">
+                    {decodedError.text}
+                    {retryAt &&
+                      (isRateLimitedNow
+                        ? ` You can try again in ${secondsUntilRetry}s (at ${formatTimestamp(retryAt)}).`
+                        : " You can try again now.")}
+                  </p>
                 </MessageContent>
                 <span className="px-1 text-left text-[10px] text-muted-foreground">
                   {formatTimestamp(errorTimestamp.current ?? Date.now())}
@@ -209,7 +250,9 @@ export function ChatPanel({
             ) : (
               <Message className="gap-0.5" from="assistant">
                 <MessageContent className="text-xs leading-relaxed">
-                  <p className="whitespace-pre-wrap">{error.message || "Something went wrong."}</p>
+                  <p className="whitespace-pre-wrap">
+                    {decodedError?.text || "Something went wrong."}
+                  </p>
                 </MessageContent>
                 <span className="px-1 text-left text-[10px] text-muted-foreground">
                   {formatTimestamp(errorTimestamp.current ?? Date.now())}
@@ -224,7 +267,7 @@ export function ChatPanel({
         <form className="relative" onSubmit={handleSubmit}>
           <Input
             className="h-11 rounded-full pe-11 shadow-sm"
-            disabled={status !== "ready"}
+            disabled={isBusy}
             onChange={(event) => setInput(event.target.value)}
             placeholder="Ask a question…"
             value={input}
@@ -233,7 +276,7 @@ export function ChatPanel({
             <Button
               aria-label="Send message"
               className="size-8 rounded-full"
-              disabled={!input.trim() || status !== "ready"}
+              disabled={!input.trim() || !canSubmit}
               size="icon-sm"
               type="submit"
             >

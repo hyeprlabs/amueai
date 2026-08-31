@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { isRateLimitError } from "./chat-errors";
+import {
+  decodeRateLimitMessage,
+  encodeRateLimitMessage,
+  isRateLimitError,
+  RATE_LIMIT_MESSAGE,
+} from "./chat-errors";
 
 describe("isRateLimitError", () => {
   it("returns false for a plain error", () => {
@@ -54,5 +59,27 @@ describe("isRateLimitError", () => {
     circular.cause = circular;
     expect(() => isRateLimitError(circular)).not.toThrow();
     expect(isRateLimitError(circular)).toBe(false);
+  });
+});
+
+describe("encodeRateLimitMessage / decodeRateLimitMessage", () => {
+  it("round-trips a message with a known retry time", () => {
+    const encoded = encodeRateLimitMessage(1735699200000);
+    expect(decodeRateLimitMessage(encoded)).toEqual({
+      text: RATE_LIMIT_MESSAGE,
+      retryAt: 1735699200000,
+    });
+  });
+
+  it("encodes plainly (no marker) when no retry time is known", () => {
+    const encoded = encodeRateLimitMessage(undefined);
+    expect(encoded).toBe(RATE_LIMIT_MESSAGE);
+    expect(decodeRateLimitMessage(encoded)).toEqual({ text: RATE_LIMIT_MESSAGE });
+  });
+
+  it("decodes an arbitrary unrelated string as plain text with no retryAt", () => {
+    expect(decodeRateLimitMessage("Something went wrong.")).toEqual({
+      text: "Something went wrong.",
+    });
   });
 });

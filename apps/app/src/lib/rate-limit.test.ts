@@ -20,17 +20,23 @@ beforeEach(() => {
 
 describe("checkChatRateLimit", () => {
   it("allows a request under the limit", async () => {
-    limitMock.mockResolvedValue({ success: true });
-    await expect(checkChatRateLimit("1.2.3.4", "agent-1")).resolves.toBe(true);
+    limitMock.mockResolvedValue({ success: true, reset: 1234 });
+    await expect(checkChatRateLimit("1.2.3.4", "agent-1")).resolves.toEqual({
+      success: true,
+      retryAt: undefined,
+    });
   });
 
-  it("blocks a request over the limit", async () => {
-    limitMock.mockResolvedValue({ success: false });
-    await expect(checkChatRateLimit("1.2.3.4", "agent-1")).resolves.toBe(false);
+  it("blocks a request over the limit and surfaces exactly when the window resets", async () => {
+    limitMock.mockResolvedValue({ success: false, reset: 1735699200000 });
+    await expect(checkChatRateLimit("1.2.3.4", "agent-1")).resolves.toEqual({
+      success: false,
+      retryAt: 1735699200000,
+    });
   });
 
   it("keys the limit by ip and agentId together, so either changing gets a fresh bucket", async () => {
-    limitMock.mockResolvedValue({ success: true });
+    limitMock.mockResolvedValue({ success: true, reset: 1234 });
 
     await checkChatRateLimit("1.2.3.4", "agent-1");
     await checkChatRateLimit("5.6.7.8", "agent-1");

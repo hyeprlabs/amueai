@@ -10,7 +10,7 @@ import { z } from "zod";
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
 import { checkChatRateLimit } from "@/lib/rate-limit";
 import { AUTO_MODEL_ID, resolveAutoModelId } from "@/lib/gateway-models";
-import { isRateLimitError, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
+import { encodeRateLimitMessage, isRateLimitError, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 
 // Plain text, not NextResponse.json: the AI SDK transport turns a non-ok
 // response into `new Error(await response.text())`, so a JSON body would
@@ -116,9 +116,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   }
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const allowed = await checkChatRateLimit(ip, agent.id);
+  const { success: allowed, retryAt } = await checkChatRateLimit(ip, agent.id);
   if (!allowed) {
-    return textError(RATE_LIMIT_MESSAGE, 429);
+    // Our own sliding window has a real, known reset time, unlike a
+    // Gateway/provider-side rate limit - encode it so the client can show
+    // exactly when the visitor can try again instead of a vague "later".
+    return textError(encodeRateLimitMessage(retryAt), 429);
   }
 
   if (conversationId) {

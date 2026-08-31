@@ -18,6 +18,9 @@ const chatRatelimit = new Ratelimit({
 });
 
 export async function checkChatRateLimit(ip: string, agentId: string) {
-  const { success } = await chatRatelimit.limit(`${ip}:${agentId}`);
-  return success;
+  const { success, reset } = await chatRatelimit.limit(`${ip}:${agentId}`);
+  // `reset` is a real, exact unix-ms timestamp for this specific window,
+  // unlike a provider-side "free tier" rate limit that has no such
+  // schedule - only surface it when the check actually failed.
+  return { success, retryAt: success ? undefined : reset };
 }
