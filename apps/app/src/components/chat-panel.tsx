@@ -182,9 +182,7 @@ export function ChatPanel({
           })}
           {status === "submitted" && (
             <Message from="assistant">
-              <MessageContent className="text-xs">
-                <Shimmer>Thinking…</Shimmer>
-              </MessageContent>
+              <Shimmer className="px-1 text-xs">Thinking…</Shimmer>
             </Message>
           )}
           {error && (

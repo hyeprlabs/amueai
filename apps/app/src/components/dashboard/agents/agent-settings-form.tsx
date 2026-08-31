@@ -87,6 +87,23 @@ export function AgentSettingsForm({
 
         <FieldSeparator />
 
+        <Field data-invalid={!!errors.fallback_message}>
+          <FieldLabel htmlFor="fallback_message">Fallback message</FieldLabel>
+          <Textarea
+            id="fallback_message"
+            maxLength={300}
+            rows={2}
+            {...register("fallback_message")}
+          />
+          <FieldDescription>
+            Shown when the agent can&apos;t answer from its sources. Mention how visitors can
+            reach you directly (an email, a link) if you&apos;d like.
+          </FieldDescription>
+          <FieldError errors={[errors.fallback_message]} />
+        </Field>
+
+        <FieldSeparator />
+
         <Controller
           control={control}
           name="temperature"

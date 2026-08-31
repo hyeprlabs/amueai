@@ -13,6 +13,7 @@ export const agentSettingsSchema = z.object({
     .min(0, "Must be at least 0")
     .max(2, "Must be at most 2"),
   welcome_message: z.string().trim().min(1, "Welcome message is required").max(300),
+  fallback_message: z.string().trim().min(1, "Fallback message is required").max(300),
 });
 
 export type AgentSettingsValues = z.infer<typeof agentSettingsSchema>;
@@ -28,6 +29,7 @@ export const agentGeneralSchema = agentSettingsSchema.pick({
   name: true,
   temperature: true,
   welcome_message: true,
+  fallback_message: true,
 });
 export type AgentGeneralValues = z.infer<typeof agentGeneralSchema>;
 

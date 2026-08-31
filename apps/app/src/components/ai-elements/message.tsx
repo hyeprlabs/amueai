@@ -32,7 +32,7 @@ export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
 export const MessageContent = ({ children, className, ...props }: MessageContentProps) => (
   <div
     className={cn(
-      "flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden rounded-md px-4 py-3 text-sm text-foreground",
+      "flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden rounded-lg px-3 py-1.5 text-sm text-foreground",
       // Assistant: an outlined pill, no fill. User: a filled pill, no border.
       "group-[.is-user]:ml-auto group-[.is-user]:bg-muted",
       "group-[.is-assistant]:border",

@@ -8,6 +8,7 @@ const validValues = {
   model: "openai/gpt-4o-mini",
   temperature: 0.3,
   welcome_message: "Hi! What can I help you with?",
+  fallback_message: "Thanks for your message! I'm not able to help with that right now.",
 };
 
 describe("agentSettingsSchema", () => {
@@ -112,6 +113,32 @@ describe("agentSettingsSchema", () => {
     ).toBe(false);
     expect(
       agentSettingsSchema.safeParse({ ...validValues, welcome_message: "a".repeat(300) }).success,
+    ).toBe(true);
+  });
+
+  it("trims whitespace from fallback_message", () => {
+    const result = agentSettingsSchema.parse({
+      ...validValues,
+      fallback_message: "  Sorry, I can't help with that.  ",
+    });
+    expect(result.fallback_message).toBe("Sorry, I can't help with that.");
+  });
+
+  it("rejects an empty or whitespace-only fallback_message", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "" }).success,
+    ).toBe(false);
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "   " }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a fallback_message over 300 characters", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "a".repeat(301) }).success,
+    ).toBe(false);
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "a".repeat(300) }).success,
     ).toBe(true);
   });
 });
