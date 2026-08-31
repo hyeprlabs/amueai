@@ -11,9 +11,6 @@ import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
  * source in a well-defined `failed` state with its prior chunks intact on
  * any error, so a retry re-runs the same extract -> chunk -> embed -> store
  * pipeline from scratch.
- *
- * PLACEHOLDER task id/config - re-verify against the real Trigger.dev
- * project once `trigger.config.ts`'s project ref is filled in.
  */
 export const ingestSource = task({
   id: "ingest-source",
