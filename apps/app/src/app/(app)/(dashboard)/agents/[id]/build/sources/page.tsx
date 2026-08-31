@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AddSourceDialog } from "@/components/dashboard/agents/add-source-dialog-drawer";
-import { SourcesTable } from "@/components/dashboard/agents/sources-table";
+import { SourcesPanel } from "@/components/dashboard/agents/sources-panel";
 
 export const metadata: Metadata = createMetadata({
   title: "Sources",
@@ -25,22 +23,5 @@ export default async function AgentSourcesPage({
     .eq("agent_id", id)
     .order("created_at", { ascending: false });
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <CardTitle>Sources</CardTitle>
-            <CardDescription>
-              Add a URL — Firecrawl scrapes it and it&apos;s embedded right away.
-            </CardDescription>
-          </div>
-          <AddSourceDialog agentId={id} />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <SourcesTable agentId={id} initialSources={sources ?? []} />
-      </CardContent>
-    </Card>
-  );
+  return <SourcesPanel agentId={id} initialSources={sources ?? []} />;
 }

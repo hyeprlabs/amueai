@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { tasks } from "@trigger.dev/sdk";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import type { ingestSource } from "@/trigger/ingest-source";
+import { triggerIngestSource } from "@/lib/trigger";
 
 export async function POST(
   _request: Request,
@@ -26,7 +25,7 @@ export async function POST(
   // ingestSource never flips status to ready on partial success, and keeps
   // this source's existing chunks in place until the new run's insert
   // succeeds - a failed retrain doesn't blank out a working agent.
-  await tasks.trigger<typeof ingestSource>("ingest-source", { sourceId });
+  const run = await triggerIngestSource(sourceId);
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, run });
 }

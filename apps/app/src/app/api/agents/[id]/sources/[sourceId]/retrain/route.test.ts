@@ -5,9 +5,9 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: (...args: unknown[]) => authMock(...args),
 }));
 
-const triggerMock = vi.fn();
-vi.mock("@trigger.dev/sdk", () => ({
-  tasks: { trigger: (...args: unknown[]) => triggerMock(...args) },
+const triggerIngestSourceMock = vi.fn();
+vi.mock("@/lib/trigger", () => ({
+  triggerIngestSource: (...args: unknown[]) => triggerIngestSourceMock(...args),
 }));
 
 let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
@@ -46,7 +46,8 @@ function makeFakeSupabase(sources: Record<string, unknown>[]) {
 
 beforeEach(() => {
   authMock.mockReset();
-  triggerMock.mockReset();
+  triggerIngestSourceMock.mockReset();
+  triggerIngestSourceMock.mockResolvedValue({ id: "run_1", publicAccessToken: "pat_1" });
 });
 
 describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
@@ -59,7 +60,7 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
     });
 
     expect(res.status).toBe(401);
-    expect(triggerMock).not.toHaveBeenCalled();
+    expect(triggerIngestSourceMock).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the source doesn't belong to this agent", async () => {
@@ -71,10 +72,10 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(triggerMock).not.toHaveBeenCalled();
+    expect(triggerIngestSourceMock).not.toHaveBeenCalled();
   });
 
-  it("enqueues the ingest-source task for the matched source and reports ok", async () => {
+  it("enqueues the ingest-source task for the matched source and returns its run", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
     fakeSupabase = makeFakeSupabase([{ id: "source-1", agent_id: "agent-1" }]);
 
@@ -84,7 +85,7 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body).toEqual({ ok: true });
-    expect(triggerMock).toHaveBeenCalledWith("ingest-source", { sourceId: "source-1" });
+    expect(body).toEqual({ ok: true, run: { id: "run_1", publicAccessToken: "pat_1" } });
+    expect(triggerIngestSourceMock).toHaveBeenCalledWith("source-1");
   });
 });

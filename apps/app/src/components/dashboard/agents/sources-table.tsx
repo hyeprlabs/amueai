@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   CircleCheckIcon,
   CircleXIcon,
@@ -10,7 +10,6 @@ import {
   Trash2Icon,
 } from "lucide-react";
 
-import { useSupabaseClient } from "@/hooks/use-supabase-client";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -24,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DashboardEmpty } from "@/components/dashboard/dashboard-empty";
+import { LiveSourceStatus } from "@/components/dashboard/agents/live-source-status";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -34,13 +34,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toast } from "@/components/ui/toast";
 import type { Tables } from "@/types/supabase";
 
-type SourceRow = Pick<
+export type SourceRow = Pick<
   Tables<"sources">,
   "id" | "label" | "status" | "error_message" | "created_at"
 >;
+
+export type ActiveRun = { id: string; accessToken: string };
 
 const statusConfig: Record<
   SourceRow["status"],
@@ -81,83 +82,40 @@ function StatusBadge({ source }: { source: SourceRow }) {
   );
 }
 
-/** Live queued/processing/ready/failed status via Supabase Realtime. */
+/**
+ * Purely presentational: `SourcesPanel` owns the sources list, the active
+ * Trigger.dev runs, and the retrain/delete network calls. A row with an
+ * active run renders `LiveSourceStatus` (driven by that run's own realtime
+ * updates); otherwise it renders the plain DB-driven `StatusBadge`.
+ */
 export function SourcesTable({
-  agentId,
-  initialSources,
+  sources,
+  activeRuns,
+  onRetrain,
+  onDelete,
+  onRunSettled,
 }: {
-  agentId: string;
-  initialSources: SourceRow[];
+  sources: SourceRow[];
+  activeRuns: Record<string, ActiveRun>;
+  onRetrain: (sourceId: string) => Promise<void>;
+  onDelete: (sourceId: string) => Promise<void>;
+  onRunSettled: (sourceId: string) => void;
 }) {
-  const supabase = useSupabaseClient();
-  const [sources, setSources] = useState(initialSources);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel(`sources:${agentId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "sources", filter: `agent_id=eq.${agentId}` },
-        (payload) => {
-          setSources((current) => {
-            if (payload.eventType === "DELETE") {
-              return current.filter((source) => source.id !== payload.old.id);
-            }
-
-            const updated = payload.new as SourceRow;
-            const exists = current.some((source) => source.id === updated.id);
-
-            return exists
-              ? current.map((source) => (source.id === updated.id ? updated : source))
-              : [updated, ...current];
-          });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, agentId]);
-
   const [pendingId, setPendingId] = useState<string | null>(null);
 
-  async function retrain(sourceId: string) {
+  async function handleRetrain(sourceId: string) {
     setPendingId(sourceId);
-    setSources((current) =>
-      current.map((s) => (s.id === sourceId ? { ...s, status: "processing" } : s)),
-    );
     try {
-      const res = await fetch(`/api/agents/${agentId}/sources/${sourceId}/retrain`, {
-        method: "POST",
-      });
-      if (!res.ok) {
-        // Request never kicked off a retrain, so the optimistic
-        // "processing" status is never going to resolve on its own.
-        setSources((current) =>
-          current.map((s) => (s.id === sourceId ? { ...s, status: "failed" } : s)),
-        );
-        toast.add({ type: "error", title: "Couldn't start retraining" });
-      } else {
-        toast.add({ type: "success", title: "Retraining started" });
-      }
+      await onRetrain(sourceId);
     } finally {
       setPendingId(null);
     }
   }
 
-  async function remove(sourceId: string) {
+  async function handleDelete(sourceId: string) {
     setPendingId(sourceId);
     try {
-      const res = await fetch(`/api/agents/${agentId}/sources/${sourceId}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setSources((current) => current.filter((s) => s.id !== sourceId));
-        toast.add({ type: "success", title: "Source deleted" });
-      } else {
-        toast.add({ type: "error", title: "Couldn't delete source" });
-      }
+      await onDelete(sourceId);
     } finally {
       setPendingId(null);
     }
@@ -184,36 +142,47 @@ export function SourcesTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {sources.map((source) => (
-          <TableRow key={source.id}>
-            <TableCell className="max-w-64 truncate font-medium">{source.label}</TableCell>
-            <TableCell>
-              <StatusBadge source={source} />
-            </TableCell>
-            <TableCell className="text-muted-foreground">
-              {new Date(source.created_at).toLocaleDateString()}
-            </TableCell>
-            <TableCell>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="outline"
-                  disabled={pendingId === source.id}
-                  onClick={() => retrain(source.id)}
-                >
-                  Retrain
-                </Button>
+        {sources.map((source) => {
+          const activeRun = activeRuns[source.id];
+          return (
+            <TableRow key={source.id}>
+              <TableCell className="max-w-64 truncate font-medium">{source.label}</TableCell>
+              <TableCell>
+                {activeRun ? (
+                  <LiveSourceStatus
+                    runId={activeRun.id}
+                    accessToken={activeRun.accessToken}
+                    onSettled={() => onRunSettled(source.id)}
+                  />
+                ) : (
+                  <StatusBadge source={source} />
+                )}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {new Date(source.created_at).toLocaleDateString()}
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    disabled={pendingId === source.id}
+                    onClick={() => handleRetrain(source.id)}
+                  >
+                    Retrain
+                  </Button>
 
-                <DeleteSourceButton
-                  label={source.label}
-                  pending={pendingId === source.id}
-                  onConfirm={() => remove(source.id)}
-                />
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+                  <DeleteSourceButton
+                    label={source.label}
+                    pending={pendingId === source.id}
+                    onConfirm={() => handleDelete(source.id)}
+                  />
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

@@ -1,19 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-// Type-only import so the ingestion task's code (Firecrawl, embedMany)
-// isn't bundled into this route handler - the task runs on Trigger.dev's
-// infrastructure, not here.
-import type { ingestSource } from "@/trigger/ingest-source";
+import { triggerIngestSource } from "@/lib/trigger";
 
 // File uploads go to the "sources" Storage bucket client-side first
 // (RLS-scoped to the org's own folder) - this route just records the
 // storage_path and hands the pipeline off to Trigger.dev. Either way the
 // route returns as soon as the source row is queued; ingestion runs in the
-// background and the sources table reflects real status via Realtime.
+// background - the client subscribes to the returned run's live status
+// (see triggerIngestSource) rather than waiting on this request.
 const createSourceSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("url"),
@@ -62,7 +59,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  await tasks.trigger<typeof ingestSource>("ingest-source", { sourceId: source.id });
+  const run = await triggerIngestSource(source.id);
 
-  return NextResponse.json({ source }, { status: 201 });
+  return NextResponse.json({ source, run }, { status: 201 });
 }

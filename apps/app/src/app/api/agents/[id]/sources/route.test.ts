@@ -5,9 +5,9 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: (...args: unknown[]) => authMock(...args),
 }));
 
-const triggerMock = vi.fn();
-vi.mock("@trigger.dev/sdk", () => ({
-  tasks: { trigger: (...args: unknown[]) => triggerMock(...args) },
+const triggerIngestSourceMock = vi.fn();
+vi.mock("@/lib/trigger", () => ({
+  triggerIngestSource: (...args: unknown[]) => triggerIngestSourceMock(...args),
 }));
 
 let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
@@ -106,7 +106,8 @@ function jsonRequest(body: unknown) {
 
 beforeEach(() => {
   authMock.mockReset();
-  triggerMock.mockReset();
+  triggerIngestSourceMock.mockReset();
+  triggerIngestSourceMock.mockResolvedValue({ id: "run_1", publicAccessToken: "pat_1" });
   fakeSupabase = makeFakeSupabase({ agents: [{ id: "agent-1" }] });
 });
 
@@ -120,7 +121,7 @@ describe("POST /api/agents/[id]/sources", () => {
     );
 
     expect(res.status).toBe(401);
-    expect(triggerMock).not.toHaveBeenCalled();
+    expect(triggerIngestSourceMock).not.toHaveBeenCalled();
   });
 
   it("rejects a malformed URL with a 400 before touching the database", async () => {
@@ -168,7 +169,7 @@ describe("POST /api/agents/[id]/sources", () => {
 
     expect(res.status).toBe(201);
     expect(body.source.status).toBe("queued");
-    expect(triggerMock).toHaveBeenCalledWith("ingest-source", { sourceId: body.source.id });
+    expect(triggerIngestSourceMock).toHaveBeenCalledWith(body.source.id);
     expect(fakeSupabase.tables.sources[0]).toMatchObject({
       org_id: "org-1",
       agent_id: "agent-1",
@@ -190,7 +191,7 @@ describe("POST /api/agents/[id]/sources", () => {
 
     expect(res.status).toBe(201);
     expect(body.source.status).toBe("queued");
-    expect(triggerMock).toHaveBeenCalledWith("ingest-source", { sourceId: body.source.id });
+    expect(triggerIngestSourceMock).toHaveBeenCalledWith(body.source.id);
     expect(fakeSupabase.tables.sources[0]).toMatchObject({
       org_id: "org-1",
       agent_id: "agent-1",
@@ -211,6 +212,6 @@ describe("POST /api/agents/[id]/sources", () => {
     );
 
     expect(res.status).toBe(500);
-    expect(triggerMock).not.toHaveBeenCalled();
+    expect(triggerIngestSourceMock).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";
@@ -10,6 +9,7 @@ import { z } from "zod";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSupabaseClient } from "@/hooks/use-supabase-client";
+import type { ActiveRun, SourceRow } from "@/components/dashboard/agents/sources-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,18 +57,20 @@ const fileSchema = z
   });
 type FileValues = z.infer<typeof fileSchema>;
 
+export type QueuedSource = { source: SourceRow; run: ActiveRun };
+
 /**
- * Queues a source and reports the outcome — ingestion runs in the
- * background via Trigger.dev, so a 201 here only means "queued," not
- * "ready." The sources table's Realtime subscription reflects the real
- * status (processing/ready/failed) as the background job proceeds.
+ * Queues a source and returns it plus its Trigger.dev run - the caller
+ * (SourcesPanel) adds the row to its own state and starts tracking the run
+ * immediately, rather than waiting on a Realtime event or a full page
+ * refresh to show it.
  */
 async function queueSource(
   agentId: string,
   body:
     | { type: "url"; label: string; url: string }
     | { type: "file"; label: string; storagePath: string },
-) {
+): Promise<QueuedSource> {
   const res = await fetch(`/api/agents/${agentId}/sources`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -80,7 +82,10 @@ async function queueSource(
       typeof responseBody?.error === "string" ? responseBody.error : "Failed to add source",
     );
   }
-  return responseBody;
+  return {
+    source: { ...responseBody.source, error_message: null },
+    run: responseBody.run,
+  };
 }
 
 /**
@@ -91,7 +96,13 @@ async function queueSource(
  * each with its own Zod schema, matching how every other form in this app
  * is built.
  */
-function AddSourceForm({ agentId, onDone }: { agentId: string; onDone: () => void }) {
+function AddSourceForm({
+  agentId,
+  onQueued,
+}: {
+  agentId: string;
+  onQueued: (result: QueuedSource) => void;
+}) {
   const { orgId } = useAuth();
   const supabase = useSupabaseClient();
   const [tab, setTab] = useState<"url" | "file">("url");
@@ -117,9 +128,9 @@ function AddSourceForm({ agentId, onDone }: { agentId: string; onDone: () => voi
 
   const onSubmitUrl = async ({ url, label }: UrlValues) => {
     try {
-      await queueSource(agentId, { type: "url", label: label || url, url });
+      const result = await queueSource(agentId, { type: "url", label: label || url, url });
       urlForm.reset();
-      onDone();
+      onQueued(result);
       reportSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
@@ -149,10 +160,14 @@ function AddSourceForm({ agentId, onDone }: { agentId: string; onDone: () => voi
         .upload(storagePath, file, { contentType: file.type || undefined });
       if (uploadError) throw new Error(uploadError.message);
 
-      await queueSource(agentId, { type: "file", label: label || file.name, storagePath });
+      const result = await queueSource(agentId, {
+        type: "file",
+        label: label || file.name,
+        storagePath,
+      });
 
       fileForm.reset();
-      onDone();
+      onQueued(result);
       reportSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
@@ -272,14 +287,19 @@ const DESCRIPTION =
  * a Dialog on a small viewport fights the on-screen keyboard and the
  * dialog's own max-height; a bottom Drawer doesn't.
  */
-export function AddSourceDialog({ agentId }: { agentId: string }) {
-  const router = useRouter();
+export function AddSourceDialog({
+  agentId,
+  onQueued,
+}: {
+  agentId: string;
+  onQueued: (result: QueuedSource) => void;
+}) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [open, setOpen] = useState(false);
 
-  const handleDone = () => {
+  const handleQueued = (result: QueuedSource) => {
     setOpen(false);
-    router.refresh();
+    onQueued(result);
   };
 
   if (isDesktop) {
@@ -294,7 +314,7 @@ export function AddSourceDialog({ agentId }: { agentId: string }) {
             <DialogTitle>{TITLE}</DialogTitle>
             <DialogDescription>{DESCRIPTION}</DialogDescription>
           </DialogHeader>
-          <AddSourceForm agentId={agentId} onDone={handleDone} />
+          <AddSourceForm agentId={agentId} onQueued={handleQueued} />
         </DialogContent>
       </Dialog>
     );
@@ -312,7 +332,7 @@ export function AddSourceDialog({ agentId }: { agentId: string }) {
           <DrawerDescription>{DESCRIPTION}</DrawerDescription>
         </DrawerHeader>
         <div className="p-4">
-          <AddSourceForm agentId={agentId} onDone={handleDone} />
+          <AddSourceForm agentId={agentId} onQueued={handleQueued} />
         </div>
       </DrawerContent>
     </Drawer>
