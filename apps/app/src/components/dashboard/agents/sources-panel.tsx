@@ -79,6 +79,26 @@ export function SourcesPanel({
     });
   }, []);
 
+  const settleRun = useCallback(
+    async (sourceId: string) => {
+      clearRun(sourceId);
+
+      // The row's own StatusBadge takes over once its run is no longer
+      // active - refetch it directly instead of trusting the Supabase
+      // Realtime channel got the UPDATE, so the badge can't fall back to a
+      // stale pre-run status while waiting on that channel.
+      const { data } = await supabase
+        .from("sources")
+        .select("id, label, status, error_message, created_at")
+        .eq("id", sourceId)
+        .single();
+      if (data) {
+        setSources((current) => current.map((s) => (s.id === sourceId ? data : s)));
+      }
+    },
+    [supabase, clearRun],
+  );
+
   function handleQueued({ source, run }: QueuedSource) {
     setSources((current) =>
       current.some((s) => s.id === source.id) ? current : [source, ...current],
@@ -133,7 +153,7 @@ export function SourcesPanel({
           activeRuns={activeRuns}
           onRetrain={handleRetrain}
           onDelete={handleDelete}
-          onRunSettled={clearRun}
+          onRunSettled={settleRun}
         />
       </CardContent>
     </Card>
