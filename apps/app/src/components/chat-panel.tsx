@@ -143,6 +143,15 @@ export function ChatPanel({
               .map((part) => part.text)
               .join("");
 
+            // A turn that fails before any token streams (a Gateway rate
+            // limit, an outage) still leaves an empty assistant message
+            // shell behind once the stream ends in error - the `error`
+            // block below already shows that failure, so render nothing
+            // for the empty shell rather than an empty pill above it.
+            if (message.role === "assistant" && !rawText && sourceParts.length === 0) {
+              return null;
+            }
+
             return (
               <Fragment key={message.id}>
                 {showSources && message.role === "assistant" && sourceParts.length > 0 && (

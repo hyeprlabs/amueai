@@ -214,6 +214,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     return textError("No chat model is currently available.", 503);
   }
 
+  const resolveErrorMessage = (err: unknown) => {
+    console.error(`[chat] generation failed for agent ${agent.id}`, err);
+    return isRateLimitError(err) ? RATE_LIMIT_MESSAGE : fallbackMessage;
+  };
+
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       for (const source of sourceRows) {
@@ -237,9 +242,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
         // registered there makes the Gateway 400 every request with
         // "Quota entity ... was provided but no quota exists."
         providerOptions: { gateway: { user: agent.org_id, tags: [`org:${agent.org_id}`] } },
-        onError: ({ error }) => {
-          console.error(`[chat] generation failed for agent ${agent.id}`, error);
-        },
+        // Not logged here - the same error also reaches toUIMessageStream's
+        // onError below (as the stream's error part), which already logs it
+        // via resolveErrorMessage. A second handler here would just double
+        // the log line.
         onFinish: async ({ text }) => {
           try {
             await supabase.from("messages").insert([
@@ -264,19 +270,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
         },
       });
 
-      writer.merge(toUIMessageStream({ stream: result.stream }));
+      // A Gateway/provider failure (a rate limit, an outage) surfaces as an
+      // inline "error" part on result.stream, not a thrown/rejected
+      // promise - toUIMessageStream converts that itself and has its own
+      // default onError ("An error occurred."), completely separate from
+      // createUIMessageStream's onError below, which only catches an
+      // exception thrown out of this whole execute function. Without this,
+      // every generation failure showed the generic AI SDK default instead
+      // of the agent's fallback or the rate-limit message.
+      writer.merge(toUIMessageStream({ stream: result.stream, onError: resolveErrorMessage }));
     },
-    // Anything uncaught above (a Gateway outage, the merge itself erroring
-    // mid-stream) lands here instead of leaving the visitor with a silent,
-    // blank turn. A Gateway rate limit gets its own distinct message, since
-    // "try again in a moment" is actually true and worth saying plainly
-    // rather than folding it into the generic "I don't know" copy the
-    // agent is configured to show - everything else still falls back to
-    // that, so nothing here ever leaks internals.
-    onError: (err) => {
-      console.error(`[chat] stream failed for agent ${agent.id}`, err);
-      return isRateLimitError(err) ? RATE_LIMIT_MESSAGE : fallbackMessage;
-    },
+    // Anything uncaught above (the merge itself throwing outside of a
+    // stream part, e.g. a network error establishing the request) lands
+    // here instead of leaving the visitor with a silent, blank turn.
+    onError: resolveErrorMessage,
   });
 
   return createUIMessageStreamResponse({

@@ -4,6 +4,7 @@ import { RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 
 const embedMock = vi.fn();
 const streamTextMock = vi.fn();
+const toUIMessageStreamMock = vi.fn((..._args: unknown[]) => ({}));
 vi.mock("ai", () => ({
   embed: (...args: unknown[]) => embedMock(...args),
   streamText: (...args: unknown[]) => streamTextMock(...args),
@@ -38,7 +39,7 @@ vi.mock("ai", () => ({
     (response as Response & { __onError?: (err: unknown) => string }).__onError = stream.onError;
     return response;
   },
-  toUIMessageStream: () => ({}),
+  toUIMessageStream: (...args: unknown[]) => toUIMessageStreamMock(...args),
 }));
 
 const checkChatRateLimitMock = vi.fn();
@@ -183,6 +184,7 @@ const agent = {
 beforeEach(() => {
   embedMock.mockReset();
   streamTextMock.mockReset();
+  toUIMessageStreamMock.mockClear();
   checkChatRateLimitMock.mockReset();
   resolveAutoModelIdMock.mockReset();
 
@@ -304,6 +306,28 @@ describe("POST /api/chat/[agentId]", () => {
 
     expect(onError?.(rateLimitError)).toBe(RATE_LIMIT_MESSAGE);
     expect(onError?.(otherError)).toBe(DEFAULT_FALLBACK_MESSAGE);
+  });
+
+  it("also passes the same rate-limit-aware onError to toUIMessageStream, not just createUIMessageStream", async () => {
+    // Regression guard: a Gateway failure surfaces as an inline "error"
+    // part on streamText's own stream, which toUIMessageStream converts
+    // using ITS OWN onError (defaulting to the AI SDK's generic "An error
+    // occurred.") - completely separate from createUIMessageStream's
+    // onError, which only fires for a thrown/rejected execute(). Without
+    // passing onError here too, every generation failure showed that
+    // generic AI SDK default instead of the agent's fallback or the
+    // rate-limit message, no matter what createUIMessageStream's onError
+    // did.
+    await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    expect(toUIMessageStreamMock).toHaveBeenCalledWith(
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+    const { onError } = toUIMessageStreamMock.mock.calls[0][0] as { onError: (e: unknown) => string };
+    expect(onError({ statusCode: 429 })).toBe(RATE_LIMIT_MESSAGE);
+    expect(onError(new Error("boom"))).toBe(DEFAULT_FALLBACK_MESSAGE);
   });
 
   it("rate-limits by IP and agent id together", async () => {
