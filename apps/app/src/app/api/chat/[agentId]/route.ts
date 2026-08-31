@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
@@ -11,6 +10,15 @@ import { z } from "zod";
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
 import { checkChatRateLimit } from "@/lib/rate-limit";
 import { AUTO_MODEL_ID, resolveAutoModelId } from "@/lib/gateway-models";
+import { isRateLimitError, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
+
+// Plain text, not NextResponse.json: the AI SDK transport turns a non-ok
+// response into `new Error(await response.text())`, so a JSON body would
+// show up as a raw, unparsed JSON blob in the chat UI's error bubble
+// instead of a clean sentence.
+function textError(message: string, status: number) {
+  return new Response(message, { status, headers: { "Content-Type": "text/plain" } });
+}
 
 // Public, unauthenticated route - the widget and the dashboard test-chat
 // panel both call this. No Clerk session, so RLS provides no protection
@@ -75,7 +83,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
 
   const parsed = chatRequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return textError("Invalid request.", 400);
   }
   const { message, visitorId } = parsed.data;
   let { conversationId } = parsed.data;
@@ -89,7 +97,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     .single();
 
   if (!agent) {
-    return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+    return textError("Agent not found.", 404);
   }
 
   // Agent ids are public by design - they ship in the embed snippet on the
@@ -103,14 +111,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   if (agent.allowed_origins && agent.allowed_origins.length > 0) {
     const origin = request.headers.get("origin");
     if (!origin || !agent.allowed_origins.includes(origin)) {
-      return NextResponse.json({ error: "Origin not allowed for this agent" }, { status: 403 });
+      return textError("Origin not allowed for this agent.", 403);
     }
   }
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const allowed = await checkChatRateLimit(ip, agent.id);
   if (!allowed) {
-    return NextResponse.json({ error: "Too many messages - please slow down." }, { status: 429 });
+    return textError(RATE_LIMIT_MESSAGE, 429);
   }
 
   if (conversationId) {
@@ -134,7 +142,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
         visitor_id: visitorId,
       });
       if (conversationError) {
-        return NextResponse.json({ error: "Failed to start conversation" }, { status: 500 });
+        return textError("Failed to start conversation.", 500);
       }
     }
   } else {
@@ -145,7 +153,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
       .single();
 
     if (conversationError || !conversation) {
-      return NextResponse.json({ error: "Failed to start conversation" }, { status: 500 });
+      return textError("Failed to start conversation.", 500);
     }
     conversationId = conversation.id;
   }
@@ -203,7 +211,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   // isn't right either, so surface the failure instead of guessing.
   const chatModel = agent.model === AUTO_MODEL_ID ? await resolveAutoModelId() : agent.model;
   if (!chatModel) {
-    return NextResponse.json({ error: "No chat model is currently available" }, { status: 503 });
+    return textError("No chat model is currently available.", 503);
   }
 
   const stream = createUIMessageStream({
@@ -260,11 +268,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     },
     // Anything uncaught above (a Gateway outage, the merge itself erroring
     // mid-stream) lands here instead of leaving the visitor with a silent,
-    // blank turn - surfaced as the same fallback copy the agent is already
-    // configured to show for "I don't know", so it never leaks internals.
+    // blank turn. A Gateway rate limit gets its own distinct message, since
+    // "try again in a moment" is actually true and worth saying plainly
+    // rather than folding it into the generic "I don't know" copy the
+    // agent is configured to show - everything else still falls back to
+    // that, so nothing here ever leaks internals.
     onError: (err) => {
       console.error(`[chat] stream failed for agent ${agent.id}`, err);
-      return fallbackMessage;
+      return isRateLimitError(err) ? RATE_LIMIT_MESSAGE : fallbackMessage;
     },
   });
 

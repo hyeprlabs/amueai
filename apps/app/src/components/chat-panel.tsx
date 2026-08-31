@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { ArrowUpIcon } from "lucide-react";
+import { ArrowUpIcon, ClockIcon } from "lucide-react";
 import {
   Component,
   Fragment,
@@ -22,6 +22,7 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 import { cn } from "@/lib/utils";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 
@@ -185,16 +186,27 @@ export function ChatPanel({
               <Shimmer className="px-1 text-xs">Thinking…</Shimmer>
             </Message>
           )}
-          {error && (
-            <Message className="gap-0.5" from="assistant">
-              <MessageContent className="text-xs leading-relaxed">
-                <p className="whitespace-pre-wrap">{error.message || "Something went wrong."}</p>
-              </MessageContent>
-              <span className="px-1 text-left text-[10px] text-muted-foreground">
-                {formatTimestamp(errorTimestamp.current ?? Date.now())}
-              </span>
-            </Message>
-          )}
+          {error &&
+            (error.message === RATE_LIMIT_MESSAGE ? (
+              <Message className="gap-0.5" from="assistant">
+                <MessageContent className="flex-row items-center gap-1.5 border-amber-500/40 bg-amber-500/10 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
+                  <ClockIcon className="size-3.5 shrink-0" />
+                  <p className="whitespace-pre-wrap">{error.message}</p>
+                </MessageContent>
+                <span className="px-1 text-left text-[10px] text-muted-foreground">
+                  {formatTimestamp(errorTimestamp.current ?? Date.now())}
+                </span>
+              </Message>
+            ) : (
+              <Message className="gap-0.5" from="assistant">
+                <MessageContent className="text-xs leading-relaxed">
+                  <p className="whitespace-pre-wrap">{error.message || "Something went wrong."}</p>
+                </MessageContent>
+                <span className="px-1 text-left text-[10px] text-muted-foreground">
+                  {formatTimestamp(errorTimestamp.current ?? Date.now())}
+                </span>
+              </Message>
+            ))}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>

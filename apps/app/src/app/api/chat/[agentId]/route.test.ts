@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
+
 const embedMock = vi.fn();
 const streamTextMock = vi.fn();
 vi.mock("ai", () => ({
@@ -273,7 +275,7 @@ describe("POST /api/chat/[agentId]", () => {
     });
   });
 
-  it("returns 429 without calling the model when rate limited", async () => {
+  it("returns 429 without calling the model when rate limited, with a plain-text body", async () => {
     checkChatRateLimitMock.mockResolvedValue(false);
 
     const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
@@ -282,6 +284,26 @@ describe("POST /api/chat/[agentId]", () => {
 
     expect(res.status).toBe(429);
     expect(streamTextMock).not.toHaveBeenCalled();
+    // Plain text, not JSON: the AI SDK transport turns a non-ok response
+    // into `new Error(await response.text())`, so a JSON body would show
+    // up as a raw, unparsed blob in the chat UI's error bubble.
+    expect(await res.text()).toBe(RATE_LIMIT_MESSAGE);
+  });
+
+  it("distinguishes a Gateway rate limit from other generation failures via the stream's onError", async () => {
+    const res = await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
+      params: Promise.resolve({ agentId: "agent-1" }),
+    });
+
+    const onError = (res as Response & { __onError?: (err: unknown) => string }).__onError;
+    const rateLimitError = {
+      name: "AI_RetryError",
+      errors: [{ name: "GatewayRateLimitError", statusCode: 429 }],
+    };
+    const otherError = new Error("network blip");
+
+    expect(onError?.(rateLimitError)).toBe(RATE_LIMIT_MESSAGE);
+    expect(onError?.(otherError)).toBe(DEFAULT_FALLBACK_MESSAGE);
   });
 
   it("rate-limits by IP and agent id together", async () => {
