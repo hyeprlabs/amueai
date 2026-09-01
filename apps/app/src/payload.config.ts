@@ -1,4 +1,5 @@
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import { mcpPlugin } from "@payloadcms/plugin-mcp";
 import { searchPlugin } from "@payloadcms/plugin-search";
 import { seoPlugin } from "@payloadcms/plugin-seo";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
@@ -96,6 +97,36 @@ export default buildConfig({
         blog: 10,
         competitors: 9,
         changelog: 8,
+      },
+    }),
+    // Lets MCP clients (e.g. a Claude Code Routine) draft blog posts through
+    // POST /api/mcp. No delete access, and only the collections a
+    // post-writing workflow needs to read or create; access still requires a
+    // per-key grant issued from the "API Keys" (MCP) group in /admin.
+    mcpPlugin({
+      collections: {
+        blog: {
+          description:
+            "Blog posts shown at /blog/[slug]. Create as a draft (draft: true) so a human reviews and publishes it in the admin UI.",
+          enabled: { create: true, find: true, update: true },
+        },
+        authors: {
+          description: "Author profiles a blog post's `author` relationship points to.",
+          enabled: { find: true },
+        },
+        categories: {
+          description: "Categories a blog post's `categories` relationship points to.",
+          enabled: { find: true },
+        },
+        media: {
+          description: "Uploaded images available for a blog post's `featuredImage`.",
+          enabled: { find: true },
+        },
+      },
+      mcp: {
+        serverOptions: {
+          serverInfo: { name: "AmueAI Payload MCP", version: "1.0.0" },
+        },
       },
     }),
   ],
