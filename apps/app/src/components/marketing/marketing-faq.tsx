@@ -1,13 +1,10 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { useId, useState } from "react";
+import { ChevronDownIcon } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
 
 export type MarketingFaqItem = {
   id?: string | null;
@@ -19,6 +16,10 @@ export type MarketingFaqItem = {
  * Optional FAQ block rendered below an article's content — shared by blog posts
  * and competitor comparisons. Both publish the same questions as FAQ
  * structured data, so the copy on the page and in the markup never diverge.
+ *
+ * A self-contained disclosure rather than the shared `Accordion` primitive:
+ * only the collapsing/expanding panel animates (via the `motion` package),
+ * so each item opens and closes independently.
  */
 export function MarketingFaq({
   title,
@@ -29,8 +30,6 @@ export function MarketingFaq({
   description?: string | null;
   items: MarketingFaqItem[];
 }) {
-  const reduced = useReducedMotion();
-
   if (items.length === 0) return null;
 
   return (
@@ -42,22 +41,54 @@ export function MarketingFaq({
         {description && <p className="text-muted-foreground text-sm">{description}</p>}
       </div>
 
-      <Accordion className="rounded-none border-x-0 border-t border-b-0">
+      <div className="divide-y border-t">
         {items.map((item, index) => (
-          <motion.div
-            initial={reduced ? false : { opacity: 0, y: 12 }}
-            key={item.id ?? index}
-            transition={{ duration: 0.4, delay: reduced ? 0 : index * 0.05, ease: "easeOut" }}
-            viewport={{ once: true, margin: "-40px" }}
-            whileInView={{ opacity: 1, y: 0 }}
-          >
-            <AccordionItem className="px-4" value={item.id ?? index}>
-              <AccordionTrigger>{item.question}</AccordionTrigger>
-              <AccordionContent>{item.answer}</AccordionContent>
-            </AccordionItem>
-          </motion.div>
+          <FaqRow item={item} key={item.id ?? index} />
         ))}
-      </Accordion>
+      </div>
     </section>
+  );
+}
+
+function FaqRow({ item }: { item: MarketingFaqItem }) {
+  const reduced = useReducedMotion();
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+
+  return (
+    <div className="px-4">
+      <h3>
+        <button
+          aria-controls={panelId}
+          aria-expanded={open}
+          className="flex w-full flex-1 items-center justify-between gap-4 py-4 text-left font-medium text-sm outline-none hover:no-underline focus-visible:underline sm:text-base"
+          onClick={() => setOpen((current) => !current)}
+          type="button"
+        >
+          {item.question}
+          <ChevronDownIcon
+            aria-hidden="true"
+            className={cn(
+              "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+              open && "rotate-180",
+            )}
+          />
+        </button>
+      </h3>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            animate={{ height: "auto", opacity: 1 }}
+            className="overflow-hidden text-sm"
+            exit={{ height: 0, opacity: 0 }}
+            id={panelId}
+            initial={{ height: 0, opacity: 0 }}
+            transition={{ duration: reduced ? 0 : 0.25, ease: "easeInOut" }}
+          >
+            <div className="pb-4 text-muted-foreground">{item.answer}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

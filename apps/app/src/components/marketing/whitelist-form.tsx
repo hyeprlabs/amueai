@@ -111,7 +111,7 @@ export function WhitelistForm() {
 
   return (
     <form
-      className="w-full max-w-2xs sm:max-w-md"
+      className="w-full max-w-[13rem] sm:max-w-md"
       noValidate
       onSubmit={handleSubmit(onSubmit, onInvalid)}
     >
