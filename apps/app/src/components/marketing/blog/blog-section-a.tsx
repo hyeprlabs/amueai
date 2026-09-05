@@ -6,8 +6,8 @@ import { FullWidthDivider } from "@/components/full-width-divider";
 import { cn } from "@/lib/utils";
 import type { Category, Post } from "@/payload-types";
 
-/** `/blog` listing: header, category switcher, and the divided post list. */
-export function BlogSection({
+/** `/blog` listing (variant A): header, category switcher, and the divided post list. */
+export function BlogSectionA({
   title,
   description,
   posts,
