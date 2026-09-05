@@ -38,7 +38,7 @@ export function BlogSectionB({
       <div className="relative">
         <FullWidthDivider />
         {posts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-x-2 gap-y-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-4 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
             {posts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
@@ -78,7 +78,7 @@ function PostCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
   return (
     <Link
       className={cn(
-        "group flex flex-col gap-3 rounded-xl p-3 hover:cursor-pointer hover:bg-accent/30 active:bg-accent dark:active:bg-accent/50",
+        "group flex w-full flex-col gap-3 rounded-xl p-2 hover:cursor-pointer hover:bg-accent/30 active:bg-accent sm:p-3 dark:active:bg-accent/50",
         className,
       )}
       href={`/blog/${post.slug}`}
@@ -88,21 +88,21 @@ function PostCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
         <LazyImage
           alt={image.alt}
           className="transition-transform duration-500 group-hover:scale-105"
-          containerClassName="rounded-lg"
+          containerClassName="w-full shrink-0 rounded-lg border border-border outline outline-1 outline-offset-4 outline-border/30"
           fallback="https://placehold.co/640x360?text=Image"
           inView
           ratio={16 / 9}
           src={image.src}
         />
       ) : (
-        <div className="aspect-video w-full rounded-lg border bg-accent/30" />
+        <div className="aspect-video w-full shrink-0 rounded-lg border border-border bg-accent/30 outline outline-1 outline-offset-4 outline-border/30" />
       )}
 
       <div className="space-y-2 px-1">
         {postCategories.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {postCategories.map((category) => (
-              <Badge key={category.id} variant="secondary">
+              <Badge className="rounded-md" key={category.id} variant="outline">
                 {category.title}
               </Badge>
             ))}

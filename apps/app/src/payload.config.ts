@@ -105,11 +105,11 @@ export default buildConfig({
         changelog: 8,
       },
     }),
-    // Lets MCP clients (e.g. a Claude Code Routine) draft blog posts through
-    // POST /api/mcp. No delete access, and only the collections a
-    // post-writing workflow needs to read, create, or update; access still
-    // requires a per-key grant issued from the "API Keys" (MCP) group in
-    // /admin.
+    // Lets MCP clients (e.g. a Claude Code Routine) draft blog posts and edit
+    // legal pages through POST /api/mcp. No delete access, and only the
+    // collections that workflow needs to read, create, or update; access
+    // still requires a per-key grant issued from the "API Keys" (MCP) group
+    // in /admin.
     mcpPlugin({
       collections: {
         blog: {
@@ -130,6 +130,11 @@ export default buildConfig({
           description:
             "Uploaded images available for a blog post's `featuredImage` and `meta.image`. Create one by passing a web image `url` (fetched server-side via pasteURL) along with `alt` text, then reference the resulting document's id.",
           enabled: { create: true, find: true },
+        },
+        "legal-pages": {
+          description:
+            "Legal pages shown at /legal/[slug] (e.g. Privacy Policy, Terms). Read and update existing pages; a human still reviews changes before publishing.",
+          enabled: { find: true, update: true },
         },
       },
       mcp: {
