@@ -128,7 +128,7 @@ export default buildConfig({
         },
         media: {
           description:
-            "Uploaded images available for a blog post's `featuredImage` and `meta.image`. Create one by passing a web image `url` (fetched server-side via pasteURL) along with `alt` text, then reference the resulting document's id.",
+            'Uploaded images available for a blog post\'s `featuredImage` and `meta.image`. Create one by passing a web image `url` *and* a `filename` (e.g. "my-image.jpg") along with `alt` text — `filename` is required for Payload\'s pasteURL fetch to trigger, or the create fails with "No files were uploaded". Then reference the resulting document\'s id.',
           enabled: { create: true, find: true },
         },
         "legal-pages": {
