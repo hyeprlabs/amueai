@@ -1,13 +1,17 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { BlogEmpty } from "@/components/marketing/blog/blog-empty";
 import { CategoryDropdown } from "@/components/marketing/blog/category-dropdown";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { LazyImage } from "@/components/lazy-image";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
 import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { Author, Category, Post } from "@/payload-types";
+
+const IMAGE_FRAME =
+  "rounded-lg border border-border outline outline-1 outline-offset-4 outline-border/30";
 
 /** `/blog` listing (variant B): same header + category switch as A, but an image grid. */
 export function BlogSectionB({
@@ -84,19 +88,19 @@ function PostCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
       href={`/blog/${post.slug}`}
       {...props}
     >
-      {image ? (
-        <LazyImage
-          alt={image.alt}
-          className="transition-transform duration-500 group-hover:scale-105"
-          containerClassName="w-full shrink-0 rounded-lg border border-border outline outline-1 outline-offset-4 outline-border/30"
-          fallback="https://placehold.co/640x360?text=Image"
-          inView
-          ratio={16 / 9}
-          src={image.src}
-        />
-      ) : (
-        <div className="aspect-video w-full shrink-0 rounded-lg border border-border bg-accent/30 outline outline-1 outline-offset-4 outline-border/30" />
-      )}
+      <AspectRatio className={cn("w-full shrink-0 overflow-hidden", IMAGE_FRAME)} ratio={16 / 9}>
+        {image ? (
+          <Image
+            alt={image.alt}
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            src={image.src}
+          />
+        ) : (
+          <div className="size-full bg-accent/30" />
+        )}
+      </AspectRatio>
 
       <div className="space-y-2 px-1">
         {postCategories.length > 0 && (
