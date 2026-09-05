@@ -21,7 +21,7 @@ export function BlogSection({
   activeCategorySlug?: string;
 }) {
   return (
-    <div className="flex w-full flex-col justify-start">
+    <div className="mb-12 flex w-full flex-col justify-start lg:mb-24">
       <div className="flex flex-col items-start justify-between gap-4 px-4 py-8 sm:flex-row sm:items-center md:py-12">
         <div className="space-y-2">
           <h1 className="font-semibold text-2xl tracking-wide md:text-4xl">{title}</h1>
