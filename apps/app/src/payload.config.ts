@@ -53,8 +53,8 @@ export default buildConfig({
     },
     components: {
       graphics: {
-        Logo: "/components/admin/brand#AdminLogo",
-        Icon: "/components/admin/brand#AdminIcon",
+        Logo: "/components/admin/admin-logo-icon#AdminLogo",
+        Icon: "/components/admin/admin-logo-icon#AdminIcon",
       },
     },
   },
