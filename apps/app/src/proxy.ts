@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-import { BLOG_VISITOR_COOKIE, waitlistFlag } from "@/lib/flags";
+import { BLOG_VISITOR_COOKIE } from "@/lib/blog-visitor-cookie";
+import { waitlistFlag } from "@/lib/flags";
 
 /**
  * The `(dashboard)` route group — everything under it, not the marketing

@@ -2,23 +2,24 @@ import { dedupe, flag } from "flags/next";
 import { vercelAdapter } from "@flags-sdk/vercel";
 import type { ReadonlyRequestCookies } from "flags";
 
+import { BLOG_VISITOR_COOKIE } from "@/lib/blog-visitor-cookie";
+
 export const waitlistFlag = flag<boolean>({
   key: "waitlist",
   adapter: vercelAdapter,
   defaultValue: false,
 });
 
-/** Cookie set by the proxy so a visitor keeps seeing the same `/blog` variant on repeat visits. */
-export const BLOG_VISITOR_COOKIE = "blog-visitor-id";
-
 interface BlogSectionEntities {
-  visitor?: { id: string };
+  // Vercel's project-level entity schema only knows "user" and "team", so an
+  // anonymous blog visitor is bucketed as a "user" for rollout purposes.
+  user?: { id: string };
 }
 
 const identifyBlogVisitor = dedupe(
   ({ cookies }: { cookies: ReadonlyRequestCookies }): BlogSectionEntities => {
     const id = cookies.get(BLOG_VISITOR_COOKIE)?.value;
-    return { visitor: id ? { id } : undefined };
+    return { user: id ? { id } : undefined };
   },
 );
 
