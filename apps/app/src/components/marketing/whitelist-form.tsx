@@ -34,7 +34,7 @@ const whitelistSchema = z.object({
 type WhitelistFormValues = z.infer<typeof whitelistSchema>;
 
 function showError(description: string) {
-  toast.add({ title: "Couldn't join the waitlist", description, type: "error" });
+  toast.add({ title: "Couldn’t join the waitlist", description, type: "error" });
 }
 
 export function WhitelistForm() {
@@ -84,8 +84,8 @@ export function WhitelistForm() {
       }
 
       toast.add({
-        title: "You're on the list!",
-        description: "We'll be in touch soon.",
+        title: "You’re on the list!",
+        description: "We’ll be in touch soon.",
         type: "success",
       });
       void fireConfetti();
@@ -127,6 +127,7 @@ export function WhitelistForm() {
             disabled={isLoading}
             id={emailId}
             placeholder="you@company.com"
+            spellCheck={false}
             type="email"
             {...register("emailAddress")}
           />
@@ -150,7 +151,7 @@ export function WhitelistForm() {
       <div
         aria-live="polite"
         className={cn(
-          "grid transition-all duration-300 ease-out",
+          "grid transition-[grid-template-rows,opacity,padding-top] duration-300 ease-out",
           fieldError ? "grid-rows-[1fr] pt-2 opacity-100" : "grid-rows-[0fr] opacity-0",
         )}
       >

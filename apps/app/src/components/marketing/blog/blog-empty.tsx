@@ -37,7 +37,7 @@ export function BlogEmpty({
       </EmptyHeader>
       {categorySlug && (
         <EmptyContent className="flex-row justify-center gap-2">
-          <Button render={<Link href="/blog" />}>Browse all posts</Button>
+          <Button render={<Link href="/blog" />}>Browse All Posts</Button>
         </EmptyContent>
       )}
       <EmptyContent>

@@ -136,7 +136,7 @@ function DashboardVisual() {
         <div className="space-y-2">
           <FeatureTitle className="text-base">No-Code Agent Builder</FeatureTitle>
           <FeatureDescription>
-            Configure your agent&apos;s knowledge, tone, and actions — no coding required.
+            Configure your agent’s knowledge, tone, and actions — no coding required.
           </FeatureDescription>
         </div>
       </div>

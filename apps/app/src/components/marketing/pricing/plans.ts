@@ -56,7 +56,7 @@ export const plans: Plan[] = [
       "AI powered suggestions",
     ],
     btn: {
-      text: "Get started",
+      text: "Get Started",
       href: "/sign-up",
     },
   },
@@ -77,7 +77,7 @@ export const plans: Plan[] = [
       "AI powered suggestions",
     ],
     btn: {
-      text: "Contact team",
+      text: "Contact Team",
       href: `mailto:${siteConfig.email}`,
     },
   },

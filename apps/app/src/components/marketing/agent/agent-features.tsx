@@ -54,7 +54,7 @@ export function AgentFeatures() {
           <FeatureGridCard
             className="lg:col-span-2"
             description="Ask in any of 90+ languages and get the same answer from the same source."
-            title="Speaks your customer's language"
+            title="Speaks your customer’s language"
           >
             <LanguagesGraphic />
           </FeatureGridCard>

@@ -24,7 +24,7 @@ export function PricingSection() {
             Plans that Scale with You
           </h2>
           <p className="text-muted-foreground text-sm md:text-base">
-            Whether you're just starting out or growing fast, our flexible pricing has you covered
+            Whether you’re just starting out or growing fast, our flexible pricing has you covered
             with no hidden costs.
           </p>
         </div>

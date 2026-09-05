@@ -16,7 +16,7 @@ import {
 import { createMetadata } from "@/lib/seo";
 
 const title = "About Us";
-const description = `Learn about ${siteConfig.name}'s mission to help every business turn their content into a 24/7 AI agent that answers questions, captures leads, and supports customers.`;
+const description = `Learn about ${siteConfig.name}’s mission to help every business turn their content into a 24/7 AI agent that answers questions, captures leads, and supports customers.`;
 const pathname = "/about";
 
 export const metadata: Metadata = createMetadata({ title, description, pathname });

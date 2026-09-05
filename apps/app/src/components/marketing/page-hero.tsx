@@ -28,7 +28,7 @@ export function PageHero({
       <h1
         className={cn(
           "max-w-2xl text-balance text-center text-3xl text-foreground md:text-5xl lg:text-6xl font-pixel-square",
-          "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-100 duration-500 ease-out",
+          "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-100 duration-500 ease-out motion-reduce:animate-none",
         )}
       >
         {title}
@@ -37,14 +37,14 @@ export function PageHero({
       <p
         className={cn(
           "text-center text-muted-foreground text-sm tracking-wider sm:text-lg",
-          "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-200 duration-500 ease-out",
+          "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-200 duration-500 ease-out motion-reduce:animate-none",
         )}
       >
         {description}
       </p>
 
       {children && (
-        <div className="fade-in slide-in-from-bottom-10 flex w-full animate-in flex-col items-center gap-2 fill-mode-backwards pt-2 delay-300 duration-500 ease-out sm:w-auto sm:flex-row">
+        <div className="fade-in slide-in-from-bottom-10 flex w-full animate-in flex-col items-center gap-2 fill-mode-backwards pt-2 delay-300 duration-500 ease-out motion-reduce:animate-none sm:w-auto sm:flex-row">
           {children}
         </div>
       )}

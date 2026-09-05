@@ -24,7 +24,8 @@ export function FrequencyToggle({
     >
       {frequencies.map((freq) => (
         <button
-          className="relative px-4 py-1 text-sm capitalize"
+          aria-pressed={frequency === freq}
+          className="relative rounded-lg px-4 py-1 text-sm capitalize outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           key={freq}
           onClick={() => setFrequency(freq)}
           type="button"

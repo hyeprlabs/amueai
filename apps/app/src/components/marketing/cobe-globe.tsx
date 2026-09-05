@@ -16,6 +16,10 @@ export function CobeGlobe({ className }: { className?: string }) {
     let rafId = 0;
     let phi = 0;
 
+    // A muted, continuous decorative loop: it must stop entirely for
+    // prefers-reduced-motion rather than keep spinning in the background.
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const init = () => {
       const side = canvas.offsetWidth;
       if (side === 0 || globe) {
@@ -39,6 +43,11 @@ export function CobeGlobe({ className }: { className?: string }) {
         glowColor: [1, 1, 1],
         markers: [],
       });
+
+      if (reduced) {
+        globe.update({ phi: 0 });
+        return;
+      }
 
       const loop = () => {
         globe?.update({ phi });

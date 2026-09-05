@@ -13,7 +13,7 @@ export function CallToAction() {
 
       <h2 className="text-center font-semibold text-xl md:text-3xl">Join the Waitlist</h2>
       <p className="text-balance text-center font-medium text-muted-foreground text-sm md:text-base">
-        Sign up with your email and we'll let you know the moment you can get in.
+        Sign up with your email and we’ll let you know the moment you can get in.
       </p>
 
       <WhitelistForm />

@@ -35,7 +35,7 @@ const routes = [
   {
     label: "Sales",
     icon: <BriefcaseIcon />,
-    description: "Volumes, rollout, or whether we're the right fit for your team.",
+    description: "Volumes, rollout, or whether we’re the right fit for your team.",
   },
   {
     label: "Privacy & security",
@@ -93,7 +93,7 @@ export default function ContactPage() {
       />
 
       <PageHero
-        description="Questions about the product, a bug you've hit, or a rollout you're planning. Send it over and someone on the team will get back to you."
+        description="Questions about the product, a bug you’ve hit, or a rollout you’re planning. Send it over and someone on the team will get back to you."
         title={`Talk to the people building ${siteConfig.name}`}
       />
 
@@ -103,7 +103,7 @@ export default function ContactPage() {
           <section className="bg-background p-6 md:p-8">
             <h2 className="font-medium text-lg md:text-xl">Send us a message</h2>
             <p className="mt-2 font-light text-muted-foreground text-sm">
-              Fill this in and we'll pick it up from there.
+              Fill this in and we’ll pick it up from there.
             </p>
             <div className="mt-6">
               <ContactForm />

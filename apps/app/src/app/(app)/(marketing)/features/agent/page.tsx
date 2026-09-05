@@ -44,7 +44,7 @@ const stats = [
 const capabilities = [
   { label: "Instant answers", icon: <ZapIcon /> },
   { label: "Your choice of model", icon: <CpuIcon /> },
-  { label: "Won't invent answers", icon: <ShieldCheckIcon /> },
+  { label: "Won’t invent answers", icon: <ShieldCheckIcon /> },
   { label: "Your branding", icon: <PencilIcon /> },
   { label: "Lead capture", icon: <UserPlusIcon /> },
   { label: "90+ languages", icon: <LanguagesIcon /> },
@@ -86,7 +86,7 @@ export default function AgentFeaturePage() {
         title="An AI agent that only knows your business"
       >
         <Button className="w-full sm:w-auto" nativeButton={false} render={<Link href="/pricing" />}>
-          See pricing
+          See Pricing
           <ArrowRightIcon data-icon="inline-end" />
         </Button>
         <Button
@@ -95,7 +95,7 @@ export default function AgentFeaturePage() {
           render={<Link href="/contact" />}
           variant="outline"
         >
-          Talk to us
+          Talk to Us
         </Button>
       </PageHero>
 

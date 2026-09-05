@@ -22,7 +22,7 @@ export function HeroSection() {
         <h1
           className={cn(
             "max-w-2xl text-balance text-center text-3xl text-foreground md:text-5xl lg:text-6xl font-pixel-square",
-            "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-100 duration-500 ease-out",
+            "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-100 duration-500 ease-out motion-reduce:animate-none",
           )}
         >
           Custom AI Agents Trained on Your Data
@@ -31,14 +31,14 @@ export function HeroSection() {
         <p
           className={cn(
             "text-center text-muted-foreground text-sm tracking-wider sm:text-lg",
-            "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-200 duration-500 ease-out",
+            "fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-200 duration-500 ease-out motion-reduce:animate-none",
           )}
         >
           Train an AI agent on your content in minutes <br /> to answer questions, capture leads,
           and support customers 24/7.
         </p>
 
-        <div className="fade-in slide-in-from-bottom-10 flex w-fit animate-in flex-col items-center justify-center gap-2 fill-mode-backwards pt-2 delay-300 duration-500 ease-out">
+        <div className="fade-in slide-in-from-bottom-10 flex w-fit animate-in flex-col items-center justify-center gap-2 fill-mode-backwards pt-2 delay-300 duration-500 ease-out motion-reduce:animate-none">
           <p className="text-center font-semibold text-sm">Join the Waitlist</p>
           <WhitelistForm />
         </div>

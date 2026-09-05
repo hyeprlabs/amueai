@@ -84,7 +84,7 @@ const features: FeatureType[] = [
   {
     title: "Custom Branding",
     icon: <PencilIcon />,
-    description: "Match your website's colors, logo, and tone in every conversation.",
+    description: "Match your website’s colors, logo, and tone in every conversation.",
   },
   {
     title: "Agent Actions",
