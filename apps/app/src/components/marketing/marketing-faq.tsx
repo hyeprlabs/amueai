@@ -31,7 +31,7 @@ export function MarketingFaq({
     <section className="mb-12 border-y lg:mb-24">
       <div className="space-y-2 p-4">
         <h2 className="font-semibold text-xl tracking-tight sm:text-2xl">
-          {title || "Frequently asked questions"}
+          {title || "Frequently Asked Questions"}
         </h2>
         {description && <p className="text-muted-foreground text-sm">{description}</p>}
       </div>

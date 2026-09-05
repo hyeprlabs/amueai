@@ -91,7 +91,7 @@ export function Channels() {
             render={<Link href="/features/channels" />}
             nativeButton={false}
           >
-            View all channels
+            View All Channels
             <ArrowUpRightIcon data-icon="inline-end" />
           </Button>
         </div>

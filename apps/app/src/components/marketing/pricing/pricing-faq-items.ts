@@ -10,7 +10,7 @@ export const pricingFaqItems: MarketingFaqItem[] = [
   },
   {
     id: "plan-difference",
-    question: "What's the difference between the Basic, Pro and Business plans?",
+    question: "What’s the difference between the Basic, Pro and Business plans?",
     answer:
       "Plans scale with usage and support level, from the Basic plan for individuals up to Business, which adds the highest usage limits and priority support.",
   },

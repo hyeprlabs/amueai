@@ -1,6 +1,25 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export default clerkMiddleware();
+import { waitlistFlag } from "@/lib/flags";
+
+/**
+ * The `(dashboard)` route group — everything under it, not the marketing
+ * site. Marketing pages stay open during waitlist mode; only the app itself
+ * is gated for now.
+ */
+const isDashboardRoute = createRouteMatcher([
+  "/overview(.*)",
+  "/analytics(.*)",
+  "/settings(.*)",
+  "/profile(.*)",
+]);
+
+export default clerkMiddleware(async (_auth, req) => {
+  if ((await waitlistFlag()) && isDashboardRoute(req)) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+});
 
 export const config = {
   matcher: [

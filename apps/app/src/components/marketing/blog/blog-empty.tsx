@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 /** Shared empty state for anywhere a post list can come back empty (the /blog index, a category with no posts, related posts, ...). */
 export function BlogEmpty({
   className,
-  title = "No posts yet",
+  title = "No Posts Yet",
   description = "Check back soon for new content.",
   categorySlug,
 }: {
@@ -37,7 +37,7 @@ export function BlogEmpty({
       </EmptyHeader>
       {categorySlug && (
         <EmptyContent className="flex-row justify-center gap-2">
-          <Button render={<Link href="/blog" />}>Browse all posts</Button>
+          <Button render={<Link href="/blog" />}>Browse All Posts</Button>
         </EmptyContent>
       )}
       <EmptyContent>

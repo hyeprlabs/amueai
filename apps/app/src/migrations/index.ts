@@ -6,6 +6,7 @@ import * as migration_20260826_165700_strip_meta_title_suffix from "./20260826_1
 import * as migration_20260826_172000_rework_competitor_comparison from "./20260826_172000_rework_competitor_comparison";
 import * as migration_20260826_180000_simplify_competitors from "./20260826_180000_simplify_competitors";
 import * as migration_20260826_185000_rename_comparison_feature_to_label from "./20260826_185000_rename_comparison_feature_to_label";
+import * as migration_20260901_211004_add_mcp_api_keys from "./20260901_211004_add_mcp_api_keys";
 
 export const migrations = [
   {
@@ -47,5 +48,10 @@ export const migrations = [
     up: migration_20260826_185000_rename_comparison_feature_to_label.up,
     down: migration_20260826_185000_rename_comparison_feature_to_label.down,
     name: "20260826_185000_rename_comparison_feature_to_label",
+  },
+  {
+    up: migration_20260901_211004_add_mcp_api_keys.up,
+    down: migration_20260901_211004_add_mcp_api_keys.down,
+    name: "20260901_211004_add_mcp_api_keys",
   },
 ];

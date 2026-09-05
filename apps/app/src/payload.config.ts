@@ -1,4 +1,5 @@
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import { mcpPlugin } from "@payloadcms/plugin-mcp";
 import { searchPlugin } from "@payloadcms/plugin-search";
 import { seoPlugin } from "@payloadcms/plugin-seo";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
@@ -96,6 +97,39 @@ export default buildConfig({
         blog: 10,
         competitors: 9,
         changelog: 8,
+      },
+    }),
+    // Lets MCP clients (e.g. a Claude Code Routine) draft blog posts through
+    // POST /api/mcp. No delete access, and only the collections a
+    // post-writing workflow needs to read, create, or update; access still
+    // requires a per-key grant issued from the "API Keys" (MCP) group in
+    // /admin.
+    mcpPlugin({
+      collections: {
+        blog: {
+          description:
+            "Blog posts shown at /blog/[slug]. Create as a draft (draft: true) so a human reviews and publishes it in the admin UI. Link `categories` and set `featuredImage`/`meta.image` to a media document.",
+          enabled: { create: true, find: true, update: true },
+        },
+        authors: {
+          description: "Author profiles a blog post's `author` relationship points to.",
+          enabled: { find: true },
+        },
+        categories: {
+          description:
+            "Categories a blog post's `categories` relationship points to. Create new ones as needed, then link them to a post.",
+          enabled: { create: true, find: true },
+        },
+        media: {
+          description:
+            "Uploaded images available for a blog post's `featuredImage` and `meta.image`. Create one by passing a web image `url` (fetched server-side via pasteURL) along with `alt` text, then reference the resulting document's id.",
+          enabled: { create: true, find: true },
+        },
+      },
+      mcp: {
+        serverOptions: {
+          serverInfo: { name: "AmueAI Payload MCP", version: "1.0.0" },
+        },
       },
     }),
   ],

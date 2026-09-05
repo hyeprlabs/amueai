@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type MotionStyle, type Transition } from "motion/react";
+import { motion, type MotionStyle, type Transition, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
@@ -64,6 +64,12 @@ export const BorderBeam = ({
   initialOffset = 0,
   borderWidth = 1,
 }: BorderBeamProps) => {
+  // A muted decorative loop, so it has to stop for prefers-reduced-motion
+  // rather than run indefinitely in the background.
+  const reduced = useReducedMotion();
+
+  if (reduced) return null;
+
   return (
     <div
       className="pointer-events-none absolute inset-0 rounded-[inherit] border-(length:--border-beam-width) border-transparent mask-[linear-gradient(transparent,transparent),linear-gradient(#000,#000)] mask-intersect [mask-clip:padding-box,border-box]"

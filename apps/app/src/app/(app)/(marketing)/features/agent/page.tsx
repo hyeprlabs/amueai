@@ -44,7 +44,7 @@ const stats = [
 const capabilities = [
   { label: "Instant answers", icon: <ZapIcon /> },
   { label: "Your choice of model", icon: <CpuIcon /> },
-  { label: "Won't invent answers", icon: <ShieldCheckIcon /> },
+  { label: "Won’t invent answers", icon: <ShieldCheckIcon /> },
   { label: "Your branding", icon: <PencilIcon /> },
   { label: "Lead capture", icon: <UserPlusIcon /> },
   { label: "90+ languages", icon: <LanguagesIcon /> },
@@ -83,10 +83,10 @@ export default function AgentFeaturePage() {
 
       <PageHero
         description="Add your content. Get an agent that answers from it, and nothing else."
-        title="An AI agent that only knows your business"
+        title="An AI Agent That Only Knows Your Business"
       >
         <Button className="w-full sm:w-auto" nativeButton={false} render={<Link href="/pricing" />}>
-          See pricing
+          See Pricing
           <ArrowRightIcon data-icon="inline-end" />
         </Button>
         <Button
@@ -95,7 +95,7 @@ export default function AgentFeaturePage() {
           render={<Link href="/contact" />}
           variant="outline"
         >
-          Talk to us
+          Talk to Us
         </Button>
       </PageHero>
 
@@ -106,7 +106,7 @@ export default function AgentFeaturePage() {
       <CapabilityStrip
         description="The rest of what your agent can do, out of the box."
         items={capabilities}
-        title="And everything else"
+        title="And Everything Else"
       />
 
       <CallToAction />

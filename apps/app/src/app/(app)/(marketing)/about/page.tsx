@@ -16,7 +16,7 @@ import {
 import { createMetadata } from "@/lib/seo";
 
 const title = "About Us";
-const description = `Learn about ${siteConfig.name}'s mission to help every business turn their content into a 24/7 AI agent that answers questions, captures leads, and supports customers.`;
+const description = `Learn about ${siteConfig.name}’s mission to help every business turn their content into a 24/7 AI agent that answers questions, captures leads, and supports customers.`;
 const pathname = "/about";
 
 export const metadata: Metadata = createMetadata({ title, description, pathname });
@@ -70,7 +70,7 @@ export default function AboutPage() {
 
       <PageHero
         description={`${siteConfig.name} turns the content you already have into an agent that answers your customers the moment they ask.`}
-        title="Your best support agent is already written down"
+        title="Your Best Support Agent Is Already Written Down"
       />
 
       {/* Facts */}
@@ -89,7 +89,7 @@ export default function AboutPage() {
 
       {/* Mission */}
       <section className="mb-12 lg:mb-24">
-        <SectionHeading title="Our mission" />
+        <SectionHeading title="Our Mission" />
         <div className="relative">
           <FullWidthDivider className="-top-px" />
           <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-3">
@@ -111,7 +111,7 @@ export default function AboutPage() {
 
       {/* Principles */}
       <section className="mb-12 lg:mb-24">
-        <SectionHeading title="What we believe" />
+        <SectionHeading title="What We Believe" />
         <div className="relative">
           <FullWidthDivider className="-top-px" />
           <dl className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
