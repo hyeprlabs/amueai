@@ -151,7 +151,7 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
 
         {/* The short answer, above the table: it is what a snippet quotes. */}
         <div className="border-t p-4">
-          <h2 className="font-medium text-muted-foreground text-sm">The short answer</h2>
+          <h2 className="font-medium text-muted-foreground text-sm">The Short Answer</h2>
           <p className="mt-2 text-balance text-lg leading-relaxed">{competitor.verdict}</p>
         </div>
 
@@ -173,7 +173,7 @@ export default async function CompetitorPage({ params }: PageProps<"/vs/[slug]">
 
       {hasRelated && (
         <section className="mb-12 flex flex-col gap-6 border-t p-4 lg:mb-24">
-          <h2 className="font-semibold text-xl tracking-tight">Other comparisons</h2>
+          <h2 className="font-semibold text-xl tracking-tight">Other Comparisons</h2>
           <div className="flex flex-wrap gap-2">
             {related.map((other) => (
               <Button key={other.id} render={<Link href={`/vs/${other.slug}`} />} variant="outline">

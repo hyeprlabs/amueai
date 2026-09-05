@@ -21,7 +21,7 @@ export function PricingSection() {
       <div className="flex flex-col items-center gap-4 px-4 py-6 text-center md:py-8">
         <div className="max-w-xl space-y-2">
           <h2 className="font-bold text-2xl tracking-tight md:text-3xl lg:font-extrabold lg:text-4xl">
-            Plans that Scale with You
+            Plans That Scale with You
           </h2>
           <p className="text-muted-foreground text-sm md:text-base">
             Whether you’re just starting out or growing fast, our flexible pricing has you covered

@@ -161,7 +161,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
 
       {relatedPosts.length > 0 && (
         <section className="mb-12 flex flex-col gap-6 border-t border-b p-4 lg:mb-24">
-          <h2 className="font-semibold text-xl tracking-tight">Related posts</h2>
+          <h2 className="font-semibold text-xl tracking-tight">Related Posts</h2>
           <PostGrid posts={relatedPosts} />
         </section>
       )}

@@ -21,7 +21,7 @@ export function ChangelogEmpty({ className }: { className?: string }) {
         <EmptyMedia variant="icon">
           <HistoryIcon aria-hidden />
         </EmptyMedia>
-        <EmptyTitle>No updates yet</EmptyTitle>
+        <EmptyTitle>No Updates Yet</EmptyTitle>
         <EmptyDescription>Check back soon, we ship changes here as they land.</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

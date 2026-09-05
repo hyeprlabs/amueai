@@ -19,14 +19,14 @@ const data = [
     label: APP_EMAIL,
   },
   {
-    title: "Send us DM",
+    title: "Send Us DM",
     description: "Send us a direct message on X for quick answers.",
     icon: <XIcon />,
     href: X_URL,
     label: X_HANDLE,
   },
   {
-    title: "Join the community",
+    title: "Join the Community",
     description: "Join our community to connect with other users.",
     icon: <Users />,
     href: DISCORD_URL,

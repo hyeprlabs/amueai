@@ -83,7 +83,7 @@ export default function AgentFeaturePage() {
 
       <PageHero
         description="Add your content. Get an agent that answers from it, and nothing else."
-        title="An AI agent that only knows your business"
+        title="An AI Agent That Only Knows Your Business"
       >
         <Button className="w-full sm:w-auto" nativeButton={false} render={<Link href="/pricing" />}>
           See Pricing
@@ -106,7 +106,7 @@ export default function AgentFeaturePage() {
       <CapabilityStrip
         description="The rest of what your agent can do, out of the box."
         items={capabilities}
-        title="And everything else"
+        title="And Everything Else"
       />
 
       <CallToAction />

@@ -5,7 +5,6 @@ import { siteConfig } from "@/config/site";
 import { DecorIcon } from "@/components/decor-icon";
 import { FullWidthDivider } from "@/components/full-width-divider";
 import { WhitelistForm } from "@/components/marketing/whitelist-form";
-import { BorderBeam } from "@/components/ui/border-beam";
 
 export function HeroSection() {
   return (
@@ -44,12 +43,6 @@ export function HeroSection() {
         </div>
       </div>
       <div className="relative">
-        <BorderBeam
-          colorFrom="rgba(255,255,255,0.35)"
-          colorTo="rgba(255,255,255,0.35)"
-          duration={20}
-          size={120}
-        />
         <DecorIcon className="size-4" position="top-left" />
         <DecorIcon className="size-4" position="top-right" />
         <DecorIcon className="size-4" position="bottom-left" />

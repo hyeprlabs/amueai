@@ -111,7 +111,7 @@ export function WhitelistForm() {
 
   return (
     <form
-      className="-mx-3 w-[calc(100%+1.5rem)] sm:mx-0 sm:w-full sm:max-w-md"
+      className="w-full max-w-2xs sm:max-w-md"
       noValidate
       onSubmit={handleSubmit(onSubmit, onInvalid)}
     >
@@ -186,7 +186,7 @@ export function WhitelistForm() {
                 className="mt-0.5"
               />
               <label
-                className="text-left font-normal text-muted-foreground text-xs leading-relaxed"
+                className="min-w-0 text-left font-normal text-muted-foreground text-xs leading-relaxed"
                 htmlFor={termsId}
               >
                 I agree to the{" "}

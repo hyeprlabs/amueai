@@ -44,7 +44,7 @@ export function FeatureSection2() {
         AI agents, screen readers). Visually hidden because the section
         doesn't have room for another visible title in the design.
       */}
-      <h2 className="sr-only">Everything you need to run an AI agent</h2>
+      <h2 className="sr-only">Everything You Need to Run an AI Agent</h2>
       {features.map((feature) => (
         <FeatureCard className={feature.className} key={feature.id}>
           {feature.children}

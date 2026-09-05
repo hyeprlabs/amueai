@@ -49,7 +49,7 @@ export function BlogSection({
                 ? "No posts in this category yet. Check back soon or browse everything else."
                 : "Check back soon for new content."
             }
-            title={activeCategorySlug ? "No posts in this category" : "No posts yet"}
+            title={activeCategorySlug ? "No Posts in This Category" : "No Posts Yet"}
           />
         )}
         <FullWidthDivider />

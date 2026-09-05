@@ -6,7 +6,7 @@ export function LogosSection() {
   return (
     <section className="mb-12 lg:mb-24">
       <h2 className="py-6 text-center font-medium text-lg text-muted-foreground tracking-tight md:text-xl">
-        Trusted by <span className="text-foreground">experts</span>
+        Trusted by <span className="text-foreground">Experts</span>
       </h2>
       <div className="relative *:border-0">
         <DecorIcon className="size-4" position="top-left" />

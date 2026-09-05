@@ -94,14 +94,14 @@ export default function ContactPage() {
 
       <PageHero
         description="Questions about the product, a bug you’ve hit, or a rollout you’re planning. Send it over and someone on the team will get back to you."
-        title={`Talk to the people building ${siteConfig.name}`}
+        title={`Talk to the People Building ${siteConfig.name}`}
       />
 
       <div className="relative mb-12 lg:mb-24">
         <FullWidthDivider className="-top-px" />
         <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-2">
           <section className="bg-background p-6 md:p-8">
-            <h2 className="font-medium text-lg md:text-xl">Send us a message</h2>
+            <h2 className="font-medium text-lg md:text-xl">Send Us a Message</h2>
             <p className="mt-2 font-light text-muted-foreground text-sm">
               Fill this in and we’ll pick it up from there.
             </p>
@@ -117,7 +117,7 @@ export default function ContactPage() {
           */}
           <section className="flex flex-col gap-8 bg-background p-6 md:p-8 dark:bg-[radial-gradient(60%_80%_at_75%_0%,--theme(--color-foreground/.07),transparent)]">
             <div>
-              <h2 className="font-medium text-lg md:text-xl">Other ways to reach us</h2>
+              <h2 className="font-medium text-lg md:text-xl">Other Ways to Reach Us</h2>
               <p className="mt-2 font-light text-muted-foreground text-sm">
                 Everything reaches the same inbox, and we read all of it.
               </p>
@@ -138,7 +138,7 @@ export default function ContactPage() {
 
             <div>
               <h3 className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-                What we can help with
+                What We Can Help With
               </h3>
               <dl className="mt-4 space-y-5">
                 {routes.map((route) => (

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 /** Shared empty state for anywhere a post list can come back empty (the /blog index, a category with no posts, related posts, ...). */
 export function BlogEmpty({
   className,
-  title = "No posts yet",
+  title = "No Posts Yet",
   description = "Check back soon for new content.",
   categorySlug,
 }: {
