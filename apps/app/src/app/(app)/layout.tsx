@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { GeistPixelSquare } from "geist/font/pixel";
-import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 // Providers
@@ -13,6 +12,7 @@ import { shadcn } from "@clerk/ui/themes";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "@/components/ui/toast";
 import { PreviewBanner } from "@/components/preview-banner";
+import { ConsentManager } from "@/components/consent-manager";
 
 // SEO
 import { siteConfig, siteTitle } from "@/config/site";
@@ -95,14 +95,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <TooltipProvider>
             <ClerkProvider appearance={{ theme: shadcn }}>
               <NuqsAdapter>
-                <PreviewBanner />
-                {children}
-                <Toaster />
+                <ConsentManager>
+                  <PreviewBanner />
+                  {children}
+                  <Toaster />
+                </ConsentManager>
               </NuqsAdapter>
             </ClerkProvider>
           </TooltipProvider>
         </ThemeProvider>
-        <Analytics />
       </body>
     </html>
   );

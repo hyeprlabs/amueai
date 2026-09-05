@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ConsentDialogLink } from "@c15t/nextjs/components/consent-dialog-link";
 
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
@@ -41,7 +42,14 @@ export function Footer() {
               </Button>
             ))}
           </div>
-          <LegalDropdown />
+          <div className="flex flex-wrap items-center gap-2">
+            <LegalDropdown />
+            <ConsentDialogLink asChild>
+              <Button className="w-max" size="sm" variant="outline">
+                Cookie Settings
+              </Button>
+            </ConsentDialogLink>
+          </div>
         </div>
         <div className="col-span-3 w-full md:col-span-1">
           <span className="text-muted-foreground text-xs">Resources</span>
