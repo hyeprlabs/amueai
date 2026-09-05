@@ -21,7 +21,7 @@ export function CompetitorsEmpty({ className }: { className?: string }) {
         <EmptyMedia variant="icon">
           <SwordsIcon aria-hidden />
         </EmptyMedia>
-        <EmptyTitle>No comparisons yet</EmptyTitle>
+        <EmptyTitle>No Comparisons Yet</EmptyTitle>
         <EmptyDescription>
           Check back soon. We publish a side-by-side breakdown for every alternative worth
           comparing.

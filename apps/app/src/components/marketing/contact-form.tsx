@@ -72,6 +72,7 @@ export function ContactForm() {
           autoComplete="email"
           id={emailId}
           placeholder="you@company.com"
+          spellCheck={false}
           type="email"
           {...register("email")}
         />
@@ -91,7 +92,7 @@ export function ContactForm() {
       </Field>
 
       <Button className="w-full" type="submit">
-        Send message
+        Send Message
       </Button>
 
       {/*

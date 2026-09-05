@@ -42,7 +42,7 @@ export function ChannelsFeatures() {
     <section className="mb-12 lg:mb-24">
       <SectionHeading
         description="Train it once. It answers everywhere your customers already are."
-        title="One agent, every channel"
+        title="One Agent, Every Channel"
       />
 
       <div className="relative">

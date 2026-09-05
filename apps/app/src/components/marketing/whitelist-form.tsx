@@ -34,7 +34,7 @@ const whitelistSchema = z.object({
 type WhitelistFormValues = z.infer<typeof whitelistSchema>;
 
 function showError(description: string) {
-  toast.add({ title: "Couldn't join the waitlist", description, type: "error" });
+  toast.add({ title: "Couldn’t join the waitlist", description, type: "error" });
 }
 
 export function WhitelistForm() {
@@ -84,8 +84,8 @@ export function WhitelistForm() {
       }
 
       toast.add({
-        title: "You're on the list!",
-        description: "We'll be in touch soon.",
+        title: "You’re on the list!",
+        description: "We’ll be in touch soon.",
         type: "success",
       });
       void fireConfetti();
@@ -111,7 +111,7 @@ export function WhitelistForm() {
 
   return (
     <form
-      className="-mx-3 w-[calc(100%+1.5rem)] sm:mx-0 sm:w-full sm:max-w-md"
+      className="w-full max-w-[13rem] sm:max-w-md"
       noValidate
       onSubmit={handleSubmit(onSubmit, onInvalid)}
     >
@@ -127,6 +127,7 @@ export function WhitelistForm() {
             disabled={isLoading}
             id={emailId}
             placeholder="you@company.com"
+            spellCheck={false}
             type="email"
             {...register("emailAddress")}
           />
@@ -150,7 +151,7 @@ export function WhitelistForm() {
       <div
         aria-live="polite"
         className={cn(
-          "grid transition-all duration-300 ease-out",
+          "grid transition-[grid-template-rows,opacity,padding-top] duration-300 ease-out",
           fieldError ? "grid-rows-[1fr] pt-2 opacity-100" : "grid-rows-[0fr] opacity-0",
         )}
       >
@@ -185,7 +186,7 @@ export function WhitelistForm() {
                 className="mt-0.5"
               />
               <label
-                className="text-left font-normal text-muted-foreground text-xs leading-relaxed"
+                className="min-w-0 text-left font-normal text-muted-foreground text-xs leading-relaxed"
                 htmlFor={termsId}
               >
                 I agree to the{" "}
@@ -202,8 +203,12 @@ export function WhitelistForm() {
                 >
                   Privacy Policy
                 </Link>
-                , and to {siteConfig.name} storing my email address so it can contact me about early
-                access.
+                {/* Shorter on small screens so the checkbox row stays compact; the full legal detail still shows from `sm` up. */}
+                <span className="sm:hidden">, and to be contacted about early access.</span>
+                <span className="hidden sm:inline">
+                  , and to {siteConfig.name} storing my email address so it can contact me about
+                  early access.
+                </span>
               </label>
             </div>
           )}

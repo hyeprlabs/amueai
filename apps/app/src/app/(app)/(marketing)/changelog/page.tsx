@@ -14,7 +14,7 @@ import {
 import { absoluteUrl, createMetadata, listPathname } from "@/lib/seo";
 
 const title = "Changelog";
-const description = `Everything we've shipped for ${siteConfig.name}: new features, improvements and fixes.`;
+const description = `Everything we’ve shipped for ${siteConfig.name}: new features, improvements and fixes.`;
 
 type ChangelogSearchParams = { page?: string };
 

@@ -75,10 +75,10 @@ export default function ChannelsFeaturePage() {
 
       <PageHero
         description="One agent, trained once, live on your website and in the apps your customers already use."
-        title="Deploy your agent everywhere at once"
+        title="Deploy Your Agent Everywhere at Once"
       >
         <Button className="w-full sm:w-auto" nativeButton={false} render={<Link href="/pricing" />}>
-          See pricing
+          See Pricing
           <ArrowRightIcon data-icon="inline-end" />
         </Button>
         <Button
@@ -87,7 +87,7 @@ export default function ChannelsFeaturePage() {
           render={<Link href="/features/agent" />}
           variant="outline"
         >
-          Explore the agent
+          Explore the Agent
         </Button>
       </PageHero>
 
@@ -98,7 +98,7 @@ export default function ChannelsFeaturePage() {
       <CapabilityStrip
         description="Every channel draws from the same trained agent."
         items={capabilities}
-        title="One agent behind all of it"
+        title="One Agent Behind All of It"
       />
 
       <CallToAction />

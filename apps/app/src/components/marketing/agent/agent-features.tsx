@@ -21,7 +21,7 @@ export function AgentFeatures() {
     <section className="mb-12 lg:mb-24">
       <SectionHeading
         description="Trained on your content, grounded in your sources, live wherever your customers are."
-        title="How your agent works"
+        title="How Your Agent Works"
       />
 
       <div className="relative">
@@ -30,7 +30,7 @@ export function AgentFeatures() {
           <FeatureGridCard
             className="lg:col-span-3"
             description="Websites, PDFs, docs, and Q&A pairs. Add a source and it is indexed in seconds."
-            title="Train it on what you already have"
+            title="Train It on What You Already Have"
           >
             <SourcesGraphic />
           </FeatureGridCard>
@@ -38,7 +38,7 @@ export function AgentFeatures() {
           <FeatureGridCard
             className="lg:col-span-3"
             description="Every reply is pulled from your sources and cited. No source, no answer."
-            title="It never makes things up"
+            title="It Never Makes Things Up"
           >
             <GroundedChat />
           </FeatureGridCard>
@@ -46,7 +46,7 @@ export function AgentFeatures() {
           <FeatureGridCard
             className="sm:col-span-2 lg:col-span-2"
             description="Paste one script tag. The chat bubble is live on every page."
-            title="Live in one line"
+            title="Live in One Line"
           >
             <EmbedGraphic />
           </FeatureGridCard>
@@ -54,7 +54,7 @@ export function AgentFeatures() {
           <FeatureGridCard
             className="lg:col-span-2"
             description="Ask in any of 90+ languages and get the same answer from the same source."
-            title="Speaks your customer's language"
+            title="Speaks Your Customer’s Language"
           >
             <LanguagesGraphic />
           </FeatureGridCard>
@@ -62,7 +62,7 @@ export function AgentFeatures() {
           <FeatureGridCard
             className="lg:col-span-2"
             description="Read real questions, spot what your content is missing, and fill the gaps."
-            title="See what people actually ask"
+            title="See What People Actually Ask"
           >
             <ConversationsGraphic />
           </FeatureGridCard>

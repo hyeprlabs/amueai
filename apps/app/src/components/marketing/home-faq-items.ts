@@ -19,13 +19,13 @@ export const homeFaqItems: MarketingFaqItem[] = [
     id: "how-it-works",
     question: "How does training an agent work?",
     answer:
-      "You upload or connect your content, the agent indexes it as its knowledge base, and it starts answering from that content in under a minute. There's no model fine-tuning required.",
+      "You upload or connect your content, the agent indexes it as its knowledge base, and it starts answering from that content in under a minute. There’s no model fine-tuning required.",
   },
   {
     id: "hallucination",
-    question: "Will the agent make up answers it doesn't know?",
+    question: "Will the agent make up answers it doesn’t know?",
     answer:
-      "No. The agent is scoped to the content you train it on and is designed to say when it doesn't know something rather than invent an answer.",
+      "No. The agent is scoped to the content you train it on and is designed to say when it doesn’t know something rather than invent an answer.",
   },
   {
     id: "channels",
@@ -43,6 +43,6 @@ export const homeFaqItems: MarketingFaqItem[] = [
     id: "customization",
     question: "Can I customize how the agent looks and which model it uses?",
     answer:
-      "Yes. You can match the widget to your brand and choose which underlying AI model powers the agent's responses.",
+      "Yes. You can match the widget to your brand and choose which underlying AI model powers the agent’s responses.",
   },
 ];

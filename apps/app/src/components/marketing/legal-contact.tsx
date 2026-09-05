@@ -19,14 +19,14 @@ const data = [
     label: APP_EMAIL,
   },
   {
-    title: "Send us DM",
+    title: "Send Us DM",
     description: "Send us a direct message on X for quick answers.",
     icon: <XIcon />,
     href: X_URL,
     label: X_HANDLE,
   },
   {
-    title: "Join the community",
+    title: "Join the Community",
     description: "Join our community to connect with other users.",
     icon: <Users />,
     href: DISCORD_URL,
@@ -41,7 +41,7 @@ export function LegalContact() {
       <div className="flex max-w-md flex-col justify-center gap-2 p-4 lg:pb-12">
         <h2 className="font-bold text-2xl md:text-3xl">Contact Us</h2>
         <p className="text-base text-muted-foreground">
-          We&apos;re here to help and answer any question you might have, We look forward to hearing
+          We’re here to help and answer any question you might have. We look forward to hearing
           from you.
         </p>
       </div>
