@@ -29,6 +29,7 @@
     "@payloadcms/plugin-seo": "3.88.0",
     "@payloadcms/richtext-lexical": "^3.88.0",
     "@payloadcms/storage-vercel-blob": "3.88.0",
+    "@trigger.dev/sdk": "^4.0.0",
     "@types/canvas-confetti": "^1.9.0",
     "@vercel/analytics": "^2.0.1",
     "canvas-confetti": "^1.9.4",
