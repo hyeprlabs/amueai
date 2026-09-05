@@ -41,8 +41,8 @@ export function LegalContact() {
       <div className="flex max-w-md flex-col justify-center gap-2 p-4 lg:pb-12">
         <h2 className="font-bold text-2xl md:text-3xl">Contact Us</h2>
         <p className="text-base text-muted-foreground">
-          We’re here to help and answer any question you might have. We look forward to hearing
-          from you.
+          We’re here to help and answer any question you might have. We look forward to hearing from
+          you.
         </p>
       </div>
       <div className="relative grid gap-2 bg-muted p-2 md:grid-cols-3 dark:bg-muted/50 border-y">
