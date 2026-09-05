@@ -203,8 +203,12 @@ export function WhitelistForm() {
                 >
                   Privacy Policy
                 </Link>
-                , and to {siteConfig.name} storing my email address so it can contact me about early
-                access.
+                {/* Shorter on small screens so the checkbox row stays compact; the full legal detail still shows from `sm` up. */}
+                <span className="sm:hidden">, and to be contacted about early access.</span>
+                <span className="hidden sm:inline">
+                  , and to {siteConfig.name} storing my email address so it can contact me about
+                  early access.
+                </span>
               </label>
             </div>
           )}

@@ -78,14 +78,27 @@ function FaqRow({ item }: { item: MarketingFaqItem }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
-            animate={{ height: "auto", opacity: 1 }}
+            animate="open"
             className="overflow-hidden text-sm"
-            exit={{ height: 0, opacity: 0 }}
+            exit="collapsed"
             id={panelId}
-            initial={{ height: 0, opacity: 0 }}
-            transition={{ duration: reduced ? 0 : 0.25, ease: "easeInOut" }}
+            initial="collapsed"
+            transition={{ duration: reduced ? 0 : 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+            variants={{ open: { height: "auto" }, collapsed: { height: 0 } }}
           >
-            <div className="pb-4 text-muted-foreground">{item.answer}</div>
+            {/*
+              Height and opacity animate on separate layers: fading the
+              outer element while it resizes makes the text visibly squash,
+              so only this inner layer fades/slides, slightly faster than
+              the height tween settles.
+            */}
+            <motion.div
+              className="pb-4 text-muted-foreground"
+              transition={{ duration: reduced ? 0 : 0.2, ease: "easeOut" }}
+              variants={{ open: { opacity: 1, y: 0 }, collapsed: { opacity: 0, y: -4 } }}
+            >
+              {item.answer}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
