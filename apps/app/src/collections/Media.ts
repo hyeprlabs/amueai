@@ -27,7 +27,7 @@ export const Media: CollectionConfig = {
     formatOptions: { format: "webp", options: { quality: 80 } },
     // `pasteURL` is enabled by default (no `allowList` restricts it to
     // specific hosts), so a document can be created by passing a `url`
-    // instead of binary file data — the MCP-backed post-writing workflow
+    // instead of binary file data. The MCP-backed post-writing workflow
     // uses this to link an image it found on the web without a separate
     // upload step.
   },
