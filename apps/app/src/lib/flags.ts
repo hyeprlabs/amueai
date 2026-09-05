@@ -23,22 +23,14 @@ const identifyBlogVisitor = dedupe(
 );
 
 /**
- * `/blog` A/B test — 50% of visitors get `BlogSectionB` (image grid), the rest
- * keep `BlogSectionA` (classic list). Bucketing is sticky per visitor via
- * `BLOG_VISITOR_COOKIE`, which the proxy assigns on first visit.
+ * `/blog` A/B test — rollout is managed in the Vercel Flags dashboard: `false`
+ * keeps `BlogSectionA` (classic list), `true` shows `BlogSectionB` (image
+ * grid). Bucketing is sticky per visitor via `BLOG_VISITOR_COOKIE`, which the
+ * proxy assigns on first visit.
  */
 export const blogSectionFlag = flag<boolean, BlogSectionEntities>({
-  key: "blog-section-b",
-  description: "/blog A/B test: variant B (image grid) vs variant A (classic list).",
+  key: "blog-section",
+  adapter: vercelAdapter,
   identify: identifyBlogVisitor,
-  decide({ entities }) {
-    if (!entities?.visitor) return false;
-    // A v4 UUID's first hex digit is uniform over 16 values, so this covers exactly half.
-    return /^[0-7]/i.test(entities.visitor.id);
-  },
-  options: [
-    { value: false, label: "A — classic list" },
-    { value: true, label: "B — image grid" },
-  ],
   defaultValue: false,
 });
