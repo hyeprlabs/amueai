@@ -25,5 +25,9 @@ export const Media: CollectionConfig = {
     ],
     focalPoint: true,
     formatOptions: { format: "webp", options: { quality: 80 } },
+    // Lets a document be created by passing a `url` instead of binary file
+    // data, so the MCP-backed post-writing workflow can link an image it
+    // found on the web without a separate upload step.
+    pasteURL: true,
   },
 };

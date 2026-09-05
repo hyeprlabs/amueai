@@ -101,13 +101,14 @@ export default buildConfig({
     }),
     // Lets MCP clients (e.g. a Claude Code Routine) draft blog posts through
     // POST /api/mcp. No delete access, and only the collections a
-    // post-writing workflow needs to read or create; access still requires a
-    // per-key grant issued from the "API Keys" (MCP) group in /admin.
+    // post-writing workflow needs to read, create, or update; access still
+    // requires a per-key grant issued from the "API Keys" (MCP) group in
+    // /admin.
     mcpPlugin({
       collections: {
         blog: {
           description:
-            "Blog posts shown at /blog/[slug]. Create as a draft (draft: true) so a human reviews and publishes it in the admin UI.",
+            "Blog posts shown at /blog/[slug]. Create as a draft (draft: true) so a human reviews and publishes it in the admin UI. Link `categories` and set `featuredImage`/`meta.image` to a media document.",
           enabled: { create: true, find: true, update: true },
         },
         authors: {
@@ -115,12 +116,14 @@ export default buildConfig({
           enabled: { find: true },
         },
         categories: {
-          description: "Categories a blog post's `categories` relationship points to.",
-          enabled: { find: true },
+          description:
+            "Categories a blog post's `categories` relationship points to. Create new ones as needed, then link them to a post.",
+          enabled: { create: true, find: true },
         },
         media: {
-          description: "Uploaded images available for a blog post's `featuredImage`.",
-          enabled: { find: true },
+          description:
+            "Uploaded images available for a blog post's `featuredImage` and `meta.image`. Create one by passing a web image `url` (fetched server-side via pasteURL) along with `alt` text, then reference the resulting document's id.",
+          enabled: { create: true, find: true },
         },
       },
       mcp: {
