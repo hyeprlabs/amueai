@@ -14,6 +14,7 @@ import {
 const legalLinks = [
   { title: "Imprint", href: "/legal/imprint" },
   { title: "Privacy Policy", href: "/legal/privacy-policy" },
+  { title: "Cookie Policy", href: "/legal/cookie-policy" },
   { title: "Terms of Service", href: "/legal/terms-of-service" },
   { title: "Right of Withdrawal", href: "/legal/withdrawal" },
   { title: "Data Processing Agreement", href: "/legal/dpa" },
