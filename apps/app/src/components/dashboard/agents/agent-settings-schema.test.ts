@@ -1,0 +1,144 @@
+import { describe, expect, it } from "vitest";
+
+import { agentSettingsSchema } from "./agent-settings-schema";
+
+const validValues = {
+  name: "Acme Support",
+  system_prompt: "You are a helpful assistant. Only answer from the provided context.",
+  model: "openai/gpt-4o-mini",
+  temperature: 0.3,
+  welcome_message: "Hi! What can I help you with?",
+  fallback_message: "Thanks for your message! I'm not able to help with that right now.",
+};
+
+describe("agentSettingsSchema", () => {
+  it("accepts a fully valid payload", () => {
+    const result = agentSettingsSchema.safeParse(validValues);
+    expect(result.success).toBe(true);
+  });
+
+  it("trims whitespace from name, system_prompt, and model", () => {
+    const result = agentSettingsSchema.parse({
+      ...validValues,
+      name: "  Acme Support  ",
+      system_prompt: "  Be helpful.  ",
+      model: "  openai/gpt-4o-mini  ",
+    });
+    expect(result.name).toBe("Acme Support");
+    expect(result.system_prompt).toBe("Be helpful.");
+    expect(result.model).toBe("openai/gpt-4o-mini");
+  });
+
+  it("rejects an empty or whitespace-only name", () => {
+    expect(agentSettingsSchema.safeParse({ ...validValues, name: "" }).success).toBe(false);
+    expect(agentSettingsSchema.safeParse({ ...validValues, name: "   " }).success).toBe(false);
+  });
+
+  it("rejects a name over 200 characters", () => {
+    expect(agentSettingsSchema.safeParse({ ...validValues, name: "a".repeat(201) }).success).toBe(
+      false,
+    );
+    expect(agentSettingsSchema.safeParse({ ...validValues, name: "a".repeat(200) }).success).toBe(
+      true,
+    );
+  });
+
+  it("rejects an empty system_prompt", () => {
+    expect(agentSettingsSchema.safeParse({ ...validValues, system_prompt: "" }).success).toBe(
+      false,
+    );
+  });
+
+  it("rejects a system_prompt over 4000 characters", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, system_prompt: "a".repeat(4001) }).success,
+    ).toBe(false);
+  });
+
+  it("rejects an empty model id", () => {
+    expect(agentSettingsSchema.safeParse({ ...validValues, model: "" }).success).toBe(false);
+    expect(agentSettingsSchema.safeParse({ ...validValues, model: "   " }).success).toBe(false);
+  });
+
+  it("accepts temperature at the 0 and 2 boundaries", () => {
+    expect(agentSettingsSchema.safeParse({ ...validValues, temperature: 0 }).success).toBe(true);
+    expect(agentSettingsSchema.safeParse({ ...validValues, temperature: 2 }).success).toBe(true);
+  });
+
+  it("rejects temperature outside 0-2", () => {
+    expect(agentSettingsSchema.safeParse({ ...validValues, temperature: -0.1 }).success).toBe(
+      false,
+    );
+    expect(agentSettingsSchema.safeParse({ ...validValues, temperature: 2.1 }).success).toBe(false);
+  });
+
+  it("rejects NaN temperature (what an emptied number input produces)", () => {
+    // register('temperature', { valueAsNumber: true }) turns a cleared
+    // input into NaN, not undefined - this must fail validation rather
+    // than silently coercing to some default.
+    expect(agentSettingsSchema.safeParse({ ...validValues, temperature: NaN }).success).toBe(false);
+  });
+
+  it("rejects a non-numeric temperature", () => {
+    expect(agentSettingsSchema.safeParse({ ...validValues, temperature: "0.3" }).success).toBe(
+      false,
+    );
+  });
+
+  it("rejects a payload missing required fields", () => {
+    expect(agentSettingsSchema.safeParse({}).success).toBe(false);
+    expect(agentSettingsSchema.safeParse({ name: "Acme" }).success).toBe(false);
+  });
+
+  it("trims whitespace from welcome_message", () => {
+    const result = agentSettingsSchema.parse({
+      ...validValues,
+      welcome_message: "  Hi! What can I help you with?  ",
+    });
+    expect(result.welcome_message).toBe("Hi! What can I help you with?");
+  });
+
+  it("rejects an empty or whitespace-only welcome_message", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "" }).success,
+    ).toBe(false);
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "   " }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a welcome_message over 300 characters", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "a".repeat(301) }).success,
+    ).toBe(false);
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "a".repeat(300) }).success,
+    ).toBe(true);
+  });
+
+  it("trims whitespace from fallback_message", () => {
+    const result = agentSettingsSchema.parse({
+      ...validValues,
+      fallback_message: "  Sorry, I can't help with that.  ",
+    });
+    expect(result.fallback_message).toBe("Sorry, I can't help with that.");
+  });
+
+  it("rejects an empty or whitespace-only fallback_message", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "" }).success,
+    ).toBe(false);
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "   " }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a fallback_message over 300 characters", () => {
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "a".repeat(301) }).success,
+    ).toBe(false);
+    expect(
+      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "a".repeat(300) }).success,
+    ).toBe(true);
+  });
+});

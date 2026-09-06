@@ -1,16 +1,35 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { useAgentName } from "@/hooks/use-agent-name";
 import { Separator } from "@/components/ui/separator";
 import { DecorIcon } from "@/components/decor-icon";
-import { AppBreadcrumbs } from "@/components/dashboard/app-breadcrumbs";
-import { navLinks } from "@/components/dashboard/app-shared";
-import { CustomSidebarTrigger } from "@/components/dashboard/custom-sidebar-trigger";
+import { AppBreadcrumbs, type BreadcrumbTrailItem } from "@/components/dashboard/app-breadcrumbs";
+import { getActiveAgentId, headerPageTitle } from "@/components/dashboard/nav-config";
+import { SidebarToggle } from "@/components/dashboard/sidebar-toggle";
 import { UserDropdown } from "@/components/dashboard/user-dropdown";
-import { SendIcon, BellIcon } from "lucide-react";
-
-const activeItem = navLinks.find((item) => item.isActive);
 
 export function AppHeader() {
+  const pathname = usePathname();
+  const activeAgentId = getActiveAgentId(pathname);
+  const agentName = useAgentName(activeAgentId);
+
+  const trail: BreadcrumbTrailItem[] = activeAgentId
+    ? [
+        { title: "Agents", href: "/agents" },
+        // agentName resolves a moment after the id does (a client-side,
+        // RLS-scoped fetch - the header sits outside the layout that
+        // already has this name server-side) - just show one crumb until
+        // it lands rather than a placeholder like "…".
+        ...(agentName ? [{ title: agentName }] : []),
+      ]
+    : (() => {
+        const page = headerPageTitle(pathname);
+        return page ? [{ title: page.title }] : [];
+      })();
+
   return (
     <header
       className={cn(
@@ -20,21 +39,14 @@ export function AppHeader() {
     >
       <DecorIcon className="hidden md:block" position="bottom-left" />
       <div className="flex items-center gap-3">
-        <CustomSidebarTrigger />
+        <SidebarToggle />
         <Separator
           className="mr-2 h-4 data-[orientation=vertical]:self-center"
           orientation="vertical"
         />
-        <AppBreadcrumbs page={activeItem} />
+        <AppBreadcrumbs trail={trail} />
       </div>
       <div className="flex items-center gap-3">
-        <Button aria-label="Send" size="icon-sm" variant="outline">
-          <SendIcon />
-        </Button>
-        <Button aria-label="Notifications" size="icon-sm" variant="outline">
-          <BellIcon />
-        </Button>
-        <Separator className="h-4 data-[orientation=vertical]:self-center" orientation="vertical" />
         <UserDropdown />
       </div>
     </header>

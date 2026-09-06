@@ -1,0 +1,401 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const authMock = vi.fn();
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: (...args: unknown[]) => authMock(...args),
+}));
+
+const redirectMock = vi.fn();
+vi.mock("next/navigation", () => ({
+  redirect: (...args: unknown[]) => redirectMock(...args),
+}));
+
+const revalidatePathMock = vi.fn();
+vi.mock("next/cache", () => ({
+  revalidatePath: (...args: unknown[]) => revalidatePathMock(...args),
+}));
+
+const getGatewayChatModelsMock = vi.fn();
+vi.mock("@/lib/gateway-models", () => ({
+  AUTO_MODEL_ID: "auto",
+  getGatewayChatModels: (...args: unknown[]) => getGatewayChatModelsMock(...args),
+}));
+
+let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
+vi.mock("@/lib/supabase/server", () => ({
+  createServerSupabaseClient: () => fakeSupabase,
+}));
+
+const { createAgent, updateAgent, deleteAgent } = await import("./actions");
+
+/**
+ * A minimal in-memory stand-in for the exact supabase-js chains actions.ts
+ * uses against the "agents" table (insert/select/single, select/eq/single,
+ * update/eq, delete/eq) - enough to exercise the real auth/validation/
+ * model-allowlist control flow without a live Supabase project.
+ */
+function makeFakeSupabase(initialAgents: Record<string, unknown>[], activeOrgId?: string) {
+  const agents = [...initialAgents];
+  // Keyed by op so a forced failure targets, e.g., only the final update
+  // and not the select that runs before it in the same function - updateAgent
+  // issues a select (to read the current model) before its update, and a
+  // plain "fail the next query" flag would wrongly trip on the select.
+  let forcedError: { op: string; message: string } | null = null;
+
+  function from(_table: "agents") {
+    const state: {
+      filters: Array<[string, unknown]>;
+      op?: "select" | "update" | "insert" | "delete";
+      updatePayload?: Record<string, unknown>;
+      insertRow?: Record<string, unknown>;
+    } = { filters: [] };
+
+    function matches(row: Record<string, unknown>) {
+      // Every real query against "agents" is implicitly scoped to the
+      // caller's active org by RLS, regardless of which .eq() filters the
+      // action code itself adds - simulate that here so a row seeded under
+      // a different org behaves like RLS excluded it (no error, no match).
+      if (activeOrgId !== undefined && row.org_id !== undefined && row.org_id !== activeOrgId) {
+        return false;
+      }
+      return state.filters.every(([col, val]) => row[col] === val);
+    }
+
+    function execute() {
+      if (forcedError && forcedError.op === state.op) {
+        const error = forcedError;
+        forcedError = null;
+        return { data: null, error };
+      }
+
+      if (state.op === "insert") {
+        const row = { id: `agent-${agents.length + 1}`, ...state.insertRow };
+        agents.push(row);
+        return { data: [row], error: null };
+      }
+
+      if (state.op === "update") {
+        const matched = agents.filter(matches);
+        for (const row of matched) Object.assign(row, state.updatePayload);
+        return { data: matched, error: null };
+      }
+
+      if (state.op === "delete") {
+        const matched = agents.filter(matches);
+        const remaining = agents.filter((row) => !matches(row));
+        agents.length = 0;
+        agents.push(...remaining);
+        return { data: matched, error: null };
+      }
+
+      // select
+      return { data: agents.filter(matches), error: null };
+    }
+
+    const builder = {
+      select(_cols?: string) {
+        state.op ??= "select";
+        return builder;
+      },
+      eq(col: string, val: unknown) {
+        state.filters.push([col, val]);
+        return builder;
+      },
+      insert(row: Record<string, unknown>) {
+        state.op = "insert";
+        state.insertRow = row;
+        return builder;
+      },
+      update(payload: Record<string, unknown>) {
+        state.op = "update";
+        state.updatePayload = payload;
+        return builder;
+      },
+      delete() {
+        state.op = "delete";
+        return builder;
+      },
+      single() {
+        const { data, error } = execute();
+        const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
+        return Promise.resolve(
+          row
+            ? { data: row, error: null }
+            : { data: null, error: error ?? { message: "not found" } },
+        );
+      },
+      // Like single(), but a no-match is a plain `{ data: null }` rather than
+      // an error - the real Postgrest behavior updateAgent/deleteAgent rely
+      // on to tell "RLS excluded every row" apart from a real db error.
+      maybeSingle() {
+        const { data, error } = execute();
+        const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
+        return Promise.resolve({ data: row ?? null, error });
+      },
+      // oxlint-disable-next-line no-thenable
+      then(onFulfilled: (result: { data: unknown; error: unknown }) => unknown) {
+        return Promise.resolve(execute()).then(onFulfilled);
+      },
+    };
+
+    return builder;
+  }
+
+  return {
+    from,
+    agents,
+    failNextQuery(op: "select" | "update" | "insert" | "delete", message: string) {
+      forcedError = { op, message };
+    },
+  };
+}
+
+beforeEach(() => {
+  authMock.mockReset();
+  redirectMock.mockReset();
+  revalidatePathMock.mockReset();
+  getGatewayChatModelsMock.mockReset();
+  fakeSupabase = makeFakeSupabase([]);
+});
+
+describe("createAgent", () => {
+  it("throws when there's no active organization", async () => {
+    authMock.mockResolvedValue({ orgId: null });
+
+    await expect(createAgent({ name: "Acme Support" })).rejects.toThrow("No active organization");
+  });
+
+  it("rejects an empty name before ever touching the database", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+
+    await expect(createAgent({ name: "" })).rejects.toThrow();
+    expect(fakeSupabase.agents).toHaveLength(0);
+  });
+
+  it("creates the agent scoped to the active org and returns its id", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+
+    const created = await createAgent({ name: "Acme Support" });
+
+    expect(fakeSupabase.agents).toHaveLength(1);
+    expect(fakeSupabase.agents[0]).toMatchObject({ org_id: "org-1", name: "Acme Support" });
+    expect(created).toMatchObject({ id: (fakeSupabase.agents[0] as { id: string }).id });
+  });
+
+  it("surfaces a database failure as a plain Error", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    fakeSupabase.failNextQuery("insert", "insert failed");
+
+    await expect(createAgent({ name: "Acme Support" })).rejects.toThrow("Failed to create agent");
+  });
+});
+
+describe("updateAgent", () => {
+  function seedAgent(overrides: Record<string, unknown> = {}) {
+    fakeSupabase.agents.push({
+      id: "agent-1",
+      org_id: "org-1",
+      name: "Acme Support",
+      system_prompt: "Be helpful.",
+      model: "openai/gpt-4o-mini",
+      temperature: 0.3,
+      ...overrides,
+    });
+  }
+
+  const validInput = {
+    name: "Acme Support",
+    system_prompt: "Be helpful.",
+    model: "openai/gpt-4o-mini",
+    temperature: 0.5,
+  };
+
+  it("throws when there's no active organization", async () => {
+    authMock.mockResolvedValue({ orgId: null });
+
+    await expect(updateAgent("agent-1", validInput)).rejects.toThrow("No active organization");
+  });
+
+  it("rejects a malformed payload before checking the model or writing anything", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+
+    await expect(updateAgent("agent-1", { name: "" })).rejects.toThrow();
+    expect((fakeSupabase.agents[0] as { name: string }).name).toBe("Acme Support");
+  });
+
+  it("accepts a model that's live in the Gateway catalog", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+    getGatewayChatModelsMock.mockResolvedValue([
+      { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "openai" },
+    ]);
+
+    const saved = await updateAgent("agent-1", validInput);
+
+    expect(saved).toEqual(validInput);
+    expect(fakeSupabase.agents[0]).toMatchObject(validInput);
+  });
+
+  it("accepts the agent's own already-stored model even if it's since been removed from the Gateway catalog", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent({ model: "openai/gpt-4-deprecated" });
+    getGatewayChatModelsMock.mockResolvedValue([
+      { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "openai" },
+    ]);
+
+    const saved = await updateAgent("agent-1", { ...validInput, model: "openai/gpt-4-deprecated" });
+
+    expect(saved.model).toBe("openai/gpt-4-deprecated");
+  });
+
+  it("accepts the 'auto' sentinel even though it's never in the Gateway catalog", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+    getGatewayChatModelsMock.mockResolvedValue([
+      { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "openai" },
+    ]);
+
+    const saved = await updateAgent("agent-1", { ...validInput, model: "auto" });
+
+    expect(saved.model).toBe("auto");
+  });
+
+  it("rejects a model that's neither live nor the agent's current model - a forged request", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+    getGatewayChatModelsMock.mockResolvedValue([
+      { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "openai" },
+    ]);
+
+    await expect(
+      updateAgent("agent-1", { ...validInput, model: "some-made-up-model" }),
+    ).rejects.toThrow("Unknown model: some-made-up-model");
+
+    // The forged model must never reach the database.
+    expect((fakeSupabase.agents[0] as { model: string }).model).toBe("openai/gpt-4o-mini");
+  });
+
+  it("surfaces a database failure as a plain Error", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+    getGatewayChatModelsMock.mockResolvedValue([
+      { id: "openai/gpt-4o-mini", name: "GPT-4o mini", provider: "openai" },
+    ]);
+
+    fakeSupabase.failNextQuery("update", "update failed");
+    await expect(updateAgent("agent-1", validInput)).rejects.toThrow("Failed to update agent");
+  });
+
+  it("saves a partial payload (General settings: name + temperature only)", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+
+    const saved = await updateAgent("agent-1", { name: "Renamed", temperature: 1 });
+
+    expect(saved).toEqual({ name: "Renamed", temperature: 1 });
+    expect(fakeSupabase.agents[0]).toMatchObject({ name: "Renamed", temperature: 1 });
+    // Untouched fields keep their prior values - a partial update must
+    // never null out columns it wasn't given.
+    expect(fakeSupabase.agents[0]).toMatchObject({ model: "openai/gpt-4o-mini" });
+    expect(getGatewayChatModelsMock).not.toHaveBeenCalled();
+  });
+
+  it("saves a partial payload (Playground personality: model + instructions only)", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    seedAgent();
+    getGatewayChatModelsMock.mockResolvedValue([
+      { id: "openai/gpt-4o", name: "GPT-4o", provider: "openai" },
+    ]);
+
+    const saved = await updateAgent("agent-1", {
+      model: "openai/gpt-4o",
+      system_prompt: "Be terse.",
+    });
+
+    expect(saved).toEqual({ model: "openai/gpt-4o", system_prompt: "Be terse." });
+    expect(fakeSupabase.agents[0]).toMatchObject({
+      model: "openai/gpt-4o",
+      system_prompt: "Be terse.",
+    });
+  });
+
+  it("rejects instead of silently no-op'ing when RLS excludes every row (e.g. the org was switched mid-session)", async () => {
+    authMock.mockResolvedValue({ orgId: "org-2" });
+    // Seeded under a different org than the caller's active one and the fake
+    // client is scoped to "org-2", so RLS excludes this row entirely - the
+    // update matches nothing and Postgrest itself still reports
+    // { error: null }, same as the real thing.
+    fakeSupabase = makeFakeSupabase(
+      [
+        {
+          id: "agent-1",
+          org_id: "org-1",
+          name: "Acme Support",
+          system_prompt: "Be helpful.",
+          model: "openai/gpt-4o-mini",
+          temperature: 0.3,
+        },
+      ],
+      "org-2",
+    );
+
+    await expect(updateAgent("agent-1", { name: "Renamed" })).rejects.toThrow("Agent not found");
+    // Never report success for a write that touched nothing.
+    expect((fakeSupabase.agents[0] as { name: string }).name).toBe("Acme Support");
+  });
+});
+
+describe("deleteAgent", () => {
+  it("throws when there's no active organization", async () => {
+    authMock.mockResolvedValue({ orgId: null });
+
+    await expect(deleteAgent("agent-1")).rejects.toThrow("No active organization");
+  });
+
+  it("deletes the agent and leaves navigation to the caller", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    fakeSupabase.agents.push({ id: "agent-1", org_id: "org-1", name: "Acme Support" });
+
+    await deleteAgent("agent-1");
+
+    expect(fakeSupabase.agents).toHaveLength(0);
+    // The action must NOT redirect: a redirect thrown while the confirm
+    // dialog is still mounted raced Base UI's close cleanup. The client
+    // closes the dialog, then routes.
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("busts the dashboard layout's Router Cache so the sidebar/lists drop the deleted agent", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    fakeSupabase.agents.push({ id: "agent-1", org_id: "org-1", name: "Acme Support" });
+
+    await deleteAgent("agent-1");
+
+    expect(revalidatePathMock).toHaveBeenCalledWith("/agents", "layout");
+  });
+
+  it("surfaces a database failure as a plain Error", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    fakeSupabase.agents.push({ id: "agent-1", org_id: "org-1", name: "Acme Support" });
+    fakeSupabase.failNextQuery("delete", "delete failed");
+
+    await expect(deleteAgent("agent-1")).rejects.toThrow("Failed to delete agent");
+    // Never revalidate on a failed delete - there's nothing to refresh.
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects instead of silently no-op'ing when RLS excludes every row (e.g. the org was switched mid-session)", async () => {
+    authMock.mockResolvedValue({ orgId: "org-2" });
+    fakeSupabase = makeFakeSupabase(
+      [{ id: "agent-1", org_id: "org-1", name: "Acme Support" }],
+      "org-2",
+    );
+
+    await expect(deleteAgent("agent-1")).rejects.toThrow("Agent not found");
+    // The row belongs to another org - it must survive untouched, and
+    // nothing should be revalidated for a delete that didn't happen.
+    expect(fakeSupabase.agents).toHaveLength(1);
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+});
