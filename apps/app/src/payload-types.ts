@@ -608,12 +608,30 @@ export interface PayloadMcpApiKey {
      * Allow clients to find categories.
      */
     find?: boolean | null;
+    /**
+     * Allow clients to create categories.
+     */
+    create?: boolean | null;
   };
   media?: {
     /**
      * Allow clients to find media.
      */
     find?: boolean | null;
+    /**
+     * Allow clients to create media.
+     */
+    create?: boolean | null;
+  };
+  legalPages?: {
+    /**
+     * Allow clients to find legal-pages.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update legal-pages.
+     */
+    update?: boolean | null;
   };
   updatedAt: string;
   createdAt: string;
@@ -1009,11 +1027,19 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
     | T
     | {
         find?: T;
+        create?: T;
       };
   media?:
     | T
     | {
         find?: T;
+        create?: T;
+      };
+  legalPages?:
+    | T
+    | {
+        find?: T;
+        update?: T;
       };
   updatedAt?: T;
   createdAt?: T;

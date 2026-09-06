@@ -51,6 +51,12 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      graphics: {
+        Logo: "/components/admin/admin-logo-icon#AdminLogo",
+        Icon: "/components/admin/admin-logo-icon#AdminLogoIcon",
+      },
+    },
   },
   collections: [Users, Media, Blog, Categories, Authors, LegalPages, Changelog, Competitors],
   editor: lexicalEditor(),
@@ -99,11 +105,11 @@ export default buildConfig({
         changelog: 8,
       },
     }),
-    // Lets MCP clients (e.g. a Claude Code Routine) draft blog posts through
-    // POST /api/mcp. No delete access, and only the collections a
-    // post-writing workflow needs to read, create, or update; access still
-    // requires a per-key grant issued from the "API Keys" (MCP) group in
-    // /admin.
+    // Lets MCP clients (e.g. a Claude Code Routine) draft blog posts and edit
+    // legal pages through POST /api/mcp. No delete access, and only the
+    // collections that workflow needs to read, create, or update; access
+    // still requires a per-key grant issued from the "API Keys" (MCP) group
+    // in /admin.
     mcpPlugin({
       collections: {
         blog: {
@@ -122,8 +128,13 @@ export default buildConfig({
         },
         media: {
           description:
-            "Uploaded images available for a blog post's `featuredImage` and `meta.image`. Create one by passing a web image `url` (fetched server-side via pasteURL) along with `alt` text, then reference the resulting document's id.",
+            'Uploaded images available for a blog post\'s `featuredImage` and `meta.image`. Create one by passing a web image `url` *and* a `filename` (e.g. "my-image.jpg") along with `alt` text — `filename` is required for Payload\'s pasteURL fetch to trigger, or the create fails with "No files were uploaded". Then reference the resulting document\'s id.',
           enabled: { create: true, find: true },
+        },
+        "legal-pages": {
+          description:
+            "Legal pages shown at /legal/[slug] (e.g. Privacy Policy, Terms). Read and update existing pages; a human still reviews changes before publishing.",
+          enabled: { find: true, update: true },
         },
       },
       mcp: {

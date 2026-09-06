@@ -7,6 +7,8 @@ import * as migration_20260826_172000_rework_competitor_comparison from "./20260
 import * as migration_20260826_180000_simplify_competitors from "./20260826_180000_simplify_competitors";
 import * as migration_20260826_185000_rename_comparison_feature_to_label from "./20260826_185000_rename_comparison_feature_to_label";
 import * as migration_20260901_211004_add_mcp_api_keys from "./20260901_211004_add_mcp_api_keys";
+import * as migration_20260905_130000_add_mcp_api_key_create_columns from "./20260905_130000_add_mcp_api_key_create_columns";
+import * as migration_20260905_215424_add_legal_pages_mcp_permission from "./20260905_215424_add_legal_pages_mcp_permission";
 
 export const migrations = [
   {
@@ -53,5 +55,15 @@ export const migrations = [
     up: migration_20260901_211004_add_mcp_api_keys.up,
     down: migration_20260901_211004_add_mcp_api_keys.down,
     name: "20260901_211004_add_mcp_api_keys",
+  },
+  {
+    up: migration_20260905_130000_add_mcp_api_key_create_columns.up,
+    down: migration_20260905_130000_add_mcp_api_key_create_columns.down,
+    name: "20260905_130000_add_mcp_api_key_create_columns",
+  },
+  {
+    up: migration_20260905_215424_add_legal_pages_mcp_permission.up,
+    down: migration_20260905_215424_add_legal_pages_mcp_permission.down,
+    name: "20260905_215424_add_legal_pages_mcp_permission",
   },
 ];

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
+import { BLOG_VISITOR_COOKIE } from "@/lib/blog-visitor-cookie";
 import { waitlistFlag } from "@/lib/flags";
 
 /**
@@ -19,6 +20,20 @@ export default clerkMiddleware(async (_auth, req) => {
   if ((await waitlistFlag()) && isDashboardRoute(req)) {
     return NextResponse.redirect(new URL("/", req.url));
   }
+
+  const response = NextResponse.next();
+
+  // Sticky bucketing for the `/blog` A/B test: assign a visitor id on first
+  // visit so `blogSectionFlag` keeps returning the same variant afterwards.
+  if (!req.cookies.get(BLOG_VISITOR_COOKIE)) {
+    response.cookies.set(BLOG_VISITOR_COOKIE, crypto.randomUUID(), {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
+
+  return response;
 });
 
 export const config = {
