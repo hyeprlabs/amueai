@@ -26,9 +26,6 @@ importers:
       '@c15t/nextjs':
         specifier: ^2.2.1
         version: 2.2.1(@types/react@19.2.2)(next@16.3.1(@babel/core@7.29.7)(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.77.4))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.2)(use-sync-external-store@1.6.0(react@19.2.8))
-      '@c15t/scripts':
-        specifier: ^2.2.0
-        version: 2.2.0
       '@clerk/nextjs':
         specifier: ^7.7.6
         version: 7.7.9(next@16.3.1(@babel/core@7.29.7)(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.77.4))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -447,9 +444,6 @@ packages:
 
   '@c15t/schema@2.2.0':
     resolution: {integrity: sha512-rj6H1AlbbSnioNaw9Cvoc3vCchVAV/55Jd/6wrzhzW+2z2ByUyf+pDvZXQnAm0KMfsuQ8oDgqNqmPdqD1aJNFw==}
-
-  '@c15t/scripts@2.2.0':
-    resolution: {integrity: sha512-FgmnIW0JL5nalY6QKG5+gzukzALMqq6LpXzn5+iwRA8OVukjoXBdgakdO/eytwSrv/QtxgLyFaiM0nBIZZbk0A==}
 
   '@c15t/translations@2.2.1':
     resolution: {integrity: sha512-JgYXn+bTyys/7e7SMfu19zVBlW1cED6/CqJ5mbOmmfMr9MSkaAq0/UK/6/29FhcfCJKmHq+kQqKa0igX86mJeA==}
@@ -8034,8 +8028,6 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@c15t/scripts@2.2.0': {}
-
   '@c15t/translations@2.2.1': {}
 
   '@c15t/ui@2.2.1(@types/react@19.2.2)(react@19.2.8)(typescript@5.9.2)(use-sync-external-store@1.6.0(react@19.2.8))':
@@ -8774,7 +8766,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 22.15.3
+      '@types/node': 20.19.43
       '@types/yargs': 17.0.35
       chalk: 4.1.2
 
@@ -11200,7 +11192,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.43
 
   '@types/debug@4.1.13':
     dependencies:
@@ -11300,7 +11292,7 @@ snapshots:
 
   '@types/ws@7.4.7':
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.43
 
   '@types/ws@8.18.1':
     dependencies:
@@ -11864,7 +11856,7 @@ snapshots:
 
   chrome-launcher@0.15.2:
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.43
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -11873,7 +11865,7 @@ snapshots:
 
   chromium-edge-launcher@0.3.0:
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.43
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -13258,7 +13250,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.15.3
+      '@types/node': 20.19.43
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -13275,7 +13267,7 @@ snapshots:
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.43
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
