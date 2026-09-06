@@ -17,7 +17,15 @@ const nextConfig: NextConfig = {
   // Same-origin proxy to the c15t consent backend. Keeps the Inth runtime
   // origin out of client config, avoids CORS/ad-blocker issues, and lets the
   // backend URL change without a client redeploy.
+  //
+  // Skipped when NEXT_PUBLIC_C15T_URL isn't set (a rewrite pointing at
+  // "undefined" fails the Next.js build) rather than as a runtime fallback —
+  // consent management has no safe default, so a missing backend should be
+  // visibly broken (client-side fetches to /api/c15t 404) rather than silently
+  // inert.
   async rewrites() {
+    if (!process.env.NEXT_PUBLIC_C15T_URL) return [];
+
     return [
       {
         source: "/api/c15t/:path*",
