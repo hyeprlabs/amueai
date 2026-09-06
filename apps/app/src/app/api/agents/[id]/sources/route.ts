@@ -3,14 +3,15 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { triggerIngestSource } from "@/lib/trigger";
+import { triggerIngestion } from "@/lib/trigger";
 
 // File uploads go to the "sources" Storage bucket client-side first
 // (RLS-scoped to the org's own folder) - this route just records the
-// storage_path and hands the pipeline off to Trigger.dev. Either way the
-// route returns as soon as the source row is queued; ingestion runs in the
-// background - the client subscribes to the returned run's live status
-// (see triggerIngestSource) rather than waiting on this request.
+// storage_path and hands the pipeline off to Trigger.dev. `url` sources run
+// a full-site crawl (crawl-website), everything else normalizes to one
+// markdown doc (ingest-source) - see lib/trigger.ts. Either way the route
+// returns as soon as the source row is queued; the client subscribes to the
+// returned tag's live status rather than waiting on this request.
 const createSourceSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("url"),
@@ -21,6 +22,16 @@ const createSourceSchema = z.discriminatedUnion("type", [
     type: z.literal("file"),
     label: z.string().trim().min(1).max(200),
     storagePath: z.string().trim().min(1).max(1024),
+  }),
+  z.object({
+    type: z.literal("text"),
+    label: z.string().trim().min(1).max(200),
+    content: z.string().trim().min(1),
+  }),
+  z.object({
+    type: z.literal("qa"),
+    label: z.string().trim().min(1).max(200),
+    pairs: z.array(z.object({ q: z.string().trim().min(1), a: z.string().trim().min(1) })).min(1),
   }),
 ]);
 
@@ -43,12 +54,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: agent } = await supabase.from("agents").select("id").eq("id", agentId).single();
   if (!agent) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
 
-  const raw_content = parsed.data.type === "url" ? parsed.data.url : null;
+  const url = parsed.data.type === "url" ? parsed.data.url : null;
   const storage_path = parsed.data.type === "file" ? parsed.data.storagePath : null;
+  const raw_content =
+    parsed.data.type === "text"
+      ? parsed.data.content
+      : parsed.data.type === "qa"
+        ? JSON.stringify(parsed.data.pairs)
+        : null;
 
   const { data: source, error: insertError } = await supabase
     .from("sources")
-    .insert({ org_id: orgId, agent_id: agentId, type, label, raw_content, storage_path })
+    .insert({ org_id: orgId, agent_id: agentId, type, label, url, storage_path, raw_content })
     .select("id, label, type, status, created_at")
     .single();
 
@@ -59,7 +76,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  const run = await triggerIngestSource(source.id);
+  const run = await triggerIngestion(
+    parsed.data.type === "url"
+      ? { id: source.id, orgId, agentId, type: "url", url: parsed.data.url, label }
+      : parsed.data.type === "file"
+        ? {
+            id: source.id,
+            orgId,
+            agentId,
+            type: "file",
+            storagePath: parsed.data.storagePath,
+            label,
+          }
+        : parsed.data.type === "text"
+          ? { id: source.id, orgId, agentId, type: "text", rawContent: parsed.data.content, label }
+          : {
+              id: source.id,
+              orgId,
+              agentId,
+              type: "qa",
+              rawContent: JSON.stringify(parsed.data.pairs),
+              label,
+            },
+  );
 
   return NextResponse.json({ source, run }, { status: 201 });
 }

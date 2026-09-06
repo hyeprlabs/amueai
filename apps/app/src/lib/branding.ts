@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getFirecrawlClient } from "@/lib/ingestion";
+import { getFirecrawlClient } from "@/lib/firecrawl";
 
 /**
  * The slice of Firecrawl's BrandingProfile we actually persist and use.

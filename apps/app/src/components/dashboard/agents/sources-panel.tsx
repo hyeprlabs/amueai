@@ -114,7 +114,10 @@ export function SourcesPanel({
       const body = await res.json().catch(() => null);
       if (!res.ok) throw new Error("Couldn't start retraining");
 
-      setActiveRuns((current) => ({ ...current, [sourceId]: body.run }));
+      setActiveRuns((current) => ({
+        ...current,
+        [sourceId]: { accessToken: body.run.publicAccessToken },
+      }));
       toast.add({ type: "success", title: "Retraining started" });
     } catch {
       toast.add({ type: "error", title: "Couldn't start retraining" });

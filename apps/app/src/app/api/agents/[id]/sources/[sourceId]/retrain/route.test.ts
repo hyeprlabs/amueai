@@ -5,9 +5,9 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: (...args: unknown[]) => authMock(...args),
 }));
 
-const triggerIngestSourceMock = vi.fn();
+const triggerIngestionMock = vi.fn();
 vi.mock("@/lib/trigger", () => ({
-  triggerIngestSource: (...args: unknown[]) => triggerIngestSourceMock(...args),
+  triggerIngestion: (...args: unknown[]) => triggerIngestionMock(...args),
 }));
 
 let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
@@ -17,7 +17,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 const { POST } = await import("./route");
 
-/** select("id").eq("id", sourceId).eq("agent_id", agentId).single() only. */
+/** select(...).eq("id", sourceId).eq("agent_id", agentId).single() only. */
 function makeFakeSupabase(sources: Record<string, unknown>[]) {
   function from(_table: "sources") {
     const filters: Array<[string, unknown]> = [];
@@ -46,8 +46,8 @@ function makeFakeSupabase(sources: Record<string, unknown>[]) {
 
 beforeEach(() => {
   authMock.mockReset();
-  triggerIngestSourceMock.mockReset();
-  triggerIngestSourceMock.mockResolvedValue({ id: "run_1", publicAccessToken: "pat_1" });
+  triggerIngestionMock.mockReset();
+  triggerIngestionMock.mockResolvedValue({ tag: "source:source-1", publicAccessToken: "pat_1" });
 });
 
 describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
@@ -60,7 +60,7 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
     });
 
     expect(res.status).toBe(401);
-    expect(triggerIngestSourceMock).not.toHaveBeenCalled();
+    expect(triggerIngestionMock).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the source doesn't belong to this agent", async () => {
@@ -72,12 +72,28 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(triggerIngestSourceMock).not.toHaveBeenCalled();
+    expect(triggerIngestionMock).not.toHaveBeenCalled();
   });
 
-  it("enqueues the ingest-source task for the matched source and returns its run", async () => {
+  it("rejects retraining a text source", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
-    fakeSupabase = makeFakeSupabase([{ id: "source-1", agent_id: "agent-1" }]);
+    fakeSupabase = makeFakeSupabase([
+      { id: "source-1", agent_id: "agent-1", type: "text", label: "Notes" },
+    ]);
+
+    const res = await POST(new Request("http://localhost", { method: "POST" }), {
+      params: Promise.resolve({ id: "agent-1", sourceId: "source-1" }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(triggerIngestionMock).not.toHaveBeenCalled();
+  });
+
+  it("re-crawls a url source", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    fakeSupabase = makeFakeSupabase([
+      { id: "source-1", agent_id: "agent-1", type: "url", label: "Docs", url: "https://ex.com" },
+    ]);
 
     const res = await POST(new Request("http://localhost", { method: "POST" }), {
       params: Promise.resolve({ id: "agent-1", sourceId: "source-1" }),
@@ -85,7 +101,38 @@ describe("POST /api/agents/[id]/sources/[sourceId]/retrain", () => {
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body).toEqual({ ok: true, run: { id: "run_1", publicAccessToken: "pat_1" } });
-    expect(triggerIngestSourceMock).toHaveBeenCalledWith("source-1");
+    expect(body).toEqual({
+      ok: true,
+      run: { tag: "source:source-1", publicAccessToken: "pat_1" },
+    });
+    expect(triggerIngestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "source-1", type: "url", url: "https://ex.com" }),
+    );
+  });
+
+  it("re-ingests a file source", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+    fakeSupabase = makeFakeSupabase([
+      {
+        id: "source-1",
+        agent_id: "agent-1",
+        type: "file",
+        label: "Handbook",
+        storage_path: "org-1/agent-1/handbook.pdf",
+      },
+    ]);
+
+    const res = await POST(new Request("http://localhost", { method: "POST" }), {
+      params: Promise.resolve({ id: "agent-1", sourceId: "source-1" }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(triggerIngestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "source-1",
+        type: "file",
+        storagePath: "org-1/agent-1/handbook.pdf",
+      }),
+    );
   });
 });

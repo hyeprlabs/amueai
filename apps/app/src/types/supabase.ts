@@ -173,12 +173,16 @@ export type Database = {
           error_message: string | null;
           id: string;
           label: string;
+          last_crawled_at: string | null;
+          markdown_path: string | null;
           org_id: string;
+          parent_source_id: string | null;
           raw_content: string | null;
           status: string;
           storage_path: string | null;
           type: string;
           updated_at: string;
+          url: string | null;
         };
         Insert: {
           agent_id: string;
@@ -186,12 +190,16 @@ export type Database = {
           error_message?: string | null;
           id?: string;
           label: string;
+          last_crawled_at?: string | null;
+          markdown_path?: string | null;
           org_id: string;
+          parent_source_id?: string | null;
           raw_content?: string | null;
           status?: string;
           storage_path?: string | null;
           type: string;
           updated_at?: string;
+          url?: string | null;
         };
         Update: {
           agent_id?: string;
@@ -199,12 +207,16 @@ export type Database = {
           error_message?: string | null;
           id?: string;
           label?: string;
+          last_crawled_at?: string | null;
+          markdown_path?: string | null;
           org_id?: string;
+          parent_source_id?: string | null;
           raw_content?: string | null;
           status?: string;
           storage_path?: string | null;
           type?: string;
           updated_at?: string;
+          url?: string | null;
         };
         Relationships: [
           {
@@ -212,6 +224,13 @@ export type Database = {
             columns: ["agent_id"];
             isOneToOne: false;
             referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sources_parent_source_id_fkey";
+            columns: ["parent_source_id"];
+            isOneToOne: false;
+            referencedRelation: "sources";
             referencedColumns: ["id"];
           },
         ];

@@ -5,9 +5,9 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: (...args: unknown[]) => authMock(...args),
 }));
 
-const triggerIngestSourceMock = vi.fn();
+const triggerIngestionMock = vi.fn();
 vi.mock("@/lib/trigger", () => ({
-  triggerIngestSource: (...args: unknown[]) => triggerIngestSourceMock(...args),
+  triggerIngestion: (...args: unknown[]) => triggerIngestionMock(...args),
 }));
 
 let fakeSupabase: ReturnType<typeof makeFakeSupabase>;
@@ -106,8 +106,8 @@ function jsonRequest(body: unknown) {
 
 beforeEach(() => {
   authMock.mockReset();
-  triggerIngestSourceMock.mockReset();
-  triggerIngestSourceMock.mockResolvedValue({ id: "run_1", publicAccessToken: "pat_1" });
+  triggerIngestionMock.mockReset();
+  triggerIngestionMock.mockResolvedValue({ tag: "source:x", publicAccessToken: "pat_1" });
   fakeSupabase = makeFakeSupabase({ agents: [{ id: "agent-1" }] });
 });
 
@@ -121,7 +121,7 @@ describe("POST /api/agents/[id]/sources", () => {
     );
 
     expect(res.status).toBe(401);
-    expect(triggerIngestSourceMock).not.toHaveBeenCalled();
+    expect(triggerIngestionMock).not.toHaveBeenCalled();
   });
 
   it("rejects a malformed URL with a 400 before touching the database", async () => {
@@ -146,6 +146,28 @@ describe("POST /api/agents/[id]/sources", () => {
     expect(fakeSupabase.tables.sources).toHaveLength(0);
   });
 
+  it("rejects a text source with empty content", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+
+    const res = await POST(jsonRequest({ type: "text", label: "Notes", content: "" }), {
+      params: Promise.resolve({ id: "agent-1" }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(fakeSupabase.tables.sources).toHaveLength(0);
+  });
+
+  it("rejects a qa source with no pairs", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+
+    const res = await POST(jsonRequest({ type: "qa", label: "FAQ", pairs: [] }), {
+      params: Promise.resolve({ id: "agent-1" }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(fakeSupabase.tables.sources).toHaveLength(0);
+  });
+
   it("returns 404 when the agent doesn't exist or isn't visible to this org", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
     fakeSupabase = makeFakeSupabase({ agents: [] });
@@ -158,7 +180,7 @@ describe("POST /api/agents/[id]/sources", () => {
     expect(res.status).toBe(404);
   });
 
-  it("creates a url source, enqueues the ingest-source task, and returns it queued", async () => {
+  it("creates a url source, dispatches to crawl-website, and returns it queued", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
 
     const res = await POST(
@@ -169,18 +191,27 @@ describe("POST /api/agents/[id]/sources", () => {
 
     expect(res.status).toBe(201);
     expect(body.source.status).toBe("queued");
-    expect(triggerIngestSourceMock).toHaveBeenCalledWith(body.source.id);
+    expect(triggerIngestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: body.source.id,
+        orgId: "org-1",
+        agentId: "agent-1",
+        type: "url",
+        url: "https://example.com/docs",
+      }),
+    );
     expect(fakeSupabase.tables.sources[0]).toMatchObject({
       org_id: "org-1",
       agent_id: "agent-1",
       type: "url",
       label: "Docs",
-      raw_content: "https://example.com/docs",
+      url: "https://example.com/docs",
+      raw_content: null,
       storage_path: null,
     });
   });
 
-  it("creates a file source, enqueues the ingest-source task, and returns it queued", async () => {
+  it("creates a file source, dispatches to ingest-source, and returns it queued", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
 
     const res = await POST(
@@ -191,15 +222,58 @@ describe("POST /api/agents/[id]/sources", () => {
 
     expect(res.status).toBe(201);
     expect(body.source.status).toBe("queued");
-    expect(triggerIngestSourceMock).toHaveBeenCalledWith(body.source.id);
+    expect(triggerIngestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: body.source.id,
+        type: "file",
+        storagePath: "org-1/agent-1/handbook.pdf",
+      }),
+    );
     expect(fakeSupabase.tables.sources[0]).toMatchObject({
       org_id: "org-1",
       agent_id: "agent-1",
       type: "file",
       label: "Handbook",
+      url: null,
       raw_content: null,
       storage_path: "org-1/agent-1/handbook.pdf",
     });
+  });
+
+  it("creates a text source with raw_content and dispatches to ingest-source", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+
+    const res = await POST(jsonRequest({ type: "text", label: "Notes", content: "Hello there." }), {
+      params: Promise.resolve({ id: "agent-1" }),
+    });
+
+    expect(res.status).toBe(201);
+    expect(triggerIngestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "text", rawContent: "Hello there." }),
+    );
+    expect(fakeSupabase.tables.sources[0]).toMatchObject({
+      type: "text",
+      raw_content: "Hello there.",
+      url: null,
+      storage_path: null,
+    });
+  });
+
+  it("creates a qa source with pairs serialized into raw_content", async () => {
+    authMock.mockResolvedValue({ orgId: "org-1" });
+
+    const res = await POST(
+      jsonRequest({ type: "qa", label: "FAQ", pairs: [{ q: "Refunds?", a: "30 days." }] }),
+      { params: Promise.resolve({ id: "agent-1" }) },
+    );
+
+    expect(res.status).toBe(201);
+    expect(triggerIngestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "qa",
+        rawContent: JSON.stringify([{ q: "Refunds?", a: "30 days." }]),
+      }),
+    );
   });
 
   it("surfaces an insert failure as a 500", async () => {
@@ -212,6 +286,6 @@ describe("POST /api/agents/[id]/sources", () => {
     );
 
     expect(res.status).toBe(500);
-    expect(triggerIngestSourceMock).not.toHaveBeenCalled();
+    expect(triggerIngestionMock).not.toHaveBeenCalled();
   });
 });

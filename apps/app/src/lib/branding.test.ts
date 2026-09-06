@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const scrapeMock = vi.fn();
-vi.mock("@/lib/ingestion", () => ({
+vi.mock("@/lib/firecrawl", () => ({
   getFirecrawlClient: () => ({ scrape: scrapeMock }),
 }));
 

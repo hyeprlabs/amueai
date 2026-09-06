@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { chunkText } from "./ingestion";
+import { chunkArray, chunkText } from "./chunk";
 
 describe("chunkText", () => {
   it("returns one chunk per short paragraph", () => {
@@ -34,5 +34,19 @@ describe("chunkText", () => {
   it("never produces an empty chunk for a non-empty source", () => {
     const chunks = chunkText("word ".repeat(2000));
     expect(chunks.every((chunk) => chunk.length > 0)).toBe(true);
+  });
+});
+
+describe("chunkArray", () => {
+  it("splits into groups of at most `size` items, preserving order", () => {
+    expect(chunkArray([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+
+  it("returns one batch when the array is smaller than the batch size", () => {
+    expect(chunkArray(["a", "b"], 100)).toEqual([["a", "b"]]);
+  });
+
+  it("returns an empty array for an empty input", () => {
+    expect(chunkArray([], 10)).toEqual([]);
   });
 });

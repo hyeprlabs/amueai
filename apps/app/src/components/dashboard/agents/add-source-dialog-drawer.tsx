@@ -84,7 +84,7 @@ async function queueSource(
   }
   return {
     source: { ...responseBody.source, error_message: null },
-    run: responseBody.run,
+    run: { accessToken: responseBody.run.publicAccessToken },
   };
 }
 

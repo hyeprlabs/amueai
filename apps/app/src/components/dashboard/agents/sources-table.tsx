@@ -41,7 +41,7 @@ export type SourceRow = Pick<
   "id" | "label" | "status" | "error_message" | "created_at"
 >;
 
-export type ActiveRun = { id: string; accessToken: string };
+export type ActiveRun = { accessToken: string };
 
 const statusConfig: Record<
   SourceRow["status"],
@@ -150,7 +150,7 @@ export function SourcesTable({
               <TableCell>
                 {activeRun ? (
                   <LiveSourceStatus
-                    runId={activeRun.id}
+                    sourceId={source.id}
                     accessToken={activeRun.accessToken}
                     onSettled={() => onRunSettled(source.id)}
                   />
