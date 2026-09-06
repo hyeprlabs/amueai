@@ -4,7 +4,6 @@ import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 import { MarketingPagination } from "@/components/marketing/marketing-pagination";
 import { BlogSectionA } from "@/components/marketing/blog/blog-section-a";
 import { BlogSectionB } from "@/components/marketing/blog/blog-section-b";
-import { BlogVariantTracking } from "@/components/marketing/blog/blog-variant-tracking";
 import { siteConfig } from "@/config/site";
 import { getCategories, getPosts, parsePageParam } from "@/lib/blog";
 import { blogSectionFlag } from "@/lib/flags";
@@ -81,8 +80,6 @@ export default async function BlogIndexPage({
         ])}
         scriptKey="breadcrumb"
       />
-
-      <BlogVariantTracking variant={showVariantB ? "B" : "A"} />
 
       <BlogSection
         activeCategorySlug={category}

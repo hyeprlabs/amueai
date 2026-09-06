@@ -105,13 +105,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </ClerkProvider>
           </TooltipProvider>
         </ThemeProvider>
-        {/*
-          Not consent-gated: Vercel Web Analytics is cookieless by design
-          (Vercel's privacy docs — no persistent identifier, no localStorage,
-          visitor hash discarded after 24h, aggregated only). See the comment
-          on `ConsentManagerClient` in `components/consent-manager/provider.tsx`
-          for why it doesn't go through c15t's `scripts` array either.
-        */}
+        {/* Cookieless by design (Vercel's own privacy docs), so not consent-gated. */}
         <Analytics />
       </body>
     </html>
