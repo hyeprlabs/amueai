@@ -456,15 +456,70 @@ up the DB write — the badge should never fall back to a stale pre-run status.
 
 ## Widget
 
-- Standalone script (`public/widget.js` or a route handler), zero framework dependencies,
-  injecting an `iframe` pointed at a hosted `/embed/[agentId]` page.
-- The iframe page renders the same **AI Elements** components against
-  `useChat({ api: "/api/chat/[agentId]" })` as the dashboard's test-chat panel.
-- `conversationId` + a random `visitorId` live in the iframe's own localStorage.
-- Snippet shown to the user:
+Architecture: a closed **Shadow DOM** launcher + a **lazy cross-origin iframe**, communicating
+only via origin-checked `postMessage`. This is the performance/isolation foundation — not a style
+choice — because `widget.js` is fetched by every visitor of every customer site that embeds an
+agent, whether or not they ever open the chat.
+
+- `src/widget/widget.js` is the source of truth: hand-written, zero-dependency vanilla JS (no
+  bundler runtime), budgeted at **under 5kb gzipped**, enforced by `scripts/build-widget.mjs`
+  (runs as part of `pnpm build`, exits non-zero over budget — this repo has no separate CI, so the
+  build itself is the gate). Never import a shared util/framework into this file.
+- It creates a `div` with a **closed** `attachShadow`, holding only the launcher `<button>` —
+  immune to the host page's own CSS (resets, `* { all: unset }`, global button/iframe selectors).
+  Deferred via `requestIdleCallback` (`setTimeout` fallback for Safari) so it never competes with
+  the host page's own critical rendering path.
+- The `<iframe src="/embed/:agentId">` is created **only on first click**, never on page load —
+  `sandbox="allow-scripts allow-same-origin allow-forms allow-popups"`, a 5s load-failure timeout
+  that shows a fallback message in the Shadow DOM itself (not the iframe, since the iframe is
+  what's failing), and a floating-panel size that starts at `height:0;opacity:0` and grows via the
+  resize bridge below (never a guessed fixed size).
+- `/widget.js` is a **route handler** (`src/app/widget.js/route.ts`), not a static file: in
+  production it 302-redirects (short-cached, `max-age=300`) to whatever content-hashed
+  `widget.<hash>.js` the last build produced (immutably cached, `max-age=31536000`) — existing
+  customer embeds pick up non-breaking improvements within minutes without ever touching their
+  snippet, while the actual payload is cached hard at the edge. In dev (no build has run, no
+  manifest on disk) it serves `src/widget/widget.js` directly. `public/widget.*.js` and
+  `public/widget-manifest.json` are build artifacts — gitignored, regenerated every build, never
+  hand-edited.
+- The embed route (`app/embed/[agentId]/`) renders the same **AI Elements** components + shared
+  `ChatPanel` against `useChat({ api: "/api/chat/[agentId]" })` as the dashboard's test-chat panel.
+  No custom font (`next/font` or otherwise) — inherits the system font stack on purpose, a chat
+  bubble doesn't need brand typography badly enough to justify a font request. It ships the app's
+  shared `globals.css` rather than a separately-purged stylesheet — a known trade-off, not yet
+  worth a second Tailwind build pipeline for one route.
+- **Resize/fullscreen/close bridge**, all via `postMessage` (embed side uses `"*"` as target
+  origin since it never knows the host page's origin in advance — height/fullscreen aren't
+  sensitive; `widget.js` is the side that validates `event.origin` before acting):
+  - `embed-chat.tsx`'s `useParentBridge` hook watches `#chat-root` with a `ResizeObserver`,
+    throttled to one `postMessage` per animation frame (unthrottled would flood the channel during
+    a streaming reply, growing height token-by-token) — posts `{type: "amueai:resize", height}`.
+  - A `matchMedia("(max-width: 480px)")` listener posts `{type: "amueai:fullscreen", value}`;
+    `widget.js` swaps the iframe's inline styles between the floating-panel box and a full-viewport
+    cover accordingly.
+  - `Escape` posts `{type: "amueai:close"}`; `widget.js` hides the iframe and returns focus to the
+    launcher button (focus can't cross the iframe boundary on its own).
+  - `Tab`/`Shift+Tab` are trapped inside `#chat-root`'s focusable elements from the embed side,
+    for the same reason — the browser would otherwise let focus escape onto the host page once it
+    reaches the last/first focusable element.
+- Accessibility: `Conversation` carries `aria-live="polite"` (on top of its existing `role="log"`)
+  so screen readers announce streamed replies without interrupting; launcher/close targets are
+  ≥44×44px.
+- `Content-Security-Policy: frame-ancestors *` on `/embed/:path*` (`next.config.ts` `headers()`) —
+  documents that arbitrary cross-origin framing is intentional here, the whole point of the
+  widget. Revisit with a per-agent domain allowlist if that becomes a paid-plan feature.
+- Rate limiting on `/api/chat/[agentId]` (Upstash, IP + agentId) already covers the widget's public
+  surface — see "Chat/retrieval flow" above.
+- SRI (`integrity="sha384-..."` on the snippet's `<script>` tag) is deliberately **not** wired up:
+  the content hash changes on every deploy under the current caching scheme, which is fundamentally
+  incompatible with pinning a single SRI hash. Revisit only alongside a `widget-v2.js`-style major
+  version split (a new path for any breaking postMessage/DOM change, so old embeds keep working
+  indefinitely on the old file) — that's the point at which a hash is stable enough to pin.
+- Snippet shown to the user (`agents/[id]/build/embed`):
   ```html
   <script src="https://yourdomain.com/widget.js" data-agent-id="AGENT_ID" async></script>
   ```
+  `data-position="bottom-left"` is also supported (default `bottom-right`).
 
 ## Build phases
 
@@ -482,6 +537,16 @@ child `sources` row per discovered page, weekly recrawl via Vercel Cron), the `f
 abstraction, and Trigger.dev-Realtime-driven live status (tag-based, covering both single-doc and
 many-page-crawl cases). Live-verified the RLS audit (see "Already in place") as part of this
 milestone rather than deferring it.
+
+**Phase 13 — High-performance embeddable widget (current milestone)**
+Rearchitected the widget from a direct-DOM-injection loader (iframe eagerly created and hidden on
+every page load, no Shadow DOM, fixed-size panel) into the Shadow-DOM-launcher +
+lazy-cross-origin-iframe architecture described in "Widget" above: `requestIdleCallback`
+deferral, iframe created only on first click, `ResizeObserver`/`postMessage` sizing and mobile
+fullscreen bridge, focus trap + `Escape`-to-close, load-failure fallback, `frame-ancestors` CSP,
+and content-hash + short-cached-redirect caching (`scripts/build-widget.mjs` + `widget.js` route
+handler) in place of a mutable static file. Rate limiting was already in place and needed no
+change.
 
 ## Guardrails while building
 

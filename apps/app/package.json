@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "tsx scripts/migrate.ts && next build",
+    "build": "tsx scripts/migrate.ts && node scripts/build-widget.mjs && next build",
     "db:migrate": "tsx scripts/migrate.ts",
     "start": "next start",
     "test": "vitest run",

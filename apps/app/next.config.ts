@@ -14,6 +14,25 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/vs", destination: "/competitors", permanent: true }];
   },
+  async headers() {
+    return [
+      {
+        // The embed route is meant to be framed from arbitrary customer
+        // domains (that's the whole point of the widget) - an explicit
+        // wildcard here documents that as intentional rather than leaving
+        // it to browsers' unset-CSP default. Revisit if per-agent domain
+        // allowlisting becomes a paid-plan feature.
+        source: "/embed/:path*",
+        headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *" }],
+      },
+      {
+        // Content-hashed widget builds from scripts/build-widget.mjs - safe
+        // to cache forever since a new deploy always writes a new filename.
+        source: "/widget.:hash.js",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ];
+  },
   images: {
     // Serve modern formats so Largest Contentful Paint stays cheap.
     formats: ["image/avif", "image/webp"],
