@@ -14,6 +14,18 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/vs", destination: "/competitors", permanent: true }];
   },
+  async rewrites() {
+    // A rewrite pointing at "undefined" fails the build, so skip it entirely
+    // when unset rather than falling back to something that looks valid.
+    if (!process.env.NEXT_PUBLIC_C15T_URL) return [];
+
+    return [
+      {
+        source: "/api/c15t/:path*",
+        destination: `${process.env.NEXT_PUBLIC_C15T_URL}/:path*`,
+      },
+    ];
+  },
   images: {
     // Serve modern formats so Largest Contentful Paint stays cheap.
     formats: ["image/avif", "image/webp"],
