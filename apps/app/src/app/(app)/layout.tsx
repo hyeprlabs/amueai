@@ -105,7 +105,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </ClerkProvider>
           </TooltipProvider>
         </ThemeProvider>
-        {/* Cookieless by design (Vercel's own privacy docs), so not consent-gated. */}
         <Analytics />
       </body>
     </html>
