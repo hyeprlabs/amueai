@@ -4,7 +4,7 @@ import { requireAgent } from "@/lib/agents";
 export default async function AgentLayout({ children, params }: LayoutProps<"/agents/[id]">) {
   const { id } = await params;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data } = await supabase.from("agents").select("id").eq("id", id).single();
 
   requireAgent(data);

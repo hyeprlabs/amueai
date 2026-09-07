@@ -23,7 +23,7 @@ export default async function AgentsPage() {
 
   if (!orgId) return <NoWorkspace />;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data: agents, error } = await supabase
     .from("agents")
     .select("id, name, created_at")

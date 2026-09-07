@@ -21,7 +21,7 @@ async function getSwitcherAgents() {
   const { orgId } = await auth();
   if (!orgId) return [];
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data } = await supabase
     .from("agents")
     .select("id, name")

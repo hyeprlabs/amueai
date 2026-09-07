@@ -11,7 +11,7 @@ export async function DELETE(
   if (!orgId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const { id: agentId, sourceId } = await params;
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
 
   const { data: source } = await supabase
     .from("sources")

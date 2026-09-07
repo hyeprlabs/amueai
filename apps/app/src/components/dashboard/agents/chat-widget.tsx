@@ -43,7 +43,6 @@ export function ChatWidget({
           agentId={agentId}
           conversationId={session.conversationId}
           key={session.conversationId}
-          showSources={false}
           visitorId={session.visitorId}
           welcomeMessage={welcomeMessage}
         />

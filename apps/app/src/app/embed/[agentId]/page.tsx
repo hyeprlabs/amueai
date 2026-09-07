@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
-import { EmbedChat } from "./embed-chat";
+import { Widget } from "./widget";
 
 export default async function EmbedPage({ params }: PageProps<"/embed/[agentId]">) {
   const { agentId } = await params;
@@ -17,7 +17,7 @@ export default async function EmbedPage({ params }: PageProps<"/embed/[agentId]"
 
   return (
     <div className="h-screen w-screen">
-      <EmbedChat agentId={agentId} welcomeMessage={agent.welcome_message} />
+      <Widget agentId={agentId} welcomeMessage={agent.welcome_message} />
     </div>
   );
 }

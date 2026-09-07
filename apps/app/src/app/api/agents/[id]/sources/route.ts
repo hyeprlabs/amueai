@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
   const { type, label } = parsed.data;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
 
   const { data: agent } = await supabase.from("agents").select("id").eq("id", agentId).single();
   if (!agent) return NextResponse.json({ error: "Agent not found" }, { status: 404 });

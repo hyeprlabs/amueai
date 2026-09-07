@@ -143,7 +143,7 @@ MVP. Revisit billing entirely as a post-MVP milestone.
 | Object storage | **files-sdk** (`trigger/storage.ts`, the only place that touches storage), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS) | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — see "Ingestion pipeline" below for what adding it later requires |
 | Live status updates | **Trigger.dev Realtime** (`useRealtimeRunsWithTag`, tag `source:{id}`) as the primary mechanism — exact run-lifecycle status with no dependency on a Postgres change event; **Supabase Realtime** (Postgres Changes on `sources`) as a cross-tab/teammate baseline | drives the queued/crawling/processing/ready/failed UI live, no polling, no reload |
 | AI orchestration | **Vercel AI SDK** (`ai` package, `@ai-sdk/react` for hooks) | `streamText`, `generateText`, `embed`/`embedMany`, `useChat` |
-| Model access | **Vercel AI Gateway** | Never call a provider SDK directly. `provider/model` strings (e.g. `openai/gpt-4o-mini`, `openai/text-embedding-3-small`) route through the Gateway automatically when `AI_GATEWAY_API_KEY` is set. Check the current model list in the Vercel dashboard rather than assuming a fixed model name |
+| Model access | **Vercel AI Gateway** | Never call a provider SDK directly. `provider/model` strings route through the Gateway automatically when `AI_GATEWAY_API_KEY` is set. The chat model list is a **hardcoded** array of three cheap models in `lib/models.ts` (`CHAT_MODELS`, `DEFAULT_CHAT_MODEL`) — no live Gateway catalog fetch, no "Auto" sentinel that resolves to a model at request time. Widening the list means editing that one array, not adding pricing-threshold logic |
 | Chat UI | **AI Elements** (`npx ai-elements@latest`, from `elements.ai-sdk.dev`) | Prebuilt chat primitives built on shadcn/ui, wired for `useChat` streaming. Use for both the dashboard test-chat panel and the widget iframe |
 | General UI | **shadcn/ui** + Tailwind CSS | dashboard shell, forms, tables, dialogs |
 | Web + document extraction | **Firecrawl** (`@mendable/firecrawl-js`) exclusively — `.crawl()` for URLs, `.parse()` for uploaded files, each client instantiated directly in the one task file that uses it (`trigger/crawl-website.ts`, `trigger/ingest-source.ts`) — no shared `getFirecrawlClient()` wrapper | no hand-rolled fetch/cheerio crawler, no `pdf-parse`/`mammoth`; Firecrawl owns SSRF protection, JS rendering, anti-bot handling, and every document format (PDF/Word/Excel/PowerPoint/CSV/EPUB) |
@@ -501,16 +501,22 @@ agent, whether or not they ever open the chat.
   manifest on disk) it serves `src/widget/widget.js` directly. `public/widget.*.js` and
   `public/widget-manifest.json` are build artifacts — gitignored, regenerated every build, never
   hand-edited.
-- The embed route (`app/embed/[agentId]/`) renders the same **AI Elements** components + shared
-  `ChatPanel` against `useChat({ api: "/api/chat/[agentId]" })` as the dashboard's test-chat panel.
-  No custom font (`next/font` or otherwise) — inherits the system font stack on purpose, a chat
-  bubble doesn't need brand typography badly enough to justify a font request. It ships the app's
-  shared `globals.css` rather than a separately-purged stylesheet — a known trade-off, not yet
-  worth a second Tailwind build pipeline for one route.
+- The embed route (`app/embed/[agentId]/widget.tsx`) is its own self-contained UI, completely
+  detached from the dashboard's `ChatPanel` (used only by the Playground's `ChatWidget` preview) —
+  one file, a handful of small components declared in it (`Widget` the export, `WidgetChat`,
+  `MessageList`, `Composer`, plus the `useWidgetSession`/`useParentBridge` hooks), still built on
+  **AI Elements** (`Conversation`, `Message`, `Shimmer`) and `useChat` against
+  `/api/chat/[agentId]` like every other chat surface in the app — just without the dashboard's
+  extras (no sources panel, no rate-limit countdown, no per-message timestamps): a visitor-facing
+  widget doesn't need them, and every one of those was more code to keep both surfaces in sync for
+  no benefit once they diverged in UI anyway. No custom font (`next/font` or otherwise) — inherits
+  the system font stack on purpose, a chat bubble doesn't need brand typography badly enough to
+  justify a font request. It ships the app's shared `globals.css` rather than a separately-purged
+  stylesheet — a known trade-off, not yet worth a second Tailwind build pipeline for one route.
 - **Resize/fullscreen/close bridge**, all via `postMessage` (embed side uses `"*"` as target
   origin since it never knows the host page's origin in advance — height/fullscreen aren't
   sensitive; `widget.js` is the side that validates `event.origin` before acting):
-  - `embed-chat.tsx`'s `useParentBridge` hook watches `#chat-root` with a `ResizeObserver`,
+  - `widget.tsx`'s `useParentBridge` hook watches `#chat-root` with a `ResizeObserver`,
     throttled to one `postMessage` per animation frame (unthrottled would flood the channel during
     a streaming reply, growing height token-by-token) — posts `{type: "amueai:resize", height}`.
   - A `matchMedia("(max-width: 480px)")` listener posts `{type: "amueai:fullscreen", value}`;
@@ -588,6 +594,21 @@ Trigger.dev task graph back into one file per task under `src/trigger/` (`ingest
 `storage.ts`, `shared.ts` for the helpers only they use — nothing ingestion-related lives in
 `src/lib/` anymore), and removed the now-unnecessary shared `lib/firecrawl.ts` wrapper: each task
 that calls Firecrawl constructs its own client directly.
+
+**Phase 16 — Hardcoded models, a detached widget UI, cleaner Supabase clients, no tests (current milestone)**
+Four changes: (1) the dynamic AI Gateway model catalog (`lib/gateway-models.ts`,
+`lib/model-picker.ts`, the `"auto"` sentinel, the pricing-threshold filtering) is gone, replaced
+by a hardcoded `CHAT_MODELS` array in `lib/models.ts` — three cheap models, no auto-resolution,
+`ModelSwitcher` is a plain `Select` over that array instead of AI Elements' searchable
+`ModelSelector`; (2) the public widget (`app/embed/[agentId]/widget.tsx`) is its own self-contained
+UI, no longer sharing `ChatPanel` with the dashboard's Playground preview — see "Widget" above;
+(3) every `createServerSupabaseClient()` call site dropped a stray `await` — the function is
+synchronous (it only wraps a Clerk `accessToken()` closure, no cookies to read), so awaiting it
+was always a no-op, not a correctness issue but not how Supabase's own Clerk-integration example
+writes it either; (4) every Vitest test file added while building this app is gone, along with the
+now-dead `sources.tsx` AI Elements component and the chat route's source-citation plumbing
+(`source-url` message parts) that only that removed UI ever rendered. `vitest`, `vitest.config.ts`,
+and the `test` script are untouched — there's simply nothing under `src/**/*.test.ts` right now.
 
 ## Guardrails while building
 

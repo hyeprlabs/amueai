@@ -17,7 +17,7 @@ export const metadata: Metadata = createMetadata({
 export default async function AgentSettingsPage({ params }: PageProps<"/agents/[id]/settings">) {
   const { id } = await params;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data } = await supabase
     .from("agents")
     .select("id, name, temperature, welcome_message, fallback_message")

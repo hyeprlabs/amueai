@@ -1,9 +1,13 @@
 import { z } from "zod";
 
+import { CHAT_MODELS } from "@/lib/models";
+
+const modelIds = CHAT_MODELS.map((model) => model.id) as [string, ...string[]];
+
 export const agentSettingsSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   system_prompt: z.string().trim().min(1, "System instructions are required").max(4000),
-  model: z.string().trim().min(1, "Choose a model"),
+  model: z.enum(modelIds),
   temperature: z
     .number("Temperature is required")
     .min(0, "Must be at least 0")

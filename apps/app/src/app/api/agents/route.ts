@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   }
   const { name, system_prompt } = parsed.data;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data: agent, error } = await supabase
     .from("agents")
     .insert({ org_id: orgId, name, ...(system_prompt ? { system_prompt } : {}) })

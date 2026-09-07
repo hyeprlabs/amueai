@@ -9,7 +9,6 @@ import { z } from "zod";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
 import { checkChatRateLimit } from "@/lib/rate-limit";
-import { AUTO_MODEL_ID, resolveAutoModelId } from "@/lib/gateway-models";
 import { encodeRateLimitMessage, isRateLimitError, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 
 function textError(message: string, status: number) {
@@ -131,28 +130,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   }
 
   let context = "";
-  let sourceRows: { id: string; label: string; raw_content: string | null }[] = [];
   try {
     const { embedding } = await embed({ model: EMBEDDING_MODEL, value: message });
-
     const { data: chunks } = await supabase.rpc("match_chunks", {
       query_embedding: JSON.stringify(embedding),
       match_agent_id: agent.id,
       match_count: 6,
     });
-
     context = (chunks ?? []).map((chunk) => chunk.content).join("\n---\n");
-
-    const sourceIds = [...new Set((chunks ?? []).map((chunk) => chunk.source_id))];
-    if (sourceIds.length > 0) {
-      const { data } = await supabase
-        .from("sources")
-        .select("id, label, raw_content")
-        .in("id", sourceIds);
-      sourceRows = data ?? [];
-    }
-  } catch (err) {
-    console.error(`[chat] retrieval failed for agent ${agent.id}, answering without context`, err);
+  } catch {
+    /* empty */
   }
 
   const fallbackMessage = agent.fallback_message?.trim() || DEFAULT_FALLBACK_MESSAGE;
@@ -165,54 +152,34 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
 
   const conversationIdForClosure = conversationId;
 
-  const chatModel = agent.model === AUTO_MODEL_ID ? await resolveAutoModelId() : agent.model;
-  if (!chatModel) {
-    return textError("No chat model is currently available.", 503);
-  }
-
-  const resolveErrorMessage = (err: unknown) => {
-    console.error(`[chat] generation failed for agent ${agent.id}`, err);
-    return isRateLimitError(err) ? RATE_LIMIT_MESSAGE : fallbackMessage;
-  };
+  const resolveErrorMessage = (err: unknown) =>
+    isRateLimitError(err) ? RATE_LIMIT_MESSAGE : fallbackMessage;
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      for (const source of sourceRows) {
-        writer.write({
-          type: "source-url",
-          sourceId: source.id,
-          url: source.raw_content ?? "",
-          title: source.label,
-        });
-      }
-
       const result = streamText({
-        model: chatModel,
+        model: agent.model,
         temperature: agent.temperature,
         system,
         prompt: message,
         providerOptions: { gateway: { user: agent.org_id, tags: [`org:${agent.org_id}`] } },
         onFinish: async ({ text }) => {
-          try {
-            await supabase.from("messages").insert([
-              {
-                org_id: agent.org_id,
-                agent_id: agent.id,
-                conversation_id: conversationIdForClosure,
-                role: "user",
-                content: message,
-              },
-              {
-                org_id: agent.org_id,
-                agent_id: agent.id,
-                conversation_id: conversationIdForClosure,
-                role: "assistant",
-                content: text,
-              },
-            ]);
-          } catch (err) {
-            console.error(`[chat] failed to persist turn for agent ${agent.id}`, err);
-          }
+          await supabase.from("messages").insert([
+            {
+              org_id: agent.org_id,
+              agent_id: agent.id,
+              conversation_id: conversationIdForClosure,
+              role: "user",
+              content: message,
+            },
+            {
+              org_id: agent.org_id,
+              agent_id: agent.id,
+              conversation_id: conversationIdForClosure,
+              role: "assistant",
+              content: text,
+            },
+          ]);
         },
       });
 

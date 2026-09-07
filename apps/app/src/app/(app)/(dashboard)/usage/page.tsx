@@ -23,7 +23,7 @@ export default async function UsagePage() {
 
   if (!orgId) return <NoWorkspace />;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
 
   const [{ count: agentCount }, { data: agents }] = await Promise.all([
     supabase.from("agents").select("id", { count: "exact", head: true }),

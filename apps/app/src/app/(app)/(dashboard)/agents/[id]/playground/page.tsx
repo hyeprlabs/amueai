@@ -4,7 +4,6 @@ import { LinkIcon } from "lucide-react";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { requireAgent } from "@/lib/agents";
 import { createMetadata } from "@/lib/seo";
-import { AUTO_MODEL_ID, getGatewayChatModels } from "@/lib/gateway-models";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgentInstructionsForm } from "@/components/dashboard/agents/agent-instructions-form";
 import { ChatPreview } from "@/components/dashboard/agents/chat-preview";
@@ -22,7 +21,7 @@ export default async function AgentPlaygroundPage({
 }: PageProps<"/agents/[id]/playground">) {
   const { id } = await params;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const [{ data }, { count: sourceCount }] = await Promise.all([
     supabase
       .from("agents")
@@ -33,12 +32,6 @@ export default async function AgentPlaygroundPage({
   ]);
 
   const agent = requireAgent(data);
-
-  const gatewayModels = await getGatewayChatModels();
-  const models =
-    agent.model === AUTO_MODEL_ID || gatewayModels.some((model) => model.id === agent.model)
-      ? gatewayModels
-      : [{ id: agent.model, name: agent.model, provider: "current" }, ...gatewayModels];
 
   return (
     <div className="flex flex-col gap-4">
@@ -69,7 +62,7 @@ export default async function AgentPlaygroundPage({
               <CardTitle className="text-sm">Model</CardTitle>
             </CardHeader>
             <CardContent className="px-4">
-              <ModelSwitcher agentId={agent.id} defaultModel={agent.model} models={models} />
+              <ModelSwitcher agentId={agent.id} defaultModel={agent.model} />
             </CardContent>
           </Card>
 

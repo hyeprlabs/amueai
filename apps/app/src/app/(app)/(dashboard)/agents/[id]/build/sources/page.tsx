@@ -16,7 +16,7 @@ export default async function AgentSourcesPage({
 }: PageProps<"/agents/[id]/build/sources">) {
   const { id } = await params;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data: sources } = await supabase
     .from("sources")
     .select("id, label, status, error_message, created_at")

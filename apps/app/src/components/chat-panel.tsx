@@ -5,7 +5,6 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { ArrowUpIcon, ClockIcon } from "lucide-react";
 import {
   Component,
-  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -25,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { decodeRateLimitMessage, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 import { cn } from "@/lib/utils";
-import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 
 function formatTimestamp(ms: number) {
   return new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -57,13 +55,11 @@ export function ChatPanel({
   conversationId,
   visitorId,
   welcomeMessage,
-  showSources = true,
 }: {
   agentId: string;
   conversationId: string;
   visitorId: string;
   welcomeMessage: string;
-  showSources?: boolean;
 }) {
   const [input, setInput] = useState("");
 
@@ -132,56 +128,36 @@ export function ChatPanel({
       <Conversation className="min-h-0">
         <ConversationContent className="gap-3 p-3">
           {messages.map((message) => {
-            const sourceParts = message.parts.filter((part) => part.type === "source-url");
             const rawText = message.parts
               .filter((part) => part.type === "text")
               .map((part) => part.text)
               .join("");
 
-            const isEmptyShell = !rawText && sourceParts.length === 0;
             const isFailedTurn = Boolean(error) && message.id === lastMessageId;
-            if (message.role === "assistant" && (isEmptyShell || isFailedTurn)) {
+            if (message.role === "assistant" && (!rawText || isFailedTurn)) {
               return null;
             }
 
             return (
-              <Fragment key={message.id}>
-                {showSources && message.role === "assistant" && sourceParts.length > 0 && (
-                  <Sources>
-                    <SourcesTrigger count={sourceParts.length} />
-                    <SourcesContent>
-                      {sourceParts.map((part, i) => (
-                        <Source
-                          key={`${message.id}-source-${i}`}
-                          href={part.url}
-                          title={part.title}
-                        />
-                      ))}
-                    </SourcesContent>
-                  </Sources>
-                )}
-                <Message className="gap-0.5" from={message.role}>
-                  <MessageContent className="text-xs leading-relaxed">
-                    <MessageErrorBoundary
-                      fallback={<p className="whitespace-pre-wrap">{rawText}</p>}
-                    >
-                      {message.parts.map((part, i) =>
-                        part.type === "text" ? (
-                          <MessageResponse key={i}>{part.text}</MessageResponse>
-                        ) : null,
-                      )}
-                    </MessageErrorBoundary>
-                  </MessageContent>
-                  <span
-                    className={cn(
-                      "px-1 text-[10px] text-muted-foreground",
-                      message.role === "user" ? "text-right" : "text-left",
+              <Message className="gap-0.5" from={message.role} key={message.id}>
+                <MessageContent className="text-xs leading-relaxed">
+                  <MessageErrorBoundary fallback={<p className="whitespace-pre-wrap">{rawText}</p>}>
+                    {message.parts.map((part, i) =>
+                      part.type === "text" ? (
+                        <MessageResponse key={i}>{part.text}</MessageResponse>
+                      ) : null,
                     )}
-                  >
-                    {formatTimestamp(getTimestamp(message.id))}
-                  </span>
-                </Message>
-              </Fragment>
+                  </MessageErrorBoundary>
+                </MessageContent>
+                <span
+                  className={cn(
+                    "px-1 text-[10px] text-muted-foreground",
+                    message.role === "user" ? "text-right" : "text-left",
+                  )}
+                >
+                  {formatTimestamp(getTimestamp(message.id))}
+                </span>
+              </Message>
             );
           })}
           {status === "submitted" && (
