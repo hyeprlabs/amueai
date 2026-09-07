@@ -73,9 +73,6 @@ describe("agentSettingsSchema", () => {
   });
 
   it("rejects NaN temperature (what an emptied number input produces)", () => {
-    // register('temperature', { valueAsNumber: true }) turns a cleared
-    // input into NaN, not undefined - this must fail validation rather
-    // than silently coercing to some default.
     expect(agentSettingsSchema.safeParse({ ...validValues, temperature: NaN }).success).toBe(false);
   });
 
@@ -99,12 +96,12 @@ describe("agentSettingsSchema", () => {
   });
 
   it("rejects an empty or whitespace-only welcome_message", () => {
-    expect(
-      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "" }).success,
-    ).toBe(false);
-    expect(
-      agentSettingsSchema.safeParse({ ...validValues, welcome_message: "   " }).success,
-    ).toBe(false);
+    expect(agentSettingsSchema.safeParse({ ...validValues, welcome_message: "" }).success).toBe(
+      false,
+    );
+    expect(agentSettingsSchema.safeParse({ ...validValues, welcome_message: "   " }).success).toBe(
+      false,
+    );
   });
 
   it("rejects a welcome_message over 300 characters", () => {
@@ -125,12 +122,12 @@ describe("agentSettingsSchema", () => {
   });
 
   it("rejects an empty or whitespace-only fallback_message", () => {
-    expect(
-      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "" }).success,
-    ).toBe(false);
-    expect(
-      agentSettingsSchema.safeParse({ ...validValues, fallback_message: "   " }).success,
-    ).toBe(false);
+    expect(agentSettingsSchema.safeParse({ ...validValues, fallback_message: "" }).success).toBe(
+      false,
+    );
+    expect(agentSettingsSchema.safeParse({ ...validValues, fallback_message: "   " }).success).toBe(
+      false,
+    );
   });
 
   it("rejects a fallback_message over 300 characters", () => {

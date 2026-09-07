@@ -17,8 +17,11 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { updateAgent } from "@/app/(app)/(dashboard)/agents/actions";
-import { agentGeneralSchema, type AgentGeneralValues } from "@/components/dashboard/agents/agent-settings-schema";
+import { apiFetch } from "@/lib/api-client";
+import {
+  agentGeneralSchema,
+  type AgentGeneralValues,
+} from "@/components/dashboard/agents/agent-settings-schema";
 
 export function AgentSettingsForm({
   agentId,
@@ -41,11 +44,11 @@ export function AgentSettingsForm({
 
   const onSubmit = async (values: AgentGeneralValues) => {
     try {
-      const saved = await updateAgent(agentId, values);
-      // Rebases the dirty-tracking baseline to what was just saved without
-      // touching live field values - any edit made while the request was
-      // in flight stays put and correctly reads as dirty again.
-      resetDefaultValues(saved as AgentGeneralValues);
+      const saved = await apiFetch<AgentGeneralValues>(`/api/agents/${agentId}`, {
+        method: "PATCH",
+        body: JSON.stringify(values),
+      });
+      resetDefaultValues(saved);
       toast.add({ type: "success", title: "Settings saved" });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
@@ -96,8 +99,8 @@ export function AgentSettingsForm({
             {...register("fallback_message")}
           />
           <FieldDescription>
-            Shown when the agent can&apos;t answer from its sources. Mention how visitors can
-            reach you directly (an email, a link) if you&apos;d like.
+            Shown when the agent can&apos;t answer from its sources. Mention how visitors can reach
+            you directly (an email, a link) if you&apos;d like.
           </FieldDescription>
           <FieldError errors={[errors.fallback_message]} />
         </Field>

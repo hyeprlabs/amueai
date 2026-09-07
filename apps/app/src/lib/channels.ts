@@ -16,13 +16,6 @@ export type Channel = {
   badge: "Included" | "Coming soon";
 };
 
-/**
- * Deployment channels shown in both the /new onboarding wizard and each
- * agent's Channels tab. MVP-only: Website widget is the one real channel
- * (the embed script), everything else is a placeholder with no backing
- * integration yet - shown so the roadmap is visible, not to promise
- * functionality that isn't there.
- */
 export const CHANNELS: Channel[] = [
   {
     id: "website",

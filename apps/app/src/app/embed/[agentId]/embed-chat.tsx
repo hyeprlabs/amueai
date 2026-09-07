@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { ChatPanel } from "@/components/chat-panel";
 
-/** conversationId/visitorId persist in this iframe's own localStorage. */
 function useWidgetSession(agentId: string) {
   const [ids, setIds] = useState<{ conversationId: string; visitorId: string } | null>(null);
 
@@ -32,18 +31,6 @@ function useWidgetSession(agentId: string) {
 
 const FULLSCREEN_BREAKPOINT_PX = 480;
 
-/**
- * The parent widget.js never guesses this iframe's content height or the
- * host page's viewport - it only reacts to what this hook reports. Height
- * changes constantly during a streaming reply (growing token by token), so
- * every report is throttled to one per animation frame: an unthrottled
- * ResizeObserver callback firing on every text-node mutation would flood
- * postMessage and visibly jank the panel's grow animation on the parent
- * side. `"*"` as the target origin is deliberate - height/fullscreen are
- * not sensitive, and this iframe never knows the host page's origin in
- * advance since it's embedded on arbitrary customer domains. widget.js is
- * the side that must (and does) validate `event.origin` before acting.
- */
 function useParentBridge(rootRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     const root = rootRef.current;
@@ -76,9 +63,6 @@ function useParentBridge(rootRef: React.RefObject<HTMLElement | null>) {
         window.parent.postMessage({ type: "amueai:close" }, "*");
         return;
       }
-      // Focus can't cross the iframe boundary on its own, so without this a
-      // Tab past the last element (or Shift+Tab past the first) would leave
-      // the panel entirely and land on the host page - trap it here instead.
       if (event.key !== "Tab") return;
       const focusable = Array.from(root.querySelectorAll<HTMLElement>(focusableSelector));
       if (focusable.length === 0) return;

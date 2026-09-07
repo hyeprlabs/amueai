@@ -19,25 +19,6 @@ import { getAgentSubPath } from "@/components/dashboard/nav-config";
 
 export type AgentSwitcherAgent = { id: string; name: string };
 
-/**
- * The sidebar's agent-face header - swaps which agent the rest of the
- * sidebar's Playground/Build/Analytics/Channels/Settings nav points at.
- * Same shape as shadcn's classic TeamSwitcher block, scoped to agents.
- *
- * Two things are done deliberately differently from a copy-paste of that
- * block, both learned the hard way from an earlier version of this exact
- * component that crashed in production:
- *
- * 1. The trigger is `DropdownMenuTrigger` styled directly with the sidebar
- *    button's own variant classes, not `DropdownMenuTrigger asChild`
- *    wrapping a `<SidebarMenuButton>`. Nesting one polymorphic `render`-
- *    based component inside another's render target (here, Menu.Trigger's)
- *    doubles up ref/prop merging and broke the trigger outright - applying
- *    the same classes to a plain element gets an identical look for free.
- * 2. Every item navigates via a plain `onClick` (router.push), not a
- *    `<Link>` rendered through the item - Base UI's Menu item/link
- *    composition was the other half of that same crash.
- */
 export function AgentSwitcher({
   agents,
   currentAgentId,

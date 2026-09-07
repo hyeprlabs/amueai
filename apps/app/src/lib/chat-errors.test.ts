@@ -20,9 +20,6 @@ describe("isRateLimitError", () => {
   });
 
   it("detects a 429 nested inside an AI_RetryError's errors array", () => {
-    // Matches the real shape thrown when the Gateway rate-limits every
-    // retry attempt: an AI_RetryError wrapping several GatewayRateLimitError
-    // instances via `.errors`.
     const retryError = {
       name: "AI_RetryError",
       reason: "maxRetriesExceeded",

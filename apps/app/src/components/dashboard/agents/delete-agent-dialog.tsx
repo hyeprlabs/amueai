@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { deleteAgent } from "@/app/(app)/(dashboard)/agents/actions";
+import { apiFetch } from "@/lib/api-client";
 
 export function DeleteAgentDialog({ agentId, agentName }: { agentId: string; agentName: string }) {
   const router = useRouter();
@@ -27,10 +27,7 @@ export function DeleteAgentDialog({ agentId, agentName }: { agentId: string; age
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await deleteAgent(agentId);
-      // Close the dialog before navigating away - letting a server-side
-      // redirect unmount it out from under Base UI's own close-animation
-      // cleanup is what threw here before.
+      await apiFetch(`/api/agents/${agentId}`, { method: "DELETE" });
       setOpen(false);
       router.push("/agents");
       router.refresh();

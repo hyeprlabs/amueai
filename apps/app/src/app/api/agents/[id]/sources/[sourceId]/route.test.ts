@@ -12,13 +12,6 @@ vi.mock("@/lib/supabase/server", () => ({
 
 const { DELETE } = await import("./route");
 
-/**
- * A minimal in-memory stand-in for the exact supabase-js chains this route
- * uses: a select().eq().eq().single() lookup (for storage_path), then
- * sources.delete({ count: "exact" }).eq(...).eq(...), awaited directly (no
- * .single()) for its {error, count} result, and finally
- * storage.from("sources").remove([...]) for file sources.
- */
 function makeFakeSupabase(initialSources: Record<string, unknown>[]) {
   const sources = [...initialSources];
   let forceError: string | null = null;
@@ -129,8 +122,6 @@ describe("DELETE /api/agents/[id]/sources/[sourceId]", () => {
 
   it("returns 404 without deleting anything when no row matches both id and agent_id", async () => {
     authMock.mockResolvedValue({ orgId: "org-1" });
-    // Belongs to a different agent - matching id() but not agent_id().eq()
-    // must not delete it.
     fakeSupabase = makeFakeSupabase([
       { id: "source-1", agent_id: "someone-elses-agent", storage_path: null },
     ]);

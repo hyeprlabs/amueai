@@ -33,7 +33,8 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { captureAgentBrand, createAgent } from "@/app/(app)/(dashboard)/agents/actions";
+import { apiFetch } from "@/lib/api-client";
+import { captureAgentBrand } from "@/app/(app)/(dashboard)/agents/actions";
 
 const TOTAL_STEPS = 3;
 
@@ -156,17 +157,13 @@ export function NewAgentForm() {
 
   const onSubmit = async (values: OnboardingValues) => {
     try {
-      const agent = await createAgent({
-        name: deriveAgentName(values),
-        system_prompt: values.systemPrompt,
+      const agent = await apiFetch<{ id: string }>("/api/agents", {
+        method: "POST",
+        body: JSON.stringify({ name: deriveAgentName(values), system_prompt: values.systemPrompt }),
       });
 
       if (values.sourceType === "website" && values.websiteUrl) {
         const url = `https://${stripProtocol(values.websiteUrl)}`;
-        // Content ingestion and brand capture both scrape the same site and
-        // neither blocks the other, so run them together. Both are
-        // best-effort: a site that can't be scraped, or has no detectable
-        // brand, still leaves a usable agent behind.
         await Promise.allSettled([
           fetch(`/api/agents/${agent.id}/sources`, {
             method: "POST",
@@ -176,8 +173,6 @@ export function NewAgentForm() {
           captureAgentBrand(agent.id, { url }),
         ]);
       } else if (values.sourceType === "file" && values.file && orgId) {
-        // Best-effort, same as the website branch: a failed upload still
-        // leaves a usable agent behind, retryable from the sources tab.
         const file = values.file;
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
         const storagePath = `${orgId}/${agent.id}/${Date.now()}-${safeName}`;

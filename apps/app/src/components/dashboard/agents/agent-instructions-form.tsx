@@ -8,7 +8,7 @@ import { Field, FieldDescription, FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
-import { updateAgent } from "@/app/(app)/(dashboard)/agents/actions";
+import { apiFetch } from "@/lib/api-client";
 import {
   agentInstructionsSchema,
   type AgentInstructionsValues,
@@ -34,8 +34,11 @@ export function AgentInstructionsForm({
 
   const onSubmit = async (values: AgentInstructionsValues) => {
     try {
-      const saved = await updateAgent(agentId, values);
-      resetDefaultValues(saved as AgentInstructionsValues);
+      const saved = await apiFetch<AgentInstructionsValues>(`/api/agents/${agentId}`, {
+        method: "PATCH",
+        body: JSON.stringify(values),
+      });
+      resetDefaultValues(saved);
       toast.add({ type: "success", title: "Instructions saved" });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";

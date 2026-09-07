@@ -7,20 +7,6 @@ import { useRealtimeRunsWithTag } from "@trigger.dev/react-hooks";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-/**
- * Live queued/processing/ready/failed badge for one source, driven by every
- * Trigger.dev run tagged `source:{id}` - the pattern Trigger.dev's own docs
- * recommend for showing run progress in a UI, and independent of Supabase
- * Realtime (so it keeps working even if that channel is slow to pick up the
- * row's status column changes). Tag-based rather than a single run id: a
- * url source's full-site crawl fans out into many child-page processing
- * runs that all carry this tag, so this same component and subscription
- * covers both "one doc" and "dozens of pages" without special-casing.
- *
- * Only mounted for a source with an active run (see SourcesPanel); once
- * every tagged run has settled, `onSettled` lets the caller drop back to
- * the row's plain DB-driven status.
- */
 export function LiveSourceStatus({
   sourceId,
   accessToken,

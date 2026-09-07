@@ -50,10 +50,6 @@ describe("findActiveNavItem", () => {
   });
 
   it("prefers the most specific match when multiple paths could apply", () => {
-    // Regression guard: nothing today has an item at "/agents" *and* a
-    // deeper nav entry under it, but findActiveNavItem sorts by path
-    // length specifically so a future deeper item wins over a shallower
-    // one instead of whichever happens to appear first in navLinks.
     expect(findActiveNavItem("/agents/abc-123")?.path).toBe("/agents");
   });
 });
@@ -89,9 +85,6 @@ describe("getAgentSubPath", () => {
   });
 
   it("collapses a data-specific detail page down to its tab, not the new agent's data", () => {
-    // /analytics/<conversationId> is scoped to a conversation the OLD
-    // agent had - keeping it verbatim would point the new agent at data
-    // that isn't (and never was) its own.
     expect(getAgentSubPath("/agents/abc-123/analytics/conv-999", "abc-123")).toBe("/analytics");
   });
 

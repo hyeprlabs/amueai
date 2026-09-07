@@ -24,11 +24,6 @@ export const Conversation = ({ className, ...props }: ConversationProps) => (
 
 export type ConversationContentProps = ComponentProps<"div">;
 
-// StickToBottom.Content (the library's own compound part) hard-codes a
-// plain native-scrollbar div as the scrolling element. Building this by
-// hand instead - handing scrollRef/contentRef to a shadcn ScrollArea -
-// keeps the same auto-scroll-to-bottom behavior while getting the custom,
-// theme-matched scrollbar everywhere Conversation is used.
 export const ConversationContent = ({ className, ...props }: ConversationContentProps) => {
   const { scrollRef, contentRef } = useStickToBottomContext();
 

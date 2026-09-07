@@ -59,12 +59,6 @@ type FileValues = z.infer<typeof fileSchema>;
 
 export type QueuedSource = { source: SourceRow; run: ActiveRun };
 
-/**
- * Queues a source and returns it plus its Trigger.dev run - the caller
- * (SourcesPanel) adds the row to its own state and starts tracking the run
- * immediately, rather than waiting on a Realtime event or a full page
- * refresh to show it.
- */
 async function queueSource(
   agentId: string,
   body:
@@ -88,14 +82,6 @@ async function queueSource(
   };
 }
 
-/**
- * Everything but the outer shell — form state, tabs, both submit handlers —
- * shared between the desktop Dialog and the mobile Drawer so the two only
- * differ in which chrome wraps them (per shadcn/ui's own Dialog/Drawer
- * responsive pattern). Both tabs are their own react-hook-form instance,
- * each with its own Zod schema, matching how every other form in this app
- * is built.
- */
 function AddSourceForm({
   agentId,
   onQueued,
@@ -140,8 +126,6 @@ function AddSourceForm({
   };
 
   const onSubmitFile = async ({ file, label }: FileValues) => {
-    // Zod's refine above already guarantees this at validation time; the
-    // check here is just to satisfy the resulting `File | null` type.
     if (!file) return;
     if (!orgId) {
       fileForm.setError("root.serverError", {
@@ -281,12 +265,6 @@ const TITLE = "Add a source";
 const DESCRIPTION =
   "Firecrawl scrapes or parses the content and queues it for embedding in the background.";
 
-/**
- * Desktop gets the Dialog, mobile gets the Drawer — same form underneath,
- * per shadcn/ui's own responsive Dialog/Drawer pattern. A file input inside
- * a Dialog on a small viewport fights the on-screen keyboard and the
- * dialog's own max-height; a bottom Drawer doesn't.
- */
 export function AddSourceDialog({
   agentId,
   onQueued,

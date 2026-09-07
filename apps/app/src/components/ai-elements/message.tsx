@@ -33,7 +33,6 @@ export const MessageContent = ({ children, className, ...props }: MessageContent
   <div
     className={cn(
       "flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden rounded-lg px-3 py-1.5 text-sm text-foreground",
-      // Assistant: an outlined pill, no fill. User: a filled pill, no border.
       "group-[.is-user]:ml-auto group-[.is-user]:bg-muted",
       "group-[.is-assistant]:border",
       className,
@@ -169,7 +168,6 @@ export const MessageBranchContent = ({ children, ...props }: MessageBranchConten
     [children],
   );
 
-  // Use useEffect to update branches when they change
   useEffect(() => {
     if (branches.length !== childrenArray.length) {
       setBranches(childrenArray);
@@ -195,7 +193,6 @@ export type MessageBranchSelectorProps = ComponentProps<typeof ButtonGroup>;
 export const MessageBranchSelector = ({ className, ...props }: MessageBranchSelectorProps) => {
   const { totalBranches } = useMessageBranch();
 
-  // Don't render if there's only one branch
   if (totalBranches <= 1) {
     return null;
   }
@@ -269,10 +266,6 @@ export const MessageBranchPage = ({ className, ...props }: MessageBranchPageProp
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
-// math/mermaid are deliberately left out: both execute real parsers
-// (KaTeX, mermaid's own layout engine) against whatever partial markdown
-// has streamed in so far, and a support agent's plain-prose answers have
-// no need for either - not worth the crash surface on incomplete input.
 const streamdownPlugins = { cjk, code };
 
 export const MessageResponse = memo(

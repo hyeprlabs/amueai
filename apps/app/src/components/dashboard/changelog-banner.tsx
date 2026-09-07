@@ -8,7 +8,6 @@ import type { Change } from "@/payload-types";
 
 const DISMISSED_UNTIL_KEY = "amueai_latest_change_dismissed_date";
 
-/** Today's date as YYYY-MM-DD - the same shape the sidebar's own open/closed cookie compares against, so "dismissed today" reads the same way across this app. */
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -16,11 +15,6 @@ function today() {
 export function ChangelogBanner({ change }: { change?: Change }) {
   const [isOpen, setIsOpen] = useState(true);
 
-  // Runs client-side only (localStorage isn't available during the server
-  // render), so this starts open and can flip closed once mounted - a
-  // one-frame flash is an acceptable cost for a low-stakes changelog
-  // banner, rather than plumbing this through cookies/SSR like the
-  // sidebar's own open state.
   useEffect(() => {
     if (localStorage.getItem(DISMISSED_UNTIL_KEY) === today()) setIsOpen(false);
   }, []);

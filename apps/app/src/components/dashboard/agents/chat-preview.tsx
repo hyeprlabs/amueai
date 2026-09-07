@@ -6,11 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChatWidget } from "@/components/dashboard/agents/chat-widget";
 
-/**
- * The Playground's live preview - the real bubble + popover a visitor gets
- * on the embed, not just a static mock of the opened state. Starts open so
- * the preview is useful the moment this page loads.
- */
 export function ChatPreview({
   agentId,
   agentName,

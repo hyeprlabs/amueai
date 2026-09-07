@@ -12,18 +12,10 @@ import { checkChatRateLimit } from "@/lib/rate-limit";
 import { AUTO_MODEL_ID, resolveAutoModelId } from "@/lib/gateway-models";
 import { encodeRateLimitMessage, isRateLimitError, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 
-// Plain text, not NextResponse.json: the AI SDK transport turns a non-ok
-// response into `new Error(await response.text())`, so a JSON body would
-// show up as a raw, unparsed JSON blob in the chat UI's error bubble
-// instead of a clean sentence.
 function textError(message: string, status: number) {
   return new Response(message, { status, headers: { "Content-Type": "text/plain" } });
 }
 
-// Public, unauthenticated route - the widget and the dashboard test-chat
-// panel both call this. No Clerk session, so RLS provides no protection
-// here: every query below does its own explicit org_id/agent_id
-// matching against the service-role client.
 const chatRequestSchema = z.object({
   message: z.string().trim().min(1).max(4000),
   conversationId: z.string().optional(),
@@ -34,14 +26,6 @@ const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const DEFAULT_FALLBACK_MESSAGE =
   "Sorry, I ran into a problem answering that. Please try again in a moment.";
 
-/**
- * The non-negotiable foundation every agent runs on, regardless of what
- * the business writes in their own system_prompt field. That field is
- * layered on top of this as "Additional instructions", never the other
- * way around, so a careless or malicious custom prompt can weaken tone
- * but can never turn off grounding, leak these rules, or get the model to
- * treat scraped page content as commands.
- */
 function buildSystemPrompt({
   agentInstructions,
   fallbackMessage,
@@ -100,14 +84,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     return textError("Agent not found.", 404);
   }
 
-  // Agent ids are public by design - they ship in the embed snippet on the
-  // customer's own site - so without this check anyone could point their
-  // page at someone else's agent and spend that org's Gateway credits while
-  // reading its knowledge base. An empty allowed_origins means "not locked
-  // down yet" and stays open; once an origin is set, only those match.
-  // The column is NOT NULL with a '{}' default, so a real row always has an
-  // array here; the guard is for the shape a caller could still hand us
-  // (a partial fixture, a future select that omits the column).
   if (agent.allowed_origins && agent.allowed_origins.length > 0) {
     const origin = request.headers.get("origin");
     if (!origin || !agent.allowed_origins.includes(origin)) {
@@ -118,17 +94,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const { success: allowed, retryAt } = await checkChatRateLimit(ip, agent.id);
   if (!allowed) {
-    // Our own sliding window has a real, known reset time, unlike a
-    // Gateway/provider-side rate limit - encode it so the client can show
-    // exactly when the visitor can try again instead of a vague "later".
     return textError(encodeRateLimitMessage(retryAt), 429);
   }
 
   if (conversationId) {
-    // The client (dashboard test-chat, widget) generates its own id up
-    // front so it can send it on the very first message - create the row
-    // on first use rather than requiring a separate "start conversation"
-    // round trip.
     const { data: existing } = await supabase
       .from("conversations")
       .select("id")
@@ -161,10 +130,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     conversationId = conversation.id;
   }
 
-  // Retrieval is best-effort: a Gateway hiccup or a slow RPC here must never
-  // sink the whole turn - answering from an empty context (which the system
-  // prompt below already treats the same as "no matching chunks") beats the
-  // visitor getting no reply at all.
   let context = "";
   let sourceRows: { id: string; label: string; raw_content: string | null }[] = [];
   try {
@@ -190,10 +155,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     console.error(`[chat] retrieval failed for agent ${agent.id}, answering without context`, err);
   }
 
-  // The agent's own configured message for "I don't know" - previously
-  // fetched but never actually used, so a customized fallback silently had
-  // no effect. Also reused below as the safe, user-facing text for any
-  // generation failure, since it's already written to sound like the agent.
   const fallbackMessage = agent.fallback_message?.trim() || DEFAULT_FALLBACK_MESSAGE;
 
   const system = buildSystemPrompt({
@@ -204,14 +165,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
 
   const conversationIdForClosure = conversationId;
 
-  // "auto" is a picker sentinel (model-switcher.tsx), never a real Gateway
-  // model id - resolve it to one here, at chat time, so a later Gateway
-  // catalog change (a model deprecated, cheaper models rotating in) takes
-  // effect on an agent's very next message instead of only at save time.
-  // Falling back to the sentinel itself if resolution fails would send an
-  // invalid model id to streamText - falling back to the agent's own
-  // stored value (only meaningful if it was never "auto" to begin with)
-  // isn't right either, so surface the failure instead of guessing.
   const chatModel = agent.model === AUTO_MODEL_ID ? await resolveAutoModelId() : agent.model;
   if (!chatModel) {
     return textError("No chat model is currently available.", 503);
@@ -238,17 +191,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
         temperature: agent.temperature,
         system,
         prompt: message,
-        // Ties Gateway usage/cost back to the org for observability via `user`
-        // (end-user identifier for spend tracking) and `tags`, not
-        // `quotaEntityId` - that requires a quota entity pre-provisioned in the
-        // Vercel dashboard, and sending an arbitrary Clerk org_id that was never
-        // registered there makes the Gateway 400 every request with
-        // "Quota entity ... was provided but no quota exists."
         providerOptions: { gateway: { user: agent.org_id, tags: [`org:${agent.org_id}`] } },
-        // Not logged here - the same error also reaches toUIMessageStream's
-        // onError below (as the stream's error part), which already logs it
-        // via resolveErrorMessage. A second handler here would just double
-        // the log line.
         onFinish: async ({ text }) => {
           try {
             await supabase.from("messages").insert([
@@ -273,19 +216,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
         },
       });
 
-      // A Gateway/provider failure (a rate limit, an outage) surfaces as an
-      // inline "error" part on result.stream, not a thrown/rejected
-      // promise - toUIMessageStream converts that itself and has its own
-      // default onError ("An error occurred."), completely separate from
-      // createUIMessageStream's onError below, which only catches an
-      // exception thrown out of this whole execute function. Without this,
-      // every generation failure showed the generic AI SDK default instead
-      // of the agent's fallback or the rate-limit message.
       writer.merge(toUIMessageStream({ stream: result.stream, onError: resolveErrorMessage }));
     },
-    // Anything uncaught above (the merge itself throwing outside of a
-    // stream part, e.g. a network error establishing the request) lands
-    // here instead of leaving the visitor with a silent, blank turn.
     onError: resolveErrorMessage,
   });
 

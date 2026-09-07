@@ -6,7 +6,6 @@ import { useMemo } from "react";
 
 import type { Database } from "@/types/supabase";
 
-/** Client-component counterpart to `createServerSupabaseClient`. */
 export function useSupabaseClient() {
   const { session } = useSession();
 

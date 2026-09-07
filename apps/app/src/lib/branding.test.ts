@@ -55,8 +55,6 @@ describe("extractUrlBranding", () => {
 
     const brand = await extractUrlBranding("https://acme.com");
 
-    // Every color was unsafe, so the colors object is dropped entirely
-    // rather than left as an object of undefineds.
     expect(brand?.colors).toBeUndefined();
     expect(brand?.name).toBe("Acme");
   });

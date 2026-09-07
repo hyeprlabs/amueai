@@ -22,10 +22,6 @@ export async function POST(
     .single();
   if (!source) return NextResponse.json({ error: "Source not found" }, { status: 404 });
 
-  // A retrained text/qa source has no raw_content left (cleared once its
-  // canonical markdown was written the first time) - re-extraction for
-  // those types isn't meaningful since there's no original input to
-  // re-normalize; only file (re-parse) and url (re-crawl) support retrain.
   if (source.type === "text" || source.type === "qa") {
     return NextResponse.json(
       { error: `${source.type} sources can't be retrained - delete and re-add instead` },
@@ -39,10 +35,6 @@ export async function POST(
     return NextResponse.json({ error: "Source has no URL" }, { status: 400 });
   }
 
-  // ingest-source/crawl-website never flip status to ready on partial
-  // success, and keep this source's existing chunks in place until the new
-  // run's insert succeeds - a failed retrain doesn't blank out a working
-  // agent.
   const run = await triggerIngestion(
     source.type === "file"
       ? {

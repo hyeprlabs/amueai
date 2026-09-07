@@ -17,12 +17,6 @@ vi.mock("@/lib/supabase/server", () => ({
 
 const { POST } = await import("./route");
 
-/**
- * A minimal in-memory stand-in for the exact supabase-js chains this route
- * uses across "agents" and "sources" (select/eq/single, insert/select/single) -
- * enough to exercise the real auth/validation/insert/enqueue control flow
- * without a live Supabase project.
- */
 function makeFakeSupabase(seed: {
   agents?: Record<string, unknown>[];
   sources?: Record<string, unknown>[];

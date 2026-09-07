@@ -82,12 +82,6 @@ function StatusBadge({ source }: { source: SourceRow }) {
   );
 }
 
-/**
- * Purely presentational: `SourcesPanel` owns the sources list, the active
- * Trigger.dev runs, and the retrain/delete network calls. A row with an
- * active run renders `LiveSourceStatus` (driven by that run's own realtime
- * updates); otherwise it renders the plain DB-driven `StatusBadge`.
- */
 export function SourcesTable({
   sources,
   activeRuns,

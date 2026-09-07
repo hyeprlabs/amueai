@@ -17,14 +17,7 @@ export function AppHeader() {
   const agentName = useAgentName(activeAgentId);
 
   const trail: BreadcrumbTrailItem[] = activeAgentId
-    ? [
-        { title: "Agents", href: "/agents" },
-        // agentName resolves a moment after the id does (a client-side,
-        // RLS-scoped fetch - the header sits outside the layout that
-        // already has this name server-side) - just show one crumb until
-        // it lands rather than a placeholder like "…".
-        ...(agentName ? [{ title: agentName }] : []),
-      ]
+    ? [{ title: "Agents", href: "/agents" }, ...(agentName ? [{ title: agentName }] : [])]
     : (() => {
         const page = headerPageTitle(pathname);
         return page ? [{ title: page.title }] : [];

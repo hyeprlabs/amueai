@@ -5,7 +5,6 @@ vi.mock("ai", () => ({
   gateway: { getAvailableModels: (...args: unknown[]) => getAvailableModelsMock(...args) },
 }));
 
-/** Defaults to a cheap-tier price so tests unconcerned with pricing don't need to think about it. */
 function languageModel(
   id: string,
   name: string,
@@ -126,8 +125,6 @@ describe("getGatewayChatModels", () => {
           languageModel("google/gemini-2.0-flash", "Gemini 2.0 Flash", "google"),
           languageModel("deepseek/deepseek-chat", "DeepSeek Chat", "deepseek"),
           languageModel("mistral/mistral-small", "Mistral Small", "mistral"),
-          // Not part of any popular family - only relevant as filler, and
-          // the quota is already full without it.
           languageModel("acme/random-model", "Random Model", "acme"),
         ],
       });
@@ -161,8 +158,6 @@ describe("getGatewayChatModels", () => {
             input: "0.00000005",
             output: "0.0000002",
           }),
-          // Would be the 4th filler, but only 3 slots remain after the 2
-          // family matches - the priciest filler loses out.
           languageModel("acme/excluded-filler", "Excluded Filler", "acme", {
             input: "0.0000009",
             output: "0.0000045",
@@ -187,7 +182,6 @@ describe("getGatewayChatModels", () => {
     it("picks the offered model ranking highest by popularity, not just the first alphabetically", async () => {
       getAvailableModelsMock.mockResolvedValue({
         models: [
-          // Alphabetically first, but the anthropic haiku pattern outranks it.
           languageModel("acme/aardvark", "Aardvark", "acme"),
           languageModel("anthropic/claude-3-5-haiku", "Claude 3.5 Haiku", "anthropic"),
         ],
@@ -223,7 +217,6 @@ describe("getGatewayChatModels", () => {
       getAvailableModelsMock.mockResolvedValue({
         models: [
           languageModel("openai/gpt-4o-mini", "GPT-4o mini", "openai"),
-          // $2.50/1M input - a real gpt-4o-class price, over the $1 cap.
           languageModel("openai/gpt-4o", "GPT-4o", "openai", {
             input: "0.0000025",
             output: "0.00001",
@@ -240,7 +233,6 @@ describe("getGatewayChatModels", () => {
     it("excludes a model priced above the output cap even with cheap input", async () => {
       getAvailableModelsMock.mockResolvedValue({
         models: [
-          // A reasoning-style model: cheap input, expensive output.
           languageModel("openai/o1-mini", "o1-mini", "openai", {
             input: "0.0000003",
             output: "0.000012",

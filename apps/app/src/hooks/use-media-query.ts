@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-/** SSR-safe `window.matchMedia` subscription, per shadcn/ui's own pattern. */
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
 

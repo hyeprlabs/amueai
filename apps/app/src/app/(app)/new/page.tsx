@@ -16,9 +16,6 @@ export const metadata: Metadata = createMetadata({
   noIndex: true,
 });
 
-// Full-page onboarding, deliberately outside the (dashboard) route group -
-// it must not render inside AppShell's sidebar/header chrome - so auth is
-// enforced here directly instead of inheriting it from that layout.
 export default async function NewAgentPage() {
   const { orgId } = await auth.protect();
 

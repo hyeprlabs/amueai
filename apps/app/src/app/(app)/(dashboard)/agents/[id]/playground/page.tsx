@@ -35,10 +35,6 @@ export default async function AgentPlaygroundPage({
   const agent = requireAgent(data);
 
   const gatewayModels = await getGatewayChatModels();
-  // The agent's current model might have been deprecated/removed from the
-  // Gateway catalog since it was picked, or it might be the "auto" sentinel
-  // (never itself a Gateway id) - either way keep it selectable so switching
-  // models never silently strands the agent on an invalid one.
   const models =
     agent.model === AUTO_MODEL_ID || gatewayModels.some((model) => model.id === agent.model)
       ? gatewayModels

@@ -31,14 +31,6 @@ function formatTimestamp(ms: number) {
   return new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-/**
- * Streamdown re-parses the full message on every streaming delta, so one
- * malformed chunk can throw mid-stream. Without a boundary that throw
- * unmounts the whole ChatPanel - killing scroll, the input, and every other
- * message with it - instead of just that one reply falling back to plain
- * text. Resets on the next delta/retry rather than freezing on the bubble
- * that first crashed.
- */
 class MessageErrorBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
   { hasError: boolean }
@@ -60,12 +52,6 @@ class MessageErrorBoundary extends Component<
   }
 }
 
-/**
- * The chat UI both the Playground's ChatWidget and the public embed render,
- * wired to the same `/api/chat/[agentId]` endpoint. The caller owns where
- * conversationId/visitorId come from (a fresh id per session for the
- * dashboard, localStorage for the widget).
- */
 export function ChatPanel({
   agentId,
   conversationId,
@@ -76,15 +62,11 @@ export function ChatPanel({
   agentId: string;
   conversationId: string;
   visitorId: string;
-  /** Shown as the first assistant bubble, before the visitor has said anything. */
   welcomeMessage: string;
-  /** The public widget hides source citations from visitors; the dashboard keeps them visible. */
   showSources?: boolean;
 }) {
   const [input, setInput] = useState("");
 
-  // Message ids never change once assigned, so this doubles as a stable
-  // per-message "sent at" clock without needing a timestamp from the wire.
   const timestamps = useRef(new Map<string, number>());
   const getTimestamp = (id: string) => {
     let time = timestamps.current.get(id);
@@ -96,11 +78,6 @@ export function ChatPanel({
   };
   const errorTimestamp = useRef<number | null>(null);
 
-  // useChat only reads `messages` once, to seed initial state (verified
-  // against @ai-sdk/react's source - it builds the underlying Chat instance
-  // in a lazy ref and never re-reads options.messages after that), so a
-  // fresh array literal here on every render is safe and never resets an
-  // in-progress conversation back to just the greeting.
   const initialMessages = useMemo<UIMessage[]>(
     () => [{ id: "welcome", role: "assistant", parts: [{ type: "text", text: welcomeMessage }] }],
     [welcomeMessage],
@@ -125,16 +102,9 @@ export function ChatPanel({
     errorTimestamp.current = null;
   }
 
-  // A rate limit from our own limiter carries an exact reset time; a
-  // Gateway/provider-side one doesn't, since "free tier" isn't a window
-  // that resets on a schedule - decode() just returns the plain text then.
   const decodedError = error ? decodeRateLimitMessage(error.message) : undefined;
   const retryAt = decodedError?.retryAt;
 
-  // Ticks once a second only while an exact retry time is pending, purely
-  // to keep the countdown text and the send button's disabled state
-  // live - both re-derive from `now` on every render, no separate timer
-  // logic needed once this fires.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!retryAt || retryAt <= Date.now()) return;
@@ -144,11 +114,6 @@ export function ChatPanel({
   const secondsUntilRetry = retryAt ? Math.max(0, Math.ceil((retryAt - now) / 1000)) : 0;
   const isRateLimitedNow = Boolean(retryAt && secondsUntilRetry > 0);
 
-  // `status` stays "error" once a request fails - it only moves back to
-  // "submitted" on the *next* sendMessage call, never on its own - so
-  // gating on `status === "ready"` alone locked the input forever after
-  // any failure. "Busy" (an actual request in flight) is the only state
-  // that should actually block sending.
   const isBusy = status === "submitted" || status === "streaming";
   const canSubmit = !isBusy && !isRateLimitedNow;
 
@@ -173,14 +138,6 @@ export function ChatPanel({
               .map((part) => part.text)
               .join("");
 
-            // A turn that fails before any token streams (a Gateway rate
-            // limit, an outage) still leaves an empty assistant message
-            // shell behind once the stream ends in error - the `error`
-            // block below already shows that failure, so render nothing
-            // for it: either it has no content at all, or (belt and
-            // braces, in case the SDK ever attaches placeholder content to
-            // that shell) it's the specific message the current error
-            // belongs to.
             const isEmptyShell = !rawText && sourceParts.length === 0;
             const isFailedTurn = Boolean(error) && message.id === lastMessageId;
             if (message.role === "assistant" && (isEmptyShell || isFailedTurn)) {
@@ -205,7 +162,9 @@ export function ChatPanel({
                 )}
                 <Message className="gap-0.5" from={message.role}>
                   <MessageContent className="text-xs leading-relaxed">
-                    <MessageErrorBoundary fallback={<p className="whitespace-pre-wrap">{rawText}</p>}>
+                    <MessageErrorBoundary
+                      fallback={<p className="whitespace-pre-wrap">{rawText}</p>}
+                    >
                       {message.parts.map((part, i) =>
                         part.type === "text" ? (
                           <MessageResponse key={i}>{part.text}</MessageResponse>

@@ -31,8 +31,6 @@ vi.mock("ai", () => ({
     headers?: Record<string, string>;
   }) => {
     const response = new Response(null, { status: 200, headers });
-    // Expose what was written (and the onError handler) for assertions
-    // without changing the Response API.
     (
       response as Response & { __written: unknown[]; __onError?: (err: unknown) => string }
     ).__written = stream.written;
@@ -60,12 +58,6 @@ vi.mock("@/lib/supabase/server", () => ({
 
 const { POST } = await import("./route");
 
-/**
- * A minimal in-memory stand-in for the exact supabase-js chains this route
- * uses across agents/conversations/messages plus the match_chunks RPC -
- * enough to exercise the real rate-limit/lookup/conversation/retrieval
- * control flow without a live Supabase project.
- */
 function makeFakeSupabase(seed: {
   agents?: Record<string, unknown>[];
   conversations?: Record<string, unknown>[];
@@ -286,9 +278,6 @@ describe("POST /api/chat/[agentId]", () => {
 
     expect(res.status).toBe(429);
     expect(streamTextMock).not.toHaveBeenCalled();
-    // Plain text, not JSON: the AI SDK transport turns a non-ok response
-    // into `new Error(await response.text())`, so a JSON body would show
-    // up as a raw, unparsed blob in the chat UI's error bubble.
     expect(await res.text()).toBe(RATE_LIMIT_MESSAGE);
   });
 
@@ -323,15 +312,6 @@ describe("POST /api/chat/[agentId]", () => {
   });
 
   it("also passes the same rate-limit-aware onError to toUIMessageStream, not just createUIMessageStream", async () => {
-    // Regression guard: a Gateway failure surfaces as an inline "error"
-    // part on streamText's own stream, which toUIMessageStream converts
-    // using ITS OWN onError (defaulting to the AI SDK's generic "An error
-    // occurred.") - completely separate from createUIMessageStream's
-    // onError, which only fires for a thrown/rejected execute(). Without
-    // passing onError here too, every generation failure showed that
-    // generic AI SDK default instead of the agent's fallback or the
-    // rate-limit message, no matter what createUIMessageStream's onError
-    // did.
     await POST(chatRequest({ message: "Hi", visitorId: "visitor-1" }), {
       params: Promise.resolve({ agentId: "agent-1" }),
     });
@@ -339,7 +319,9 @@ describe("POST /api/chat/[agentId]", () => {
     expect(toUIMessageStreamMock).toHaveBeenCalledWith(
       expect.objectContaining({ onError: expect.any(Function) }),
     );
-    const { onError } = toUIMessageStreamMock.mock.calls[0][0] as { onError: (e: unknown) => string };
+    const { onError } = toUIMessageStreamMock.mock.calls[0][0] as {
+      onError: (e: unknown) => string;
+    };
     expect(onError({ statusCode: 429 })).toBe(RATE_LIMIT_MESSAGE);
     expect(onError(new Error("boom"))).toBe(DEFAULT_FALLBACK_MESSAGE);
   });
@@ -489,8 +471,6 @@ describe("POST /api/chat/[agentId]", () => {
     expect(system).toContain("Never fill gaps with outside knowledge");
     expect(system).toContain("Additional instructions from the business:");
     expect(system).toContain(agent.system_prompt);
-    // The business's own instructions must appear after the base rules,
-    // not replace or precede them.
     expect(system.indexOf("Never fill gaps with outside knowledge")).toBeLessThan(
       system.indexOf(agent.system_prompt),
     );
@@ -508,9 +488,12 @@ describe("POST /api/chat/[agentId]", () => {
     fakeSupabase = makeFakeSupabase({ agents: [agent] });
     embedMock.mockRejectedValueOnce(new Error("Gateway unavailable"));
 
-    const res = await POST(chatRequest({ message: "What's your refund policy?", visitorId: "v-1" }), {
-      params: Promise.resolve({ agentId: "agent-1" }),
-    });
+    const res = await POST(
+      chatRequest({ message: "What's your refund policy?", visitorId: "v-1" }),
+      {
+        params: Promise.resolve({ agentId: "agent-1" }),
+      },
+    );
 
     expect(res.status).toBe(200);
     expect(streamTextMock).toHaveBeenCalled();
@@ -574,10 +557,6 @@ describe("POST /api/chat/[agentId]", () => {
     const call = streamTextMock.mock.calls[0][0];
     expect(call.model).toBe("openai/gpt-4o-mini");
     expect(call.temperature).toBe(0.3);
-    // Regression guard: quotaEntityId requires a quota entity
-    // pre-provisioned in the Vercel dashboard - sending an arbitrary
-    // Clerk org_id there makes the Gateway 400 every request (see
-    // lib/ingestion history). user/tags are the safe substitute.
     expect(call.providerOptions.gateway).not.toHaveProperty("quotaEntityId");
     expect(call.providerOptions.gateway.user).toBe("org-1");
     expect(call.providerOptions.gateway.tags).toContain("org:org-1");

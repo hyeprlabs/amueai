@@ -19,14 +19,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { AUTO_MODEL_ID } from "@/lib/model-picker";
 import type { GatewayChatModel } from "@/lib/gateway-models";
-import { updateAgent } from "@/app/(app)/(dashboard)/agents/actions";
+import { apiFetch } from "@/lib/api-client";
 
-/**
- * Best-effort human label for a Gateway provider id ("google-vertex" ->
- * "Google Vertex") used as this component's group headings. The known
- * brands get their real casing; anything else falls back to a generic
- * title-case of the hyphenated slug.
- */
 const PROVIDER_LABELS: Record<string, string> = {
   openai: "OpenAI",
   anthropic: "Anthropic",
@@ -51,21 +45,6 @@ function providerLabel(provider: string): string {
   );
 }
 
-/**
- * The model this agent answers with, set from the Playground's settings
- * rail - the AI Elements Model Selector (the same searchable command-
- * palette pattern as its own docs example), wired to this app's real AI
- * Gateway catalog instead of the docs' hardcoded list. Brand marks come
- * straight from models.dev (ModelSelectorLogo's own built-in source) keyed
- * by the Gateway's own provider id - no bespoke icon set to maintain.
- *
- * There's no separate save step: every request to /api/chat/[agentId]
- * reads the agent's model fresh from the database, so persisting the
- * change here is exactly what makes the very next test message use it.
- *
- * The list itself is already restricted to the AI Gateway's cheap tier by
- * getGatewayChatModels - nothing here re-filters by price.
- */
 export function ModelSwitcher({
   agentId,
   models,
@@ -79,7 +58,6 @@ export function ModelSwitcher({
   const [model, setModel] = useState(defaultModel);
   const selected = models.find((m) => m.id === model);
 
-  // Providers in order of first appearance, so each renders as one group.
   const providers = [...new Set(models.map((m) => m.provider))];
 
   const handleSelect = async (nextId: string) => {
@@ -88,7 +66,10 @@ export function ModelSwitcher({
     setModel(nextId);
 
     try {
-      await updateAgent(agentId, { model: nextId });
+      await apiFetch(`/api/agents/${agentId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ model: nextId }),
+      });
     } catch (err) {
       setModel(previousModel);
       const message = err instanceof Error ? err.message : "Something went wrong";

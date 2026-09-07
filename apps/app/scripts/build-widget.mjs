@@ -1,15 +1,3 @@
-// Runs before `next build`. Two jobs:
-//
-// 1. Enforce the widget's size budget against the real source (5kb gzipped,
-//    per the widget performance spec) - fails the build, not just a warning,
-//    since this file is fetched by every visitor of every customer embed.
-// 2. Content-hash `src/widget/widget.js` into `public/widget.<hash>.js` with
-//    a manifest, so `/widget.js` (a route handler, see
-//    src/app/widget.js/route.ts) can 302 to an immutably-cacheable,
-//    content-addressed filename. Existing customer embeds keep pointing at
-//    the stable `/widget.js` url forever; only the redirect target changes
-//    on each deploy, so browsers/CDNs can cache the payload itself for a
-//    year without ever serving a stale version.
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";

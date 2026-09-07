@@ -15,22 +15,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/toast";
 
-/**
- * Owns everything the sources tab needs to feel live: the row list (seeded
- * server-side, then kept in sync two ways), the set of sources with an
- * active Trigger.dev run, and the retrain/delete calls.
- *
- * Two update paths, both without a reload:
- * 1. Trigger.dev realtime (LiveSourceStatus, via activeRuns) - immediate,
- *    exact run-lifecycle status for whichever source *this tab* just
- *    queued or retrained. This is the primary mechanism, per Trigger.dev's
- *    own recommended pattern (mint a scoped token, subscribe with
- *    useRealtimeRun) - it doesn't depend on a Postgres change event
- *    reaching this client at all.
- * 2. Supabase Realtime on the `sources` table - a baseline so a second tab,
- *    or a teammate viewing the same agent, also sees status/row changes
- *    live even though they hold no run token for it.
- */
 export function SourcesPanel({
   agentId,
   initialSources,
@@ -83,10 +67,6 @@ export function SourcesPanel({
     async (sourceId: string) => {
       clearRun(sourceId);
 
-      // The row's own StatusBadge takes over once its run is no longer
-      // active - refetch it directly instead of trusting the Supabase
-      // Realtime channel got the UPDATE, so the badge can't fall back to a
-      // stale pre-run status while waiting on that channel.
       const { data } = await supabase
         .from("sources")
         .select("id, label, status, error_message, created_at")

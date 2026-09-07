@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
 import { EmbedChat } from "./embed-chat";
 
-// Public, unauthenticated route (no Clerk session) - same service-role
-// client the chat API itself uses, since RLS has nothing to scope this to.
 export default async function EmbedPage({ params }: PageProps<"/embed/[agentId]">) {
   const { agentId } = await params;
 

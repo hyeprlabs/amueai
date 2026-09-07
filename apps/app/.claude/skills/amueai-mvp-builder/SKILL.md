@@ -139,7 +139,7 @@ MVP. Revisit billing entirely as a post-MVP milestone.
 | Typed client access | Regenerated via the **Supabase MCP** (`generate_typescript_types`) after every migration, hand-pasted into `src/types/supabase.ts` (see that file's own header comment — never edit it any other way), passed as the generic to `createClient<Database>(...)` | fully typed `.from()`/`.rpc()` calls without hand-written types drifting from the schema |
 | Data access pattern | **`supabase-js` directly** (`.from()`, `.rpc()`) for all reads/writes on authenticated routes, via the Clerk-token-scoped client; **service-role `supabase-js` client** for the documented exceptions (public chat route, every Trigger.dev task) | matches how Supabase intends RLS + Clerk integration to be consumed — no raw `pg`/connection-string layer in the app |
 | Vector similarity search | A Postgres **RPC function** (`match_chunks`, `security invoker`) called via `supabase.rpc('match_chunks', {...})` | `security invoker` means the function runs under the caller's RLS on authenticated routes automatically — no need to duplicate org-scoping logic in application code |
-| Object storage | **files-sdk** (`lib/storage.ts` — the one file that knows the active backend), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS) | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — its AWS SDK peer deps aren't installed, and Trigger.dev's bundler needs every import resolvable at build time even for an unused branch; see `lib/storage.ts`'s comment for what adding it later requires |
+| Object storage | **files-sdk** (a `Files` instance built inline in `trigger/tasks.ts`, the only place that touches storage), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS) | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — see "Ingestion pipeline" below for what adding it later requires |
 | Live status updates | **Trigger.dev Realtime** (`useRealtimeRunsWithTag`, tag `source:{id}`) as the primary mechanism — exact run-lifecycle status with no dependency on a Postgres change event; **Supabase Realtime** (Postgres Changes on `sources`) as a cross-tab/teammate baseline | drives the queued/crawling/processing/ready/failed UI live, no polling, no reload |
 | AI orchestration | **Vercel AI SDK** (`ai` package, `@ai-sdk/react` for hooks) | `streamText`, `generateText`, `embed`/`embedMany`, `useChat` |
 | Model access | **Vercel AI Gateway** | Never call a provider SDK directly. `provider/model` strings (e.g. `openai/gpt-4o-mini`, `openai/text-embedding-3-small`) route through the Gateway automatically when `AI_GATEWAY_API_KEY` is set. Check the current model list in the Vercel dashboard rather than assuming a fixed model name |
@@ -338,9 +338,17 @@ using ( bucket_id = 'sources' and (storage.foldername(name))[1] = public.clerk_o
 
 ## API surface
 
+One resource, one route file per shape, REST verbs mapped straight onto HTTP methods (Resend's
+own API is organized the same way — a flat `POST /agents`-style collection route plus a
+`GET`/`PATCH`/`DELETE` `:id` route per resource, action endpoints as a `POST` on an `:id` sub-path
+like `retrain` below). No Server Actions for agent CRUD — every one of these is a plain route
+handler behind the RLS-scoped Clerk client, called from client forms through the shared
+`apiFetch` helper (`lib/api-client.ts`) instead of a framework-specific action import:
+
 - `POST /api/agents` — create an agent (Clerk-token client; RLS scopes it to the active org)
-- `GET /api/agents` / `GET /api/agents/:id` — list / read
+- `GET /api/agents/:id` — read
 - `PATCH /api/agents/:id` — update name/systemPrompt/model/temperature/etc.
+- `DELETE /api/agents/:id` — delete (cascades sources/chunks/conversations/messages)
 - `POST /api/agents/:id/sources` — add a source (`text`/`qa`/`file`/`url`); dispatches to
   `crawl-website` (url) or `ingest-source` (everything else) via `lib/trigger.ts`'s
   `triggerIngestion`, and returns `{ source, run: { tag, publicAccessToken } }` for the client to
@@ -358,8 +366,10 @@ using ( bucket_id = 'sources' and (storage.foldername(name))[1] = public.clerk_o
   `CRON_SECRET`. Looks up every root `url` source and `batchTrigger`s `crawl-website` for each,
   idempotent per calendar week — kept thin per Vercel's own cron guidance, all crawling logic
   lives in the task
-- `GET /widget.js` — static widget bundle
+- `GET /widget.js` — route handler, not a static file (see "Widget" below)
 - No billing endpoints in this MVP.
+- Onboarding's one remaining Server Action is `captureAgentBrand` (`agents/actions.ts`) — a
+  best-effort enhancement, not core CRUD, called right after `POST /api/agents` from `/new`.
 
 ## Ingestion pipeline (the core of the product)
 
@@ -375,7 +385,14 @@ file   → markdown = Firecrawl .parse() output
 url    → markdown = Firecrawl .crawl() output, one markdown doc PER discovered page
 ```
 
-Task graph (`src/trigger/`):
+All four tasks, plus the chunking/storage helpers only they use, live in **one file**,
+`src/trigger/tasks.ts` — not four files each importing from separate `lib/chunk.ts`/`lib/storage.ts`
+modules. `lib/firecrawl.ts` is the one helper kept separate, because `lib/branding.ts` (a Server
+Action, unrelated to ingestion) needs the same Firecrawl client — genuine reuse, not an
+unnecessary split. Two small local helpers factor out what all four tasks repeated: `claim()`
+(atomically flips a source's status only if it isn't already there, so a double-triggered run
+exits quietly instead of clobbering the winning run) and `markFailed()` (every `onFailure` hook is
+a one-liner calling it):
 
 ```
 POST /api/agents/:id/sources
@@ -383,27 +400,31 @@ POST /api/agents/:id/sources
   └─ type = url:               tasks.trigger("crawl-website", {...})
 
 ingest-source (text/qa/file → one markdown doc)
-  claim (status -> "processing", skip quietly if already claimed)
+  claim(supabase, sourceId, "processing") — skip quietly if already claimed
   → extract → upload markdown via files-sdk → processMarkdownSource.triggerAndWait(...).unwrap()
 
 crawl-website (url → many markdown docs, one per page)
-  claim (status -> "crawling")
+  claim(supabase, sourceId, "crawling")
   → Firecrawl .crawl() → upsert one `sources` child row per page (parent_source_id = root,
     onConflict agent_id+url) → upload each page's markdown → processMarkdownSource.batchTriggerAndWait(...)
     (each item tagged source:{rootId}, not its own id, so the dashboard's one subscription on the
     root sees every page's progress) → root source -> "ready", last_crawled_at = now()
 
 processMarkdownSource (shared by ALL source types — the one and only chunk/embed/store path)
-  chunk (lib/chunk.ts) → embedChunkBatch.batchTriggerAndWait (fanned out, lib/chunk.ts's
-  chunkArray) → insert new chunks → delete the source's prior chunks (only after the new set is
-  stored) → source -> "ready"
+  chunkText/chunkArray (local to tasks.ts) → embedChunkBatch.batchTriggerAndWait (fanned out) →
+  insert new chunks → delete the source's prior chunks (only after the new set is stored) →
+  source -> "ready"
 ```
 
-Storage goes through **files-sdk** (`lib/storage.ts`), never `supabase.storage.*` directly — that
-file is the only place that knows which backend is active, so swapping `STORAGE_PROVIDER=r2` plus
-R2 env vars is the entire migration to Cloudflare R2. `files.download(key)` returns a `StoredFile`
-(`.blob()`, `.text()`, `.arrayBuffer()`), not a raw Blob — get the blob out before handing it to
-Firecrawl's `.parse()`.
+Storage goes through **files-sdk** (a `Files` instance built inline at the top of `tasks.ts`),
+never `supabase.storage.*` directly. `files.download(key)` returns a `StoredFile` (`.blob()`,
+`.text()`, `.arrayBuffer()`), not a raw Blob — get the blob out before handing it to Firecrawl's
+`.parse()`. A future Cloudflare R2 migration means installing `files-sdk/r2`'s AWS SDK peer deps
+(`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `@aws-sdk/s3-request-presigner` — not
+installed today) and branching on `process.env.STORAGE_PROVIDER` in `tasks.ts` the same way it
+already branches on nothing else today (Supabase is the only adapter wired up); Trigger.dev's
+bundler resolves every static import regardless of which branch runs, so `files-sdk/r2` can't be
+imported unconditionally until those deps exist.
 
 Each task's `onFailure` hook takes a **single destructured params object**
 (`{ payload, error, ctx, ... }`), not two positional arguments — this is a real API detail easy to
@@ -548,6 +569,17 @@ and content-hash + short-cached-redirect caching (`scripts/build-widget.mjs` + `
 handler) in place of a mutable static file. Rate limiting was already in place and needed no
 change.
 
+**Phase 14 — Codebase cleanup: minimal REST API, one-file task graph, no comments (current milestone)**
+Three changes, all about surface area rather than behavior: (1) agent CRUD moved from Server
+Actions to a Resend-style REST surface — `POST /api/agents`, `GET`/`PATCH`/`DELETE /api/agents/:id`
+— with a tiny shared `apiFetch` client helper replacing five separate hand-rolled try/catch blocks
+across the dashboard forms; (2) the four Trigger.dev tasks plus their `chunk`/`storage` helpers
+collapsed from six files into one, `trigger/tasks.ts`, with `claim()`/`markFailed()` factored out
+of the three copies each task previously had; (3) explanatory comments removed throughout —
+naming and structure carry the intent instead. Lint/type-checker directive comments
+(`oxlint-disable`, `@ts-expect-error`) are the one exception, since those aren't documentation,
+they're instructions to the tooling.
+
 ## Guardrails while building
 
 - Never let the LLM answer outside the retrieved context by default — the system prompt must
@@ -567,7 +599,14 @@ change.
 - **Don't add any billing/payment code** — no Stripe, no Clerk Billing, no pricing page, no
   upgrade flow — until the user explicitly asks for it post-MVP.
 - Never call `supabase.storage.*` directly for a source's original file or canonical markdown —
-  always through `files` from `lib/storage.ts`.
+  always through the `files` instance in `trigger/tasks.ts`.
+- Never write a new agent CRUD path as a Server Action — `POST /api/agents` and
+  `GET`/`PATCH`/`DELETE /api/agents/:id` are the only ones, called via `apiFetch`
+  (`lib/api-client.ts`). Reserve Server Actions for what genuinely isn't a REST resource
+  (`captureAgentBrand`'s onboarding-only enhancement).
+- No code comments except lint/type-checker directives (`oxlint-disable`, `@ts-expect-error`, and
+  the like) — this codebase explains itself through naming and structure, not prose above the
+  code. If a piece of logic needs a comment to be understood, restructure it instead.
 - Trigger.dev task lifecycle hooks (`onFailure`, `onSuccess`, etc.) take a single destructured
   params object, not positional arguments — verify against the installed `@trigger.dev/core`
   types rather than assuming a shape from a generic example.

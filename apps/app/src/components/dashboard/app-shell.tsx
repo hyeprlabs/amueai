@@ -7,12 +7,6 @@ import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { getLatestChange } from "@/lib/changelog";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-/**
- * A closed sidebar should stay closed across page loads, but only for the
- * day it was closed on - the next calendar day it reopens by default. The
- * cookie is stamped with the date it was written (see ui/sidebar.tsx); a
- * missing or stale-dated cookie falls back to expanded.
- */
 async function resolveSidebarDefaultOpen(): Promise<boolean> {
   const cookieStore = await cookies();
   const state = cookieStore.get("sidebar_state")?.value;
@@ -23,7 +17,6 @@ async function resolveSidebarDefaultOpen(): Promise<boolean> {
   return state === "true";
 }
 
-/** The sidebar's agent-switcher only needs enough to list and link agents. */
 async function getSwitcherAgents() {
   const { orgId } = await auth();
   if (!orgId) return [];
@@ -38,7 +31,6 @@ async function getSwitcherAgents() {
 }
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  // A transient DB hiccup shouldn't take the whole dashboard down.
   const [latestChange, defaultOpen, agents] = await Promise.all([
     getLatestChange().catch(() => undefined),
     resolveSidebarDefaultOpen(),

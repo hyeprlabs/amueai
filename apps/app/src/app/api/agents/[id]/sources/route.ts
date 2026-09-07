@@ -5,13 +5,6 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { triggerIngestion } from "@/lib/trigger";
 
-// File uploads go to the "sources" Storage bucket client-side first
-// (RLS-scoped to the org's own folder) - this route just records the
-// storage_path and hands the pipeline off to Trigger.dev. `url` sources run
-// a full-site crawl (crawl-website), everything else normalizes to one
-// markdown doc (ingest-source) - see lib/trigger.ts. Either way the route
-// returns as soon as the source row is queued; the client subscribes to the
-// returned tag's live status rather than waiting on this request.
 const createSourceSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("url"),
@@ -49,8 +42,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const supabase = await createServerSupabaseClient();
 
-  // RLS already scopes this to the active org; a miss means either the
-  // agent doesn't exist or belongs to another org - either way, 404.
   const { data: agent } = await supabase.from("agents").select("id").eq("id", agentId).single();
   if (!agent) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
 

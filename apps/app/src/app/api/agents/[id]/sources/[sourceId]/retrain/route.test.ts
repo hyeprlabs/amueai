@@ -17,7 +17,6 @@ vi.mock("@/lib/supabase/server", () => ({
 
 const { POST } = await import("./route");
 
-/** select(...).eq("id", sourceId).eq("agent_id", agentId).single() only. */
 function makeFakeSupabase(sources: Record<string, unknown>[]) {
   function from(_table: "sources") {
     const filters: Array<[string, unknown]> = [];

@@ -13,13 +13,6 @@ function newSession(prefix: string) {
   };
 }
 
-/**
- * The chat, packaged as a visitor sees it on the real embed once they've
- * opened it: a small floating card. The bubble/toggle interaction itself
- * lives in the caller (ChatPreview's Popover) - this component is just the
- * opened panel. Source citations are hidden - visitors don't need
- * footnotes, only the answer.
- */
 export function ChatWidget({
   agentId,
   agentName,

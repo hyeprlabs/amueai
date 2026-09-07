@@ -1,18 +1,3 @@
-// AmueAI embeddable widget loader.
-//
-// Hand-written vanilla JS, zero dependencies, on purpose: this file is
-// fetched by every visitor of every customer site that embeds an agent, so
-// its size and its cost on the host page's own critical rendering path
-// matter more than almost any other asset in the product. Do not import a
-// bundler runtime, a framework, or a shared util module into this file -
-// `scripts/build-widget.mjs` enforces a 5kb-gzipped budget on exactly this
-// source and fails the build if it's exceeded.
-//
-// Architecture: a closed Shadow DOM host holds only the always-present
-// launcher button (near-zero cost). The full Next.js chat app is a
-// cross-origin iframe created lazily on first click, never on page load,
-// so an embed that's never opened costs the host page nothing beyond this
-// script tag.
 (function () {
   "use strict";
 

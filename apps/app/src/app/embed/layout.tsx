@@ -2,10 +2,6 @@ import type { Metadata } from "next";
 
 import "../(app)/globals.css";
 
-// The widget iframe is its own top-level route segment (sibling to the
-// (app) dashboard, not nested inside it), so it needs its own root
-// layout - and deliberately a minimal one: no Clerk, no dashboard chrome,
-// nothing that assumes a signed-in session, since visitors never sign in.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
