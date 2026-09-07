@@ -11,10 +11,9 @@ export function ConsentManagerClient({ children }: { children: ReactNode }) {
       options={{
         mode: "hosted",
         backendURL: "/api/c15t",
-        consentCategories: ["necessary", "functionality", "experience", "measurement", "marketing"],
+        consentCategories: ["necessary", "functionality"],
         legalLinks: {
           privacyPolicy: { href: "/legal/privacy-policy", target: "_self" },
-          cookiePolicy: { href: "/legal/cookie-policy", target: "_self" },
         },
         overrides: {
           language: siteConfig.language,
