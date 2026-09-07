@@ -85,26 +85,15 @@ function StatusBadge({ source }: { source: SourceRow }) {
 export function SourcesTable({
   sources,
   activeRuns,
-  onRetrain,
   onDelete,
   onRunSettled,
 }: {
   sources: SourceRow[];
   activeRuns: Record<string, ActiveRun>;
-  onRetrain: (sourceId: string) => Promise<void>;
   onDelete: (sourceId: string) => Promise<void>;
   onRunSettled: (sourceId: string) => void;
 }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
-
-  async function handleRetrain(sourceId: string) {
-    setPendingId(sourceId);
-    try {
-      await onRetrain(sourceId);
-    } finally {
-      setPendingId(null);
-    }
-  }
 
   async function handleDelete(sourceId: string) {
     setPendingId(sourceId);
@@ -157,16 +146,6 @@ export function SourcesTable({
               </TableCell>
               <TableCell>
                 <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="outline"
-                    disabled={pendingId === source.id}
-                    onClick={() => handleRetrain(source.id)}
-                  >
-                    Retrain
-                  </Button>
-
                   <DeleteSourceButton
                     label={source.label}
                     pending={pendingId === source.id}

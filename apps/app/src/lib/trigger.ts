@@ -2,7 +2,8 @@ import "server-only";
 
 import { auth, tasks } from "@trigger.dev/sdk";
 
-import type { crawlWebsite, ingestSource } from "@/trigger/tasks";
+import type { crawlWebsite } from "@/trigger/crawl-website";
+import type { ingestSource } from "@/trigger/ingest-source";
 
 type TriggerableSource =
   | {

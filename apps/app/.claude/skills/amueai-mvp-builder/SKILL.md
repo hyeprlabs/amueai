@@ -97,7 +97,7 @@ boundary**. Verify it, build on it — don't re-set it up from scratch.
    - File upload (PDF, Word, Excel, PowerPoint, CSV, EPUB, RTF, OpenDocument — via Firecrawl's
      document parser, no OCR in MVP)
    - URL(s) — a full-site crawl (Firecrawl `/crawl`), one page per discovered `sources` row under
-     the root, with a weekly automatic recrawl
+     the root, one-time at add time (no scheduled recrawl — delete and re-add to refresh)
    - Q&A pairs (question + answer typed directly)
 4. Ingestion pipeline runs per source: normalize to markdown → chunk → embed → store. Source shows
    a status (`queued` → `crawling`/`processing` → `ready` / `failed`), updated live via
@@ -108,10 +108,11 @@ boundary**. Verify it, build on it — don't re-set it up from scratch.
 7. Embeddable widget: copy a `<script>` snippet; it renders a chat bubble on any external site
    and talks to a hosted `/api/chat/[agentId]` endpoint — no login required for the visitor.
 8. Conversation logs: every widget/test conversation is stored and viewable per agent.
-9. Retrain: re-running a `url`/`file` source's ingestion (`text`/`qa` sources have no original
-   input left to re-extract once ingested — delete and re-add instead).
-10. Usage limits: count messages sent per workspace, hard-capped at a fixed free-tier number —
-    see "Usage limits without billing" below. No payment flow.
+9. Usage limits: count messages sent per workspace, hard-capped at a fixed free-tier number —
+   see "Usage limits without billing" below. No payment flow.
+
+No retrain, no scheduled recrawl, no agent-branding auto-capture — a source that needs refreshing
+is deleted and re-added; deliberately smaller surface than earlier iterations of this MVP.
 
 Explicitly NOT in this MVP: voice, WhatsApp/Slack/Messenger/Instagram channels, actions/API-calling
 by the bot, human helpdesk handoff, sentiment analytics, team seats beyond what Clerk
@@ -139,13 +140,13 @@ MVP. Revisit billing entirely as a post-MVP milestone.
 | Typed client access | Regenerated via the **Supabase MCP** (`generate_typescript_types`) after every migration, hand-pasted into `src/types/supabase.ts` (see that file's own header comment — never edit it any other way), passed as the generic to `createClient<Database>(...)` | fully typed `.from()`/`.rpc()` calls without hand-written types drifting from the schema |
 | Data access pattern | **`supabase-js` directly** (`.from()`, `.rpc()`) for all reads/writes on authenticated routes, via the Clerk-token-scoped client; **service-role `supabase-js` client** for the documented exceptions (public chat route, every Trigger.dev task) | matches how Supabase intends RLS + Clerk integration to be consumed — no raw `pg`/connection-string layer in the app |
 | Vector similarity search | A Postgres **RPC function** (`match_chunks`, `security invoker`) called via `supabase.rpc('match_chunks', {...})` | `security invoker` means the function runs under the caller's RLS on authenticated routes automatically — no need to duplicate org-scoping logic in application code |
-| Object storage | **files-sdk** (a `Files` instance built inline in `trigger/tasks.ts`, the only place that touches storage), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS) | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — see "Ingestion pipeline" below for what adding it later requires |
+| Object storage | **files-sdk** (`trigger/storage.ts`, the only place that touches storage), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS) | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — see "Ingestion pipeline" below for what adding it later requires |
 | Live status updates | **Trigger.dev Realtime** (`useRealtimeRunsWithTag`, tag `source:{id}`) as the primary mechanism — exact run-lifecycle status with no dependency on a Postgres change event; **Supabase Realtime** (Postgres Changes on `sources`) as a cross-tab/teammate baseline | drives the queued/crawling/processing/ready/failed UI live, no polling, no reload |
 | AI orchestration | **Vercel AI SDK** (`ai` package, `@ai-sdk/react` for hooks) | `streamText`, `generateText`, `embed`/`embedMany`, `useChat` |
 | Model access | **Vercel AI Gateway** | Never call a provider SDK directly. `provider/model` strings (e.g. `openai/gpt-4o-mini`, `openai/text-embedding-3-small`) route through the Gateway automatically when `AI_GATEWAY_API_KEY` is set. Check the current model list in the Vercel dashboard rather than assuming a fixed model name |
 | Chat UI | **AI Elements** (`npx ai-elements@latest`, from `elements.ai-sdk.dev`) | Prebuilt chat primitives built on shadcn/ui, wired for `useChat` streaming. Use for both the dashboard test-chat panel and the widget iframe |
 | General UI | **shadcn/ui** + Tailwind CSS | dashboard shell, forms, tables, dialogs |
-| Web + document extraction | **Firecrawl** (`@mendable/firecrawl-js`) exclusively — `.scrape()`/`.crawl()` for URLs, `.parse()` for uploaded files | no hand-rolled fetch/cheerio crawler, no `pdf-parse`/`mammoth`; Firecrawl owns SSRF protection, JS rendering, anti-bot handling, and every document format (PDF/Word/Excel/PowerPoint/CSV/EPUB) |
+| Web + document extraction | **Firecrawl** (`@mendable/firecrawl-js`) exclusively — `.crawl()` for URLs, `.parse()` for uploaded files, each client instantiated directly in the one task file that uses it (`trigger/crawl-website.ts`, `trigger/ingest-source.ts`) — no shared `getFirecrawlClient()` wrapper | no hand-rolled fetch/cheerio crawler, no `pdf-parse`/`mammoth`; Firecrawl owns SSRF protection, JS rendering, anti-bot handling, and every document format (PDF/Word/Excel/PowerPoint/CSV/EPUB) |
 | Background jobs | **Trigger.dev** (`@trigger.dev/sdk`, `@trigger.dev/react-hooks`) — `ingest-source`, `crawl-website`, `process-markdown-source`, `embed-chunk-batch` | durable, retryable background tasks off the request path; each app env (dev/staging/prod) needs its own env vars set directly on the Trigger.dev project — they do NOT inherit from Vercel |
 | Rate limiting | **Upstash Redis** + `@upstash/ratelimit` on the public `/api/chat/[agentId]` route | serverless-friendly |
 | Billing | **None** | see "Usage limits without billing" |
@@ -180,7 +181,6 @@ create table agents (
   fallback_message text not null default '',
   allowed_origins text[] not null default '{}',
   remove_branding boolean not null default false,
-  brand jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -206,7 +206,7 @@ create table sources (
     check (status in ('queued','crawling','processing','ready','failed')),
   error_message text,
 
-  last_crawled_at timestamptz, -- root url sources only, drives the weekly recrawl
+  last_crawled_at timestamptz, -- root url sources only, set once by the initial crawl
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -340,10 +340,10 @@ using ( bucket_id = 'sources' and (storage.foldername(name))[1] = public.clerk_o
 
 One resource, one route file per shape, REST verbs mapped straight onto HTTP methods (Resend's
 own API is organized the same way — a flat `POST /agents`-style collection route plus a
-`GET`/`PATCH`/`DELETE` `:id` route per resource, action endpoints as a `POST` on an `:id` sub-path
-like `retrain` below). No Server Actions for agent CRUD — every one of these is a plain route
-handler behind the RLS-scoped Clerk client, called from client forms through the shared
-`apiFetch` helper (`lib/api-client.ts`) instead of a framework-specific action import:
+`GET`/`PATCH`/`DELETE` `:id` route per resource). No Server Actions anywhere in the agent surface
+— every one of these is a plain route handler behind the RLS-scoped Clerk client, called from
+client forms through the shared `apiFetch` helper (`lib/api-client.ts`) instead of a
+framework-specific action import:
 
 - `POST /api/agents` — create an agent (Clerk-token client; RLS scopes it to the active org)
 - `GET /api/agents/:id` — read
@@ -355,21 +355,17 @@ handler behind the RLS-scoped Clerk client, called from client forms through the
   subscribe to live status with `useRealtimeRunsWithTag`
 - `DELETE /api/agents/:id/sources/:sourceId` — delete source + its chunks (cascades), and its
   uploaded file from Storage
-- `POST /api/agents/:id/sources/:sourceId/retrain` — re-trigger ingestion for a `url`/`file`
-  source (400 for `text`/`qa` — no original input left to re-extract)
 - `POST /api/chat/:agentId` — **public, no Clerk auth**. Body: `{ message, conversationId? }`.
   Service-role client, explicit `org_id`/`agent_id` checks, `match_chunks` RPC, `streamText`
   through the Gateway. Rate-limited via Upstash. Checks/increments usage; 429 if the cap is
   reached.
 - `GET /api/agents/:id/conversations` — list conversations + messages for the dashboard
-- `GET /api/cron/recrawl-sources` — Vercel Cron (weekly, see `vercel.json`), bearer-secured with
-  `CRON_SECRET`. Looks up every root `url` source and `batchTrigger`s `crawl-website` for each,
-  idempotent per calendar week — kept thin per Vercel's own cron guidance, all crawling logic
-  lives in the task
 - `GET /widget.js` — route handler, not a static file (see "Widget" below)
 - No billing endpoints in this MVP.
-- Onboarding's one remaining Server Action is `captureAgentBrand` (`agents/actions.ts`) — a
-  best-effort enhancement, not core CRUD, called right after `POST /api/agents` from `/new`.
+
+No retrain endpoint and no recrawl cron — a source that needs refreshing is deleted and re-added.
+No agent-branding endpoint or Server Action — the dashboard never auto-captures a site's colors or
+logo.
 
 ## Ingestion pipeline (the core of the product)
 
@@ -385,14 +381,16 @@ file   → markdown = Firecrawl .parse() output
 url    → markdown = Firecrawl .crawl() output, one markdown doc PER discovered page
 ```
 
-All four tasks, plus the chunking/storage helpers only they use, live in **one file**,
-`src/trigger/tasks.ts` — not four files each importing from separate `lib/chunk.ts`/`lib/storage.ts`
-modules. `lib/firecrawl.ts` is the one helper kept separate, because `lib/branding.ts` (a Server
-Action, unrelated to ingestion) needs the same Firecrawl client — genuine reuse, not an
-unnecessary split. Two small local helpers factor out what all four tasks repeated: `claim()`
-(atomically flips a source's status only if it isn't already there, so a double-triggered run
-exits quietly instead of clobbering the winning run) and `markFailed()` (every `onFailure` hook is
-a one-liner calling it):
+Everything for the ingestion pipeline lives under `src/trigger/` — one file per task
+(`ingest-source.ts`, `crawl-website.ts`, `process-markdown-source.ts`, `embed-chunk-batch.ts`),
+plus the small helpers only they use, also in that folder rather than `src/lib/`: `chunk.ts`
+(`chunkText`/`chunkArray`), `storage.ts` (the `files` instance), and `shared.ts` (`claim()` —
+atomically flips a source's status only if it isn't already there, so a double-triggered run exits
+quietly instead of clobbering the winning run — and `markFailed()`, which every `onFailure` hook is
+a one-liner calling). Each Firecrawl-using task (`ingest-source.ts`, `crawl-website.ts`)
+constructs its own `new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! })` directly at module
+scope — no shared `getFirecrawlClient()` wrapper, since a two-line client constructor duplicated
+across two files is cheaper than a whole extra module for it.
 
 ```
 POST /api/agents/:id/sources
@@ -411,20 +409,20 @@ crawl-website (url → many markdown docs, one per page)
     root sees every page's progress) → root source -> "ready", last_crawled_at = now()
 
 processMarkdownSource (shared by ALL source types — the one and only chunk/embed/store path)
-  chunkText/chunkArray (local to tasks.ts) → embedChunkBatch.batchTriggerAndWait (fanned out) →
+  chunkText/chunkArray (trigger/chunk.ts) → embedChunkBatch.batchTriggerAndWait (fanned out) →
   insert new chunks → delete the source's prior chunks (only after the new set is stored) →
   source -> "ready"
 ```
 
-Storage goes through **files-sdk** (a `Files` instance built inline at the top of `tasks.ts`),
+Storage goes through **files-sdk** (the `files` instance exported from `trigger/storage.ts`),
 never `supabase.storage.*` directly. `files.download(key)` returns a `StoredFile` (`.blob()`,
 `.text()`, `.arrayBuffer()`), not a raw Blob — get the blob out before handing it to Firecrawl's
 `.parse()`. A future Cloudflare R2 migration means installing `files-sdk/r2`'s AWS SDK peer deps
 (`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `@aws-sdk/s3-request-presigner` — not
-installed today) and branching on `process.env.STORAGE_PROVIDER` in `tasks.ts` the same way it
-already branches on nothing else today (Supabase is the only adapter wired up); Trigger.dev's
-bundler resolves every static import regardless of which branch runs, so `files-sdk/r2` can't be
-imported unconditionally until those deps exist.
+installed today) and branching on `process.env.STORAGE_PROVIDER` in `trigger/storage.ts` the same
+way it already branches on nothing else today (Supabase is the only adapter wired up);
+Trigger.dev's bundler resolves every static import regardless of which branch runs, so
+`files-sdk/r2` can't be imported unconditionally until those deps exist.
 
 Each task's `onFailure` hook takes a **single destructured params object**
 (`{ payload, error, ctx, ... }`), not two positional arguments — this is a real API detail easy to
@@ -438,8 +436,8 @@ onFailure: async ({ payload, error }) => {
 ```
 
 Never let a source's status flip to `ready` on partial success, and never touch a source's prior
-chunks until the new set is fully stored (a failed retrain/recrawl shouldn't blank out a working
-agent). A losing claim (two overlapping runs on the same source) should return quietly, not throw
+chunks until the new set is fully stored (a failed run shouldn't blank out a working agent). A
+losing claim (two overlapping runs on the same source) should return quietly, not throw
 — throwing triggers `onFailure` and incorrectly marks the source `failed` even though the winning
 run is still legitimately in flight.
 
@@ -456,7 +454,7 @@ Two mechanisms, both without a page reload:
 2. **Supabase Realtime** (Postgres Changes on `sources`) — a baseline so a second tab or a
    teammate viewing the same agent also sees status live, even without a run token for it.
 
-A newly queued/retrained source is added to local UI state directly from the route's response
+A newly queued source is added to local UI state directly from the route's response
 (source + run), not left to wait on a Realtime event to even show the row. Once a source's tagged
 runs all settle, refetch that row directly rather than trusting Supabase Realtime already picked
 up the DB write — the badge should never fall back to a stale pre-run status.
@@ -547,19 +545,19 @@ agent, whether or not they ever open the chat.
 **Phases 1–11 (foundations through fine-tuning) are complete and live** — agent CRUD, sources +
 ingestion (originally text-only inline, since replaced by the full Trigger.dev task graph below),
 the chat/retrieval API, the dashboard test-chat panel, the public widget, conversation logs,
-Realtime status, retrain, and background jobs on Trigger.dev with Upstash rate limiting all exist
-in the current codebase. Read the sections above for their current shape rather than an
-in-progress plan.
+Realtime status, and background jobs on Trigger.dev with Upstash rate limiting all exist in the
+current codebase. Read the sections above for their current shape rather than an in-progress plan.
 
-**Phase 12 — Full-site RAG ingestion pipeline (current milestone)**
+**Phase 12 — Full-site RAG ingestion pipeline**
 Rearchitected ingestion from a single inline extract-chunk-embed-store function into the task
 graph described above: added `text`/`qa` source types, full-site crawling for `url` sources (one
-child `sources` row per discovered page, weekly recrawl via Vercel Cron), the `files-sdk` storage
-abstraction, and Trigger.dev-Realtime-driven live status (tag-based, covering both single-doc and
-many-page-crawl cases). Live-verified the RLS audit (see "Already in place") as part of this
-milestone rather than deferring it.
+child `sources` row per discovered page), the `files-sdk` storage abstraction, and
+Trigger.dev-Realtime-driven live status (tag-based, covering both single-doc and many-page-crawl
+cases). Live-verified the RLS audit (see "Already in place") as part of this milestone rather than
+deferring it. (The weekly-recrawl-via-Vercel-Cron piece of this phase was later removed — see
+Phase 15.)
 
-**Phase 13 — High-performance embeddable widget (current milestone)**
+**Phase 13 — High-performance embeddable widget**
 Rearchitected the widget from a direct-DOM-injection loader (iframe eagerly created and hidden on
 every page load, no Shadow DOM, fixed-size panel) into the Shadow-DOM-launcher +
 lazy-cross-origin-iframe architecture described in "Widget" above: `requestIdleCallback`
@@ -569,16 +567,27 @@ and content-hash + short-cached-redirect caching (`scripts/build-widget.mjs` + `
 handler) in place of a mutable static file. Rate limiting was already in place and needed no
 change.
 
-**Phase 14 — Codebase cleanup: minimal REST API, one-file task graph, no comments (current milestone)**
-Three changes, all about surface area rather than behavior: (1) agent CRUD moved from Server
+**Phase 14 — Codebase cleanup: minimal REST API, no comments**
+Two changes, both about surface area rather than behavior: (1) agent CRUD moved from Server
 Actions to a Resend-style REST surface — `POST /api/agents`, `GET`/`PATCH`/`DELETE /api/agents/:id`
 — with a tiny shared `apiFetch` client helper replacing five separate hand-rolled try/catch blocks
-across the dashboard forms; (2) the four Trigger.dev tasks plus their `chunk`/`storage` helpers
-collapsed from six files into one, `trigger/tasks.ts`, with `claim()`/`markFailed()` factored out
-of the three copies each task previously had; (3) explanatory comments removed throughout —
-naming and structure carry the intent instead. Lint/type-checker directive comments
-(`oxlint-disable`, `@ts-expect-error`) are the one exception, since those aren't documentation,
-they're instructions to the tooling.
+across the dashboard forms; (2) explanatory comments removed throughout — naming and structure
+carry the intent instead. Lint/type-checker directive comments (`oxlint-disable`,
+`@ts-expect-error`) are the one exception, since those aren't documentation, they're instructions
+to the tooling. (This phase briefly collapsed the four Trigger.dev tasks into one file,
+`trigger/tasks.ts` — reverted in Phase 15 back to one file per task, still all under `src/trigger/`.)
+
+**Phase 15 — Trim to the minimal MVP surface: no retrain, no scheduled recrawl, no branding capture (current milestone)**
+Removed three features that added surface area without being part of the fixed MVP scope: the
+per-source retrain endpoint/button, the weekly recrawl Vercel Cron (`vercel.json` and
+`/api/cron/recrawl-sources` are both gone — a `url` source's initial crawl still runs once at add
+time, it just never re-runs on a schedule), and agent-branding auto-capture (`captureAgentBrand`,
+`lib/branding.ts`, and the `agents.brand` column, dropped via migration). Also split the
+Trigger.dev task graph back into one file per task under `src/trigger/` (`ingest-source.ts`,
+`crawl-website.ts`, `process-markdown-source.ts`, `embed-chunk-batch.ts`, plus `chunk.ts`,
+`storage.ts`, `shared.ts` for the helpers only they use — nothing ingestion-related lives in
+`src/lib/` anymore), and removed the now-unnecessary shared `lib/firecrawl.ts` wrapper: each task
+that calls Firecrawl constructs its own client directly.
 
 ## Guardrails while building
 
@@ -599,11 +608,13 @@ they're instructions to the tooling.
 - **Don't add any billing/payment code** — no Stripe, no Clerk Billing, no pricing page, no
   upgrade flow — until the user explicitly asks for it post-MVP.
 - Never call `supabase.storage.*` directly for a source's original file or canonical markdown —
-  always through the `files` instance in `trigger/tasks.ts`.
+  always through the `files` instance in `trigger/storage.ts`.
 - Never write a new agent CRUD path as a Server Action — `POST /api/agents` and
   `GET`/`PATCH`/`DELETE /api/agents/:id` are the only ones, called via `apiFetch`
-  (`lib/api-client.ts`). Reserve Server Actions for what genuinely isn't a REST resource
-  (`captureAgentBrand`'s onboarding-only enhancement).
+  (`lib/api-client.ts`). There are no Server Actions left in the agent surface at all.
+- Don't re-add retrain, scheduled recrawl, or agent-branding auto-capture without the user
+  explicitly asking — all three were deliberately removed. A source that needs refreshing is
+  deleted and re-added.
 - No code comments except lint/type-checker directives (`oxlint-disable`, `@ts-expect-error`, and
   the like) — this codebase explains itself through naming and structure, not prose above the
   code. If a piece of logic needs a comment to be understood, restructure it instead.

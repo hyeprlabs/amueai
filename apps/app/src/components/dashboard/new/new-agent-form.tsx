@@ -34,7 +34,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api-client";
-import { captureAgentBrand } from "@/app/(app)/(dashboard)/agents/actions";
 
 const TOTAL_STEPS = 3;
 
@@ -164,14 +163,11 @@ export function NewAgentForm() {
 
       if (values.sourceType === "website" && values.websiteUrl) {
         const url = `https://${stripProtocol(values.websiteUrl)}`;
-        await Promise.allSettled([
-          fetch(`/api/agents/${agent.id}/sources`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "url", label: url, url }),
-          }),
-          captureAgentBrand(agent.id, { url }),
-        ]);
+        await fetch(`/api/agents/${agent.id}/sources`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "url", label: url, url }),
+        });
       } else if (values.sourceType === "file" && values.file && orgId) {
         const file = values.file;
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");

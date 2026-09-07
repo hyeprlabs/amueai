@@ -86,24 +86,6 @@ export function SourcesPanel({
     setActiveRuns((current) => ({ ...current, [source.id]: run }));
   }
 
-  async function handleRetrain(sourceId: string) {
-    try {
-      const res = await fetch(`/api/agents/${agentId}/sources/${sourceId}/retrain`, {
-        method: "POST",
-      });
-      const body = await res.json().catch(() => null);
-      if (!res.ok) throw new Error("Couldn't start retraining");
-
-      setActiveRuns((current) => ({
-        ...current,
-        [sourceId]: { accessToken: body.run.publicAccessToken },
-      }));
-      toast.add({ type: "success", title: "Retraining started" });
-    } catch {
-      toast.add({ type: "error", title: "Couldn't start retraining" });
-    }
-  }
-
   async function handleDelete(sourceId: string) {
     try {
       const res = await fetch(`/api/agents/${agentId}/sources/${sourceId}`, { method: "DELETE" });
@@ -134,7 +116,6 @@ export function SourcesPanel({
         <SourcesTable
           sources={sources}
           activeRuns={activeRuns}
-          onRetrain={handleRetrain}
           onDelete={handleDelete}
           onRunSettled={settleRun}
         />
