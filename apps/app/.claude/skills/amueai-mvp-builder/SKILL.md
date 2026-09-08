@@ -608,6 +608,24 @@ box size on the host page, toggled by two discrete `postMessage`s the iframe sen
   resolves against the large/static viewport, and a `dvh`-sized sibling can end up measurably
   shorter than that when the browser's dynamic-viewport-height adjustment doesn't apply the same
   way to both — measured directly (not assumed) via the rendered heights.
+- **The chat itself (`useChat`, `DefaultChatTransport`, message rendering, the composer) lives in
+  its own file, `src/components/widget-chat.tsx`, loaded via `next/dynamic(..., { ssr: false })`
+  from `widget.tsx`.** This is the one deliberate exception to "the widget is one file" — splitting
+  it out is what makes the AI SDK code a separate chunk the browser never fetches for a visitor who
+  loads the page but never opens the chat (verified: 8 additional chunks load only after the first
+  click, zero before). `widget.tsx` calls `import("@/components/widget-chat")` speculatively on the
+  trigger's `pointerenter`/`focus` too, so the chunk is usually already warm by the time a visitor
+  actually clicks. Message rows animate in with `motion/react` (fade + slight rise, skipped under
+  `prefers-reduced-motion` via `useReducedMotion()`) and are wrapped in `memo` so a streaming
+  reply's re-renders don't re-diff every prior message.
+- The agent's `name`/`welcome_message` lookup in `page.tsx` is wrapped in `unstable_cache` (not the
+  `"use cache"` directive — this project hasn't opted into Cache Components, and enabling
+  `cacheComponents` project-wide is a far bigger change than this one lookup warrants), keyed and
+  tagged per `agentId` (`["embed-agent", agentId]`, tag `` `agent-${agentId}` ``), `revalidate: 60`.
+  `PATCH`/`DELETE /api/agents/:id` call `revalidateTag(\`agent-${id}\`, "max")` so a dashboard edit
+reflects on the public widget immediately rather than waiting out the TTL — **`revalidateTag`takes a required second argument in this Next.js version** (a`cacheLife`profile name,`"max"`
+  for the standard stale-while-revalidate behavior); the old one-argument call still type-errors
+  here, not a training-data assumption to trust.
 - `/widget.js` is a **route handler** (`src/app/widget.js/route.ts`), not a static file: in
   production it 302-redirects (short-cached, `max-age=300`) to whatever content-hashed
   `widget.<hash>.js` the last build produced (immutably cached, `max-age=31536000`) — existing
@@ -784,7 +802,7 @@ the parent to shrink the iframe back down — a bare `setOpen(false)` on the `X`
 panel stuck open-sized. Verified geometry by sampling the iframe's bounding box at 20ms intervals
 across the open and close transitions in Chromium, not by reading the JSX.
 
-**Phase 21 — A full-screen shadcn Drawer on mobile (current milestone)**
+**Phase 21 — A full-screen shadcn Drawer on mobile**
 Below the mobile breakpoint the panel is a shadcn `Drawer` instead of a `Popover` — same trigger,
 same header/body, chosen by an `isMobile` boolean the same way `framed` already branches the
 component (`framed ? mobile : useIsMobile()`), with `mobile` threaded from `widget.js`'s own
@@ -794,6 +812,18 @@ the Drawer genuinely full-screen (not the default bottom-sheet-with-a-peek-gap) 
 both `--drawer-height` and `--drawer-content-max-height` together via an inline `style` (a class
 alone loses to the component's own more-specific `data-[swipe-axis=y]` rule) — see "Widget" above
 for the exact mechanism and why `100vh` was required over `100dvh`.
+
+**Phase 22 — Polish, motion, and a lazily-loaded chat (current milestone)**
+Three changes, none touching the geometry-critical code (the framed/unframed branch, the fixed
+trigger size, the `positionerClassName`/inline-style overrides) — every regression from Phases
+19–21 was re-verified in Chromium after each of these: (1) message bubbles are now two-tone
+(`bg-primary` for the visitor, `bg-card` + border for the assistant) instead of border-only, the
+panel body is `bg-background` against the header/composer's `bg-popover` for depth, and the
+trigger gets a one-time spring-in on mount plus `whileHover`/`whileTap` scale via `motion/react`;
+(2) the chat itself (`useChat` and everything it pulls in) split into its own lazily-loaded file,
+`widget-chat.tsx` — see "Widget" above for why and how it's verified; (3) the embed page's agent
+lookup is cached per-agent via `unstable_cache` with tag-based invalidation on write, rather than
+hitting Supabase on every widget load.
 
 ## Guardrails while building
 

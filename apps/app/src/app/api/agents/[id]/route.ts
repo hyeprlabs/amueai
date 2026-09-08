@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { agentSettingsSchema } from "@/components/dashboard/agents/agent-settings-schema";
@@ -44,6 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   if (!updated) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
 
+  revalidateTag(`agent-${id}`, "max");
   return NextResponse.json(parsed.data);
 }
 
@@ -68,5 +69,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!deleted) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
 
   revalidatePath("/agents", "layout");
+  revalidateTag(`agent-${id}`, "max");
   return new NextResponse(null, { status: 204 });
 }
