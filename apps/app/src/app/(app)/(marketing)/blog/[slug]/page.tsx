@@ -145,11 +145,10 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
 
         <div className="border-t p-4">
           <BlogImage
-            className="max-w-4xl"
             imageClassName="transition-transform duration-500"
             media={post.featuredImage}
             size="card"
-            sizes="(min-width: 1280px) 896px, (min-width: 1024px) calc(100vw - 8rem), (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2rem)"
+            sizes="100vw"
           />
         </div>
 
