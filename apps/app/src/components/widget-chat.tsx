@@ -11,6 +11,7 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -61,7 +62,7 @@ function MessageList({
         ))}
         {thinking && (
           <Message from="assistant">
-            <MessageContent className="text-xs leading-relaxed">Thinking…</MessageContent>
+            <Shimmer className="px-1 text-xs">Thinking…</Shimmer>
           </Message>
         )}
         {error && (
@@ -89,7 +90,7 @@ function Composer({
   return (
     <form className="relative border-t p-3" onSubmit={onSubmit}>
       <Input
-        className="h-11 rounded-full pe-11"
+        className="h-11 rounded-full pe-11 shadow-sm"
         disabled={busy}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Ask a question…"
