@@ -15,9 +15,10 @@
     "iframe{position:fixed;bottom:16px;" +
     side +
     ":16px;width:56px;height:56px;border:0;border-radius:9999px;color-scheme:dark;" +
-    "background:transparent;box-shadow:0 8px 24px rgba(0,0,0,.24);z-index:2147483647}" +
-    "iframe[data-open]{width:min(400px,calc(100vw - 32px));height:min(640px,calc(100vh - 32px));" +
-    "border-radius:16px}" +
+    "background:#1a1a1a;background:oklch(0.205 0 0);" +
+    "box-shadow:0 8px 24px rgba(0,0,0,.24);z-index:2147483647}" +
+    "iframe[data-open]{width:min(400px,calc(100vw - 32px));height:min(664px,calc(100vh - 32px));" +
+    "border-radius:16px;background:transparent;box-shadow:none}" +
     "@media (max-width:480px){iframe[data-open]{inset:0;width:100%;height:100%;" +
     "border-radius:0;box-shadow:none}}";
 

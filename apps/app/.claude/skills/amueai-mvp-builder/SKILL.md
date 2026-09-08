@@ -838,6 +838,31 @@ trigger animation broke the widget's very first paint (see "Widget" above, "Neve
 trigger"). The lesson generalizes: verify a change against the actual server-rendered HTML output,
 not just a post-hydration screenshot, before trusting anything that touches what renders first.
 
+**Phase 23 — The white iframe background was never a `color-scheme` problem, and the panel now
+floats over the trigger instead of covering it**
+Two misconceptions from Phase 20 got corrected. First: `color-scheme: dark` set on the parent's
+`<iframe>` element does nothing for the child document — `color-scheme` only affects the document
+it's declared *within*, so setting it on the embed page's own `<html>` only takes effect once that
+cross-origin document has loaded, which does nothing for the blank gap *before* it loads (DNS/TLS/
+cold start for a genuinely cross-origin request). During that gap the browser paints the raw
+`<iframe>` replaced element using its own parent-side CSS `background`, which was `transparent` —
+i.e. white. The actual fix has zero network dependency: `widget.js` now paints the closed-state
+`<iframe>` a solid dark color matching `--popover` (`background:#1a1a1a;background:oklch(0.205 0
+0)`) directly, available instantly regardless of load timing. Second: Phase 20's framed branch
+forced `PopoverContent` to `!fixed !inset-0 !size-full`, filling the entire iframe box — which is
+exactly where the trigger sits, so the panel visually replaced the trigger instead of floating
+above it ("opens on top of it" instead of "over it"). That override, and the `positionerClassName`
+escape hatch it needed, are both gone now: framed and unframed use the same natural anchored
+floating-ui positioning (`side="top"`, `sideOffset={16}`, a fixed `h-[560px] w-[360px]` panel), and
+the trigger stays visible and clickable underneath the open desktop panel (it only hides for the
+mobile Drawer, which is genuinely full-screen). This was only safe to do once the iframe's fallback
+background was opaque instead of transparent — `widget.js`'s `iframe[data-open]` size grew to
+`664px` tall to fit trigger + gap + panel, and its own background reverts to `transparent` while
+open so the negative space around the trigger/panel (now real, visible gaps) shows the host page
+through rather than a solid rectangle. Verified with a genuinely cross-origin test harness (host
+page and embed page on different ports) rather than the same-origin setup used in earlier phases —
+same-origin testing had been silently hiding exactly this class of pre-load-timing bug.
+
 ## Guardrails while building
 
 - Never let the LLM answer outside the retrieved context by default — the system prompt must

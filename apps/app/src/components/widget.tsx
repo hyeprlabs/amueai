@@ -94,19 +94,21 @@ export function Widget({
     setOpen(next);
   };
 
+  const hideTrigger = isMobile && open;
+
   const trigger = (
     <Button
-      aria-hidden={open}
-      aria-label="Open chat"
+      aria-hidden={hideTrigger}
+      aria-label={open ? "Close chat" : "Open chat"}
       className={cn(
-        "dark fixed bottom-0 size-14 rounded-full bg-popover text-popover-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 [&_svg]:size-6",
+        "dark fixed bottom-0 z-10 size-14 rounded-full bg-popover text-popover-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 [&_svg]:size-6",
         side === "left" ? "left-0" : "right-0",
-        open && "pointer-events-none opacity-0",
+        hideTrigger && "pointer-events-none opacity-0",
       )}
       onFocus={preloadChat}
       onPointerEnter={preloadChat}
       size="icon-lg"
-      tabIndex={open ? -1 : 0}
+      tabIndex={hideTrigger ? -1 : 0}
     />
   );
 
@@ -141,16 +143,10 @@ export function Widget({
         <MessageCircleIcon />
       </PopoverTrigger>
       <PopoverContent
-        align={framed ? undefined : side === "left" ? "start" : "end"}
-        className={cn(
-          "dark flex flex-col gap-0 overflow-hidden p-0",
-          framed
-            ? "!fixed !inset-0 !size-full !max-w-none !rounded-none !border-0 !shadow-none !ring-0 !duration-0"
-            : "h-[560px] max-h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)]",
-        )}
-        positionerClassName={framed ? "!fixed !inset-0 !transform-none" : undefined}
-        side={framed ? undefined : "top"}
-        sideOffset={framed ? undefined : 12}
+        align={side === "left" ? "start" : "end"}
+        className="dark flex h-[560px] max-h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0"
+        side="top"
+        sideOffset={16}
       >
         <PanelHeader agentName={agentName} onClose={() => toggle(false)} />
         <div className="min-h-0 flex-1">
