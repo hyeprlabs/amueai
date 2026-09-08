@@ -554,21 +554,27 @@ box size on the host page, toggled by two discrete `postMessage`s the iframe sen
   manifest on disk) it serves `src/widget/widget.js` directly. `public/widget.*.js` and
   `public/widget-manifest.json` are build artifacts — gitignored, regenerated every build, never
   hand-edited.
-- The embed route (`app/embed/[agentId]/widget.tsx`) is its own self-contained UI, completely
-  detached from the dashboard's `ChatPanel` (used only by the Playground's `ChatWidget` preview) —
-  one file, a handful of small components declared in it (`Widget` the export, `Chat`,
-  `MessageList`, `Composer`, plus the `useWidgetSession` hook), built on shadcn/ui's `Popover`
-  (rounded-full `Button` with a `MessageCircleIcon` as `PopoverTrigger`, exactly the pattern
-  already used by the dashboard's `ChatPreview`/`ChatWidget`) and **AI Elements**
-  (`Conversation`, `Message`, `Shimmer`) with `useChat` against `/api/chat/[agentId]` like every
-  other chat surface in the app — just without the dashboard's extras (no sources panel, no
-  rate-limit countdown, no per-message timestamps). Forced into dark mode (`className="dark"`)
-  regardless of the host page's own theme — a widget shouldn't inherit a stranger's color scheme.
-  `?side=left` in the iframe's own URL (set by `widget.js` from `data-position`) flips which
-  corner the trigger/panel anchor to, mirroring `widget.js`'s own `<side>` variable. No custom
-  font (`next/font` or otherwise) — inherits the system font stack on purpose. It ships the app's
-  shared `globals.css` rather than a separately-purged stylesheet — a known trade-off, not yet
-  worth a second Tailwind build pipeline for one route.
+- **There is exactly one chat UI in the codebase**: `src/components/widget.tsx`, exporting
+  `Widget`. It renders _only_ a shadcn `Popover` — a rounded-full `Button` with a
+  `MessageCircleIcon` as `PopoverTrigger`, and a `PopoverContent` panel with the agent name
+  top-left, an `XIcon` close button top-right, and **AI Elements** (`Conversation`, `Message`,
+  `Shimmer`) + `useChat` against `/api/chat/[agentId]` below — with no wrapper element around it.
+  Both surfaces render that same component: the embed route (`app/embed/[agentId]/page.tsx`, the
+  iframe a customer's site loads) and the dashboard Playground. The old parallel dashboard stack
+  (`ChatPreview` -> `ChatWidget` -> `ChatPanel`) is gone; it had drifted into a _second_ chat
+  implementation, and its `ChatPreview` wrapped the chat in a 40rem `border bg-muted/30` box —
+  the "weird white box" the widget appeared to open inside.
+- **The widget carries its own dark theme**, as `dark` on the trigger and the panel themselves
+  (`.dark` is a plain class selector in `globals.css`, so it scopes the dark tokens to that
+  subtree). That is what keeps it dark inside the light dashboard _and_ on any customer page,
+  without a wrapper div and without the embed document having to be dark. `app/embed/layout.tsx`
+  is therefore theme-neutral, with a `bg-transparent` body so the iframe composites onto the host
+  page instead of painting a box — verified against a bright-red host page.
+- `Widget` only talks to a host frame when it actually has one (`window.parent !== window`), so
+  the same component works unframed in the dashboard.
+- No custom font (`next/font` or otherwise) — inherits the system font stack on purpose. It ships
+  the app's shared `globals.css` rather than a separately-purged stylesheet — a known trade-off,
+  not yet worth a second Tailwind build pipeline for one route.
 - **Two postMessages in the whole protocol**, both origin-checked by `widget.js` on receipt:
   `{type:"amueai:open"}` and `{type:"amueai:close"}`, posted from an `useEffect` keyed on the
   `Popover`'s own `open` state (`onOpenChange`) — covers the trigger click, `Escape`, and
@@ -686,7 +692,7 @@ protocol (only the removed countdown UI read it), the chat route's 32-line
 find-or-create-conversation branch (now one `upsert`), and the duplicate status-badge rendering in
 `sources-table.tsx` / `live-source-status.tsx` (now one `SourceStatusBadge`).
 
-**Phase 19 — The widget's trigger and panel moved inside the iframe (current milestone)**
+**Phase 19 — The widget's trigger and panel moved inside the iframe**
 The embeddable widget's launcher button and chat panel are now both rendered by
 `app/embed/[agentId]/widget.tsx` itself, as a single shadcn `Popover` (rounded-full `Button` +
 `MessageCircleIcon` trigger, a panel with an agent-name header and an `XIcon` close button,
@@ -714,6 +720,11 @@ fetches the agent's `name` for the header.
 - Never call the embeddings API once per chunk in a loop when `embedMany`/`embedChunkBatch`
   batching is available.
 - Never hand-build chat message rendering/streaming state when AI Elements + `useChat` solve it.
+- **There is one chat UI: `components/widget.tsx`.** Don't add a second implementation for a new
+  surface, and don't wrap it in a bordered/background container - it renders only its `Popover`,
+  and it carries its own `dark` scope. Verify widget changes in a browser against a
+  strongly-coloured host page, not by reading the code: every real bug in it so far (clipped
+  bubble, collision-clipped panel, opaque box) was invisible in the diff.
 - **Don't add any billing/payment code** — no Stripe, no Clerk Billing, no pricing page, no
   upgrade flow — until the user explicitly asks for it post-MVP.
 - Never call `supabase.storage.*` directly for a source's original file or canonical markdown —

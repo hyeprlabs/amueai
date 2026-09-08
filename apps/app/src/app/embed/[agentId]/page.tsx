@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
-import { Widget } from "./widget";
+import { Widget } from "@/components/widget";
 
 export default async function EmbedPage({ params, searchParams }: PageProps<"/embed/[agentId]">) {
   const [{ agentId }, { side }] = await Promise.all([params, searchParams]);

@@ -5,7 +5,11 @@ import { DefaultChatTransport } from "ai";
 import { ArrowUpIcon, MessageCircleIcon, XIcon } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
@@ -36,27 +40,48 @@ function useWidgetSession(agentId: string) {
 
 type UIMessages = ReturnType<typeof useChat>["messages"];
 
-function MessageList({ messages, thinking }: { messages: UIMessages; thinking: boolean }) {
+function MessageList({
+  messages,
+  thinking,
+  error,
+}: {
+  messages: UIMessages;
+  thinking: boolean;
+  error?: Error;
+}) {
+  const lastMessageId = messages.at(-1)?.id;
+
   return (
     <Conversation className="min-h-0">
       <ConversationContent className="gap-3 p-3">
-        {messages.map((message) => (
-          <Message className="gap-0.5" from={message.role} key={message.id}>
-            <MessageContent className="text-xs leading-relaxed">
-              {message.parts.map((part, i) =>
-                part.type === "text" ? (
-                  <MessageResponse key={i}>{part.text}</MessageResponse>
-                ) : null,
-              )}
-            </MessageContent>
-          </Message>
-        ))}
+        {messages.map((message) => {
+          const text = message.parts
+            .filter((part) => part.type === "text")
+            .map((part) => part.text)
+            .join("");
+          const failed = Boolean(error) && message.id === lastMessageId;
+          if (message.role === "assistant" && (!text || failed)) return null;
+
+          return (
+            <Message className="gap-0.5" from={message.role} key={message.id}>
+              <MessageContent className="text-xs leading-relaxed">
+                <MessageResponse>{text}</MessageResponse>
+              </MessageContent>
+            </Message>
+          );
+        })}
         {thinking && (
           <Message from="assistant">
             <Shimmer className="px-1 text-xs">Thinking…</Shimmer>
           </Message>
         )}
+        {error && (
+          <Message from="assistant">
+            <MessageContent className="text-xs leading-relaxed">{error.message}</MessageContent>
+          </Message>
+        )}
       </ConversationContent>
+      <ConversationScrollButton />
     </Conversation>
   );
 }
@@ -107,7 +132,7 @@ function Chat({
 }) {
   const [input, setInput] = useState("");
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     messages: [
       { id: "welcome", role: "assistant", parts: [{ type: "text", text: welcomeMessage }] },
     ],
@@ -134,7 +159,7 @@ function Chat({
 
   return (
     <div className="flex h-full flex-col">
-      <MessageList messages={messages} thinking={status === "submitted"} />
+      <MessageList error={error} messages={messages} thinking={status === "submitted"} />
       <Composer busy={busy} onChange={setInput} onSubmit={handleSubmit} value={input} />
     </div>
   );
@@ -155,8 +180,12 @@ export function Widget({
   const [open, setOpen] = useState(false);
 
   const toggle = (next: boolean) => {
-    window.parent.postMessage({ type: next ? "amueai:open" : "amueai:close" }, "*");
+    const framed = window.parent !== window;
+    if (framed) {
+      window.parent.postMessage({ type: next ? "amueai:open" : "amueai:close" }, "*");
+    }
     if (!next) return setOpen(false);
+    if (!framed) return setOpen(true);
     requestAnimationFrame(() => requestAnimationFrame(() => setOpen(true)));
   };
 
@@ -167,7 +196,7 @@ export function Widget({
           <Button
             aria-label={open ? "Close chat" : "Open chat"}
             className={cn(
-              "fixed bottom-4 size-14 rounded-full bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10 transition-transform hover:bg-popover/90",
+              "dark fixed bottom-4 size-14 rounded-full bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10 transition-transform hover:bg-popover/90",
               side === "left" ? "left-4" : "right-4",
               open && "scale-0",
             )}
@@ -179,7 +208,7 @@ export function Widget({
       </PopoverTrigger>
       <PopoverContent
         align={side === "left" ? "start" : "end"}
-        className="flex h-[calc(100vh-100px)] w-[calc(100vw-2rem)] max-w-[368px] flex-col gap-0 overflow-hidden p-0"
+        className="dark flex h-[min(560px,calc(100vh-100px))] w-[calc(100vw-2rem)] max-w-[368px] flex-col gap-0 overflow-hidden p-0"
         side="top"
         sideOffset={12}
       >
