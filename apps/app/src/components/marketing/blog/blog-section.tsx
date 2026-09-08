@@ -13,8 +13,8 @@ import type { Author, Category, Post } from "@/payload-types";
 const IMAGE_FRAME =
   "rounded-lg border border-border outline outline-1 outline-offset-4 outline-border/30";
 
-/** `/blog` listing (variant B): same header + category switch as A, but an image grid. */
-export function BlogSectionB({
+/** `/blog` listing: header + category switch and an image grid of posts. */
+export function BlogSection({
   title,
   description,
   posts,
@@ -94,6 +94,7 @@ function PostCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
             alt={image.alt}
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             fill
+            loading="lazy"
             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             src={image.src}
           />
