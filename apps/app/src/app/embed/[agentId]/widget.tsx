@@ -3,7 +3,6 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowUpIcon, MessageCircleIcon, XIcon } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
@@ -145,27 +144,30 @@ export function Widget({
   agentId,
   agentName,
   welcomeMessage,
+  side = "right",
 }: {
   agentId: string;
   agentName: string;
   welcomeMessage: string;
+  side?: "left" | "right";
 }) {
   const session = useWidgetSession(agentId);
-  const side = useSearchParams().get("side") === "left" ? "left" : "right";
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    window.parent.postMessage({ type: open ? "amueai:open" : "amueai:close" }, "*");
-  }, [open]);
+  const toggle = (next: boolean) => {
+    window.parent.postMessage({ type: next ? "amueai:open" : "amueai:close" }, "*");
+    if (!next) return setOpen(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => setOpen(true)));
+  };
 
   return (
-    <Popover onOpenChange={setOpen} open={open}>
+    <Popover onOpenChange={toggle} open={open}>
       <PopoverTrigger
         render={
           <Button
             aria-label={open ? "Close chat" : "Open chat"}
             className={cn(
-              "fixed bottom-4 size-14 rounded-full shadow-lg transition-transform",
+              "fixed bottom-4 size-14 rounded-full bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10 transition-transform hover:bg-popover/90",
               side === "left" ? "left-4" : "right-4",
               open && "scale-0",
             )}
@@ -177,7 +179,7 @@ export function Widget({
       </PopoverTrigger>
       <PopoverContent
         align={side === "left" ? "start" : "end"}
-        className="flex h-[560px] w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0"
+        className="flex h-[calc(100vh-100px)] w-[calc(100vw-2rem)] max-w-[368px] flex-col gap-0 overflow-hidden p-0"
         side="top"
         sideOffset={12}
       >
