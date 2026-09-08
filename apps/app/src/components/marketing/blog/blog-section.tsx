@@ -1,17 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { BlogEmpty } from "@/components/marketing/blog/blog-empty";
+import { BlogImage } from "@/components/marketing/blog/blog-image";
 import { CategoryDropdown } from "@/components/marketing/blog/category-dropdown";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
-import { resolveMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { Author, Category, Post } from "@/payload-types";
-
-const IMAGE_FRAME =
-  "rounded-lg border border-border outline outline-1 outline-offset-4 outline-border/30";
 
 /** `/blog` listing: header + category switch and an image grid of posts. */
 export function BlogSection({
@@ -66,7 +61,6 @@ export function BlogSection({
 }
 
 function PostCard({ post, className, ...props }: React.ComponentProps<"a"> & { post: Post }) {
-  const image = resolveMedia(post.featuredImage, "card");
   const author: Author | undefined = typeof post.author === "object" ? post.author : undefined;
   const postCategories = (post.categories ?? []).filter(
     (category): category is Category => typeof category === "object",
@@ -88,20 +82,11 @@ function PostCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
       href={`/blog/${post.slug}`}
       {...props}
     >
-      <AspectRatio className={cn("w-full shrink-0 overflow-hidden", IMAGE_FRAME)} ratio={16 / 9}>
-        {image ? (
-          <Image
-            alt={image.alt}
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            fill
-            loading="lazy"
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            src={image.src}
-          />
-        ) : (
-          <div className="size-full bg-accent/30" />
-        )}
-      </AspectRatio>
+      <BlogImage
+        imageClassName="transition-transform duration-500 group-hover:scale-105"
+        media={post.featuredImage}
+        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+      />
 
       <div className="space-y-2 px-1">
         {postCategories.length > 0 && (
