@@ -14,9 +14,12 @@
     ":host{all:initial}" +
     "iframe{position:fixed;bottom:16px;" +
     side +
-    ":16px;width:88px;height:88px;border:0;background:transparent;z-index:2147483647}" +
-    "iframe[data-open]{width:min(400px,calc(100vw - 32px));height:min(640px,calc(100vh - 32px))}" +
-    "@media (max-width:480px){iframe[data-open]{inset:0;width:100%;height:100%}}";
+    ":16px;width:56px;height:56px;border:0;border-radius:9999px;color-scheme:dark;" +
+    "background:transparent;box-shadow:0 8px 24px rgba(0,0,0,.24);z-index:2147483647}" +
+    "iframe[data-open]{width:min(400px,calc(100vw - 32px));height:min(640px,calc(100vh - 32px));" +
+    "border-radius:16px}" +
+    "@media (max-width:480px){iframe[data-open]{inset:0;width:100%;height:100%;" +
+    "border-radius:0;box-shadow:none}}";
 
   function init() {
     var host = document.createElement("div");
@@ -28,7 +31,6 @@
     iframe.src =
       origin + "/embed/" + encodeURIComponent(agentId) + (side === "left" ? "?side=left" : "");
     iframe.title = "Chat";
-    iframe.setAttribute("allowtransparency", "true");
     iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups");
     shadow.appendChild(iframe);
 

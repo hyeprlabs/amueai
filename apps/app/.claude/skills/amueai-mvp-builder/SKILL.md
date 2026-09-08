@@ -524,21 +524,30 @@ box size on the host page, toggled by two discrete `postMessage`s the iframe sen
   the earlier lazy-mount optimization, made so the whole widget (trigger + panel) could be one
   self-contained shadcn/AI-SDK React component instead of a vanilla-JS button paired with a
   separate iframe UI.
-- **The box is sized entirely in CSS, never measured, and toggles between exactly two fixed
-  sizes.** Closed: a 64x64 circle at `bottom:20px` / `<side>:20px`. Open (`iframe[data-open]`):
-  `min(400px, 100vw - 40px)` x `min(620px, 100vh - 128px)`, same corner anchor, growing up and
-  in — plus a `@media (max-width:480px)` rule for the mobile fullscreen case. Which size applies
-  is driven by two messages the iframe's own content posts on open/close
-  (`{type:"amueai:open"}` / `{type:"amueai:close"}`) — a discrete boolean toggle, not a measurement.
-  **Never reintroduce a content-height bridge** (continuously measuring rendered content and
-  feeding that back as a size) — that's a different, incompatible thing from this open/close
-  toggle. The earlier flicker bug came from a `ResizeObserver` on an `h-full` element posting its
-  _own_ measured height back to the parent that had just set that height on it: a self-referential
-  loop that can't resolve, settling at a 0-height panel and re-triggering on every streamed token.
-  Measured in a browser at the time: old = a 380x0 panel, new = a stable 400x620 with 0.0000
-  cumulative layout shift across a full streamed reply. The current open/close toggle carries no
-  measurement at all — it's the same _kind_ of discrete, parent-owned CSS transition, just
-  triggered by a click event living inside the iframe instead of a button living outside it.
+- **The iframe hugs the visible UI exactly, in both states, and the UI fills it edge to edge.**
+  Closed: a 56x56 iframe with `border-radius:9999px`, and the trigger `Button` is
+  `inset-0 size-full` so it _is_ the whole frame. Open (`iframe[data-open]`):
+  `min(400px,100vw-32px)` x `min(640px,100vh-32px)` with `border-radius:16px`, and the panel is
+  `h-screen w-screen` pinned to (0,0) so it covers every pixel of it — plus a
+  `@media (max-width:480px)` rule for the mobile fullscreen case. **Never leave slack between the
+  iframe box and the UI inside it.** An iframe's canvas is not reliably transparent: it composited
+  fine in local Chromium but painted opaque white in the wild, which showed up as a white square
+  behind the launcher and a white border around the panel on a customer's dark site. Any slack is
+  a white box waiting to happen. Two belts to the same braces: the embed document sets
+  `color-scheme: dark` (so an unpainted canvas is near-black, not white) and `widget.js` sets
+  `background:transparent` on the iframe — but neither is load-bearing, the exact hug is.
+- Pixel-exactness of the open panel needs three things that are easy to lose: `sideOffset={0}` and
+  `collisionPadding={0}` on `PopoverContent` (base-ui otherwise keeps a 5px collision gap), and
+  the collapsed trigger must be `size-0 border-0 p-0` — `Button`'s 1px transparent border alone
+  offset the panel by 2px and exposed a sliver of canvas.
+- Which size applies is driven by two messages the iframe's own content posts on open/close
+  (`{type:"amueai:open"}` / `{type:"amueai:close"}`) — a discrete boolean toggle, not a
+  measurement. **Never reintroduce a content-height bridge** (continuously measuring rendered
+  content and feeding that back as a size) — that's a different, incompatible thing from this
+  open/close toggle. The earlier flicker bug came from a `ResizeObserver` on an `h-full` element
+  posting its _own_ measured height back to the parent that had just set that height on it: a
+  self-referential loop that can't resolve, settling at a 0-height panel and re-triggering on
+  every streamed token. The current toggle carries no measurement at all.
 - Why the iframe box has to actually resize (not just fade/hide) between these two states: an
   `<iframe>` element's own `pointer-events` in the _parent_ document is one on/off switch for its
   entire rectangle — content inside the iframe setting its own `pointer-events: none` on unused

@@ -196,21 +196,22 @@ export function Widget({
           <Button
             aria-label={open ? "Close chat" : "Open chat"}
             className={cn(
-              "dark fixed bottom-4 size-14 rounded-full bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10 transition-transform hover:bg-popover/90",
-              side === "left" ? "left-4" : "right-4",
-              open && "scale-0",
+              "dark fixed rounded-full bg-popover text-popover-foreground hover:bg-popover/90",
+              open ? "bottom-0 size-0 border-0 p-0 opacity-0" : "inset-0 size-full [&_svg]:size-6",
+              side === "left" ? "left-0" : "right-0",
             )}
             size="icon-lg"
           />
         }
       >
-        <MessageCircleIcon className="size-6" />
+        <MessageCircleIcon />
       </PopoverTrigger>
       <PopoverContent
         align={side === "left" ? "start" : "end"}
-        className="dark flex h-[min(560px,calc(100vh-100px))] w-[calc(100vw-2rem)] max-w-[368px] flex-col gap-0 overflow-hidden p-0"
+        collisionPadding={0}
+        className="dark flex h-screen w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 shadow-none ring-0"
         side="top"
-        sideOffset={12}
+        sideOffset={0}
       >
         <div className="flex items-center gap-2 border-b px-4 py-3">
           <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
