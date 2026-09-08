@@ -178,15 +178,13 @@ export function Widget({
 }) {
   const session = useWidgetSession(agentId);
   const [open, setOpen] = useState(false);
+  const [framed, setFramed] = useState(false);
+
+  useEffect(() => setFramed(window.parent !== window), []);
 
   const toggle = (next: boolean) => {
-    const framed = window.parent !== window;
-    if (framed) {
-      window.parent.postMessage({ type: next ? "amueai:open" : "amueai:close" }, "*");
-    }
-    if (!next) return setOpen(false);
-    if (!framed) return setOpen(true);
-    requestAnimationFrame(() => requestAnimationFrame(() => setOpen(true)));
+    if (framed) window.parent.postMessage({ type: next ? "amueai:open" : "amueai:close" }, "*");
+    setOpen(next);
   };
 
   return (
@@ -194,30 +192,37 @@ export function Widget({
       <PopoverTrigger
         render={
           <Button
-            aria-label={open ? "Close chat" : "Open chat"}
+            aria-hidden={open}
+            aria-label="Open chat"
             className={cn(
-              "dark fixed rounded-full bg-popover text-popover-foreground hover:bg-popover/90",
-              open ? "bottom-0 size-0 border-0 p-0 opacity-0" : "inset-0 size-full [&_svg]:size-6",
+              "dark fixed bottom-0 size-14 rounded-full bg-popover text-popover-foreground transition-opacity hover:bg-popover/90 [&_svg]:size-6",
               side === "left" ? "left-0" : "right-0",
+              open && "pointer-events-none opacity-0",
             )}
             size="icon-lg"
+            tabIndex={open ? -1 : 0}
           />
         }
       >
         <MessageCircleIcon />
       </PopoverTrigger>
       <PopoverContent
-        align={side === "left" ? "start" : "end"}
-        collisionPadding={0}
-        className="dark flex h-screen w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 shadow-none ring-0"
-        side="top"
-        sideOffset={0}
+        align={framed ? undefined : side === "left" ? "start" : "end"}
+        className={cn(
+          "dark flex flex-col gap-0 overflow-hidden p-0",
+          framed
+            ? "!fixed !inset-0 !size-full !max-w-none !rounded-none !border-0 !shadow-none !ring-0 !duration-0"
+            : "h-[560px] max-h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)]",
+        )}
+        positionerClassName={framed ? "!fixed !inset-0 !transform-none" : undefined}
+        side={framed ? undefined : "top"}
+        sideOffset={framed ? undefined : 12}
       >
         <div className="flex items-center gap-2 border-b px-4 py-3">
           <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
           <Button
             aria-label="Close chat"
-            onClick={() => setOpen(false)}
+            onClick={() => toggle(false)}
             size="icon-sm"
             variant="ghost"
           >

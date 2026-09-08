@@ -524,23 +524,51 @@ box size on the host page, toggled by two discrete `postMessage`s the iframe sen
   the earlier lazy-mount optimization, made so the whole widget (trigger + panel) could be one
   self-contained shadcn/AI-SDK React component instead of a vanilla-JS button paired with a
   separate iframe UI.
-- **The iframe hugs the visible UI exactly, in both states, and the UI fills it edge to edge.**
-  Closed: a 56x56 iframe with `border-radius:9999px`, and the trigger `Button` is
-  `inset-0 size-full` so it _is_ the whole frame. Open (`iframe[data-open]`):
-  `min(400px,100vw-32px)` x `min(640px,100vh-32px)` with `border-radius:16px`, and the panel is
-  `h-screen w-screen` pinned to (0,0) so it covers every pixel of it — plus a
-  `@media (max-width:480px)` rule for the mobile fullscreen case. **Never leave slack between the
-  iframe box and the UI inside it.** An iframe's canvas is not reliably transparent: it composited
-  fine in local Chromium but painted opaque white in the wild, which showed up as a white square
-  behind the launcher and a white border around the panel on a customer's dark site. Any slack is
-  a white box waiting to happen. Two belts to the same braces: the embed document sets
+- **The iframe hugs the visible UI exactly, in both states, and the UI fills it edge to edge —
+  and the trigger's own geometry never depends on the iframe's current size.** Closed: a 56x56
+  iframe (`widget.js`'s default `iframe{}` rule), and the trigger `Button` is a **fixed 56x56**
+  circle pinned to its corner (`fixed bottom-0 right-0 size-14`, never `inset-0`/`size-full`).
+  Open (`iframe[data-open]`): `min(400px,100vw-32px)` x `min(640px,100vh-32px)`, and
+  `PopoverContent` is forced to `!fixed !inset-0 !size-full`. **Never size the trigger off the
+  iframe's box (`inset-0 size-full`).** The iframe resize (driven by `widget.js`, instant, no CSS
+  transition) and the React re-render that swaps the trigger's classes are two separate documents
+  on two separate paint schedules — they cannot be made to land in the same frame. A trigger sized
+  `inset-0`/`size-full` stretches into a giant pill exactly the size of the about-to-open chat
+  panel for the (however brief) window where the iframe has already resized but React hasn't
+  re-rendered yet. A trigger with a **fixed pixel size** never stretches regardless of which side
+  of that race wins — worst case it's a small correctly-shaped circle sitting in the corner of an
+  already-large frame for one frame, not a giant pill.
+- **Never leave slack between the iframe box and the UI inside it, in either state.** An iframe's
+  canvas is not reliably transparent: it composited fine in local Chromium but painted opaque
+  white in the wild, which showed up as a white square behind the launcher and a white border
+  around the panel on a customer's dark site. Any slack is a white box waiting to happen. Two
+  belts to the same braces, neither load-bearing on their own: the embed document sets
   `color-scheme: dark` (so an unpainted canvas is near-black, not white) and `widget.js` sets
-  `background:transparent` on the iframe — but neither is load-bearing, the exact hug is.
-- Pixel-exactness of the open panel needs three things that are easy to lose: `sideOffset={0}` and
-  `collisionPadding={0}` on `PopoverContent` (base-ui otherwise keeps a 5px collision gap), and
-  the collapsed trigger must be `size-0 border-0 p-0` — `Button`'s 1px transparent border alone
-  offset the panel by 2px and exposed a sliver of canvas.
-- Which size applies is driven by two messages the iframe's own content posts on open/close
+  `background:transparent` on the iframe.
+- Getting `PopoverContent` to actually land at exactly `(0,0)` sized to the iframe — not merely
+  intended to — needs one thing that is easy to miss: base-ui's `Positioner` (the `Popup`'s
+  immediate parent) sets an inline `transform` for its floating-ui placement math, and a
+  `transform` on an ancestor creates a new **containing block** for `position: fixed` descendants.
+  Forcing `!fixed !inset-0` on the popup alone resolves against the `Positioner`'s own collapsed
+  `0x0` box, not the true viewport — it measures `(0,0) 0x0`, not a bug in the class names but in
+  which element they're fighting. `PopoverContent` takes a `positionerClassName` prop for exactly
+  this: pass `!fixed !inset-0 !transform-none` to neutralize the `Positioner`'s transform so the
+  popup's own `fixed` positions against the real viewport.
+- **This full-viewport trick is conditional on actually being inside a host iframe
+  (`window.parent !== window`, read once via `useEffect` into a `framed` boolean state — reading
+  it eagerly during render would throw during SSR).** Unframed — the dashboard Playground, which
+  renders `Widget` directly with no wrapping iframe — `PopoverContent` must NOT force
+  `!fixed !inset-0`, or the chat hijacks the entire dashboard viewport instead of floating near the
+  button. Unframed, it's a plain, normally-anchored popover (`h-[560px] w-[360px]`, default
+  `side`/`align`/`sideOffset`, no `positionerClassName` override) — the same component, branched
+  on `framed`, not two components.
+- **Every path that closes the panel must go through the same `toggle(false)` that posts
+  `amueai:close`** — `Popover`'s own `onOpenChange` (trigger click, `Escape`, outside click) is
+  wired to it, and so must the header's `X` button be. A bare `onClick={() => setOpen(false)}` on
+  that button flips React state without ever telling `widget.js` to shrink the iframe back down —
+  the panel stays stuck open-sized with nothing in it responding, since `setOpen` alone never
+  reaches the parent document.
+- Which size the iframe applies is driven by the two messages its own content posts on open/close
   (`{type:"amueai:open"}` / `{type:"amueai:close"}`) — a discrete boolean toggle, not a
   measurement. **Never reintroduce a content-height bridge** (continuously measuring rendered
   content and feeding that back as a size) — that's a different, incompatible thing from this
@@ -712,6 +740,24 @@ Shadow DOM. `widget.js` shrank to just mounting the iframe and toggling its CSS 
 why this needed the iframe to mount on page load rather than lazily on first click, and why that
 trade-off doesn't reintroduce the earlier content-height-bridge flicker bug. `page.tsx` now also
 fetches the agent's `name` for the header.
+
+**Phase 20 — One `Widget` component everywhere, and its geometry made actually robust**
+The parallel dashboard chat stack (`ChatPreview` -> `ChatWidget` -> `ChatPanel`, and
+`app/embed/[agentId]/widget.tsx`) collapsed into exactly one component,
+`src/components/widget.tsx`, rendered directly by both the embed route and the dashboard
+Playground — no more drift between what a visitor sees and what the dashboard previews. Getting
+one component to look right in both a customer's cross-origin iframe and the plain dashboard page
+needed: a `framed` boolean (`window.parent !== window`, read once via `useEffect`) branching
+`PopoverContent` between a forced full-viewport panel (framed) and a normal anchored popover
+(unframed); a trigger with a **fixed** pixel size instead of one sized off the iframe's box, so it
+can never visibly stretch into a giant pill during the unavoidable cross-document resize race (see
+"Widget" above for the exact mechanism); a `positionerClassName` escape hatch on the shared
+`PopoverContent` to neutralize base-ui's `Positioner` transform, since forcing `!fixed !inset-0`
+on the popup alone measured `(0,0) 0x0` instead of the intended full frame; and every close path
+(trigger, `Escape`, the header's own `X` button) going through the same `toggle(false)` that tells
+the parent to shrink the iframe back down — a bare `setOpen(false)` on the `X` button left the
+panel stuck open-sized. Verified geometry by sampling the iframe's bounding box at 20ms intervals
+across the open and close transitions in Chromium, not by reading the JSX.
 
 ## Guardrails while building
 
