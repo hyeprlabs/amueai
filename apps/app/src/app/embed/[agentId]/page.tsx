@@ -15,9 +15,5 @@ export default async function EmbedPage({ params }: PageProps<"/embed/[agentId]"
 
   if (!agent) notFound();
 
-  return (
-    <div className="h-screen w-screen">
-      <Widget agentId={agentId} welcomeMessage={agent.welcome_message} />
-    </div>
-  );
+  return <Widget agentId={agentId} welcomeMessage={agent.welcome_message} />;
 }

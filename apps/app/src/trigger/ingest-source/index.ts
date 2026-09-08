@@ -1,78 +1,50 @@
-import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk";
 import Firecrawl from "@mendable/firecrawl-js";
+import { logger, task } from "@trigger.dev/sdk";
 
-import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
-import { processMarkdownSource } from "../process-markdown-source";
-import { claim, markFailed } from "../shared/status";
-import { files } from "../shared/storage";
+import { crawlWebsite } from "./crawl-website";
+import { processMarkdownSource } from "./process-markdown-source";
+import { claimSource, markFailed, updateSource, type SourceRef } from "./shared/source";
+import { files, markdownKey } from "./shared/storage";
 
 const firecrawl = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! });
 
-type IngestSourcePayload =
-  | {
-      sourceId: string;
-      orgId: string;
-      agentId: string;
-      type: "text" | "qa";
-      rawContent: string;
-      label: string;
-    }
-  | {
-      sourceId: string;
-      orgId: string;
-      agentId: string;
-      type: "file";
-      storagePath: string;
-      label: string;
-    };
+type ClaimedSource = NonNullable<Awaited<ReturnType<typeof claimSource>>>;
+
+async function toMarkdown(source: ClaimedSource) {
+  if (source.type === "text") return `# ${source.label}\n\n${source.raw_content}`;
+
+  if (source.type === "qa") {
+    const pairs = JSON.parse(source.raw_content ?? "[]") as { q: string; a: string }[];
+    return pairs.map(({ q, a }) => `## ${q}\n\n${a}`).join("\n\n");
+  }
+
+  const file = await files.download(source.storage_path!);
+  const { markdown } = await firecrawl.parse(
+    { data: await file.blob(), filename: file.name, contentType: file.type || undefined },
+    { formats: ["markdown"] },
+  );
+  if (!markdown) throw new Error(`Firecrawl found no content in ${source.storage_path}`);
+
+  return markdown;
+}
 
 export const ingestSource = task({
   id: "ingest-source",
   queue: { name: "ingestion", concurrencyLimit: 5 },
-  retry: { maxAttempts: 4, factor: 2, minTimeoutInMs: 1000, maxTimeoutInMs: 20000 },
-  run: async (payload: IngestSourcePayload) => {
-    const supabase = createServiceRoleSupabaseClient();
-    if (!(await claim(supabase, payload.sourceId, "processing"))) {
-      logger.log("Source already being processed, skipping", { sourceId: payload.sourceId });
+  run: async (ref: SourceRef) => {
+    const source = await claimSource(ref.sourceId);
+    if (!source) return logger.log("Already ingesting", { sourceId: ref.sourceId });
+
+    const tags = [`source:${ref.sourceId}`];
+
+    if (source.type === "url") {
+      await crawlWebsite.triggerAndWait({ ...ref, url: source.url! }, { tags }).unwrap();
       return;
     }
 
-    let markdown: string;
-    if (payload.type === "text") {
-      markdown = `# ${payload.label}\n\n${payload.rawContent}`;
-    } else if (payload.type === "qa") {
-      const pairs = JSON.parse(payload.rawContent) as { q: string; a: string }[];
-      markdown = pairs.map((pair) => `## ${pair.q}\n\n${pair.a}`).join("\n\n");
-    } else if (payload.type === "file") {
-      const stored = await files.download(payload.storagePath);
-      const blob = await stored.blob();
-      const document = await firecrawl.parse(
-        { data: blob, filename: stored.name, contentType: stored.type || undefined },
-        { formats: ["markdown"] },
-      );
-      if (!document.markdown) {
-        throw new Error(`Firecrawl returned no content for ${payload.storagePath}`);
-      }
-      markdown = document.markdown;
-    } else {
-      throw new AbortTaskRunError(
-        `Unsupported type for ingest-source: ${(payload as { type: string }).type}`,
-      );
-    }
-
-    const markdownPath = `${payload.orgId}/${payload.agentId}/${payload.sourceId}.md`;
-    await files.upload(markdownPath, markdown);
-    await supabase
-      .from("sources")
-      .update({ markdown_path: markdownPath, raw_content: null })
-      .eq("id", payload.sourceId);
-
-    await processMarkdownSource
-      .triggerAndWait(
-        { sourceId: payload.sourceId, orgId: payload.orgId, markdownPath },
-        { tags: [`source:${payload.sourceId}`] },
-      )
-      .unwrap();
+    await files.upload(markdownKey(ref), await toMarkdown(source));
+    await updateSource(ref.sourceId, { raw_content: null });
+    await processMarkdownSource.triggerAndWait(ref, { tags }).unwrap();
   },
-  onFailure: async ({ payload, error }) => markFailed(payload.sourceId, error),
+  onFailure: ({ payload, error }) => markFailed(payload.sourceId, error),
 });

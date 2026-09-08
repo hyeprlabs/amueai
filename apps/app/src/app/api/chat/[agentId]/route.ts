@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
 import { checkChatRateLimit } from "@/lib/rate-limit";
-import { encodeRateLimitMessage, isRateLimitError, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
+import { isRateLimitError, RATE_LIMIT_MESSAGE } from "@/lib/chat-errors";
 
 function textError(message: string, status: number) {
   return new Response(message, { status, headers: { "Content-Type": "text/plain" } });
@@ -17,7 +17,7 @@ function textError(message: string, status: number) {
 
 const chatRequestSchema = z.object({
   message: z.string().trim().min(1).max(4000),
-  conversationId: z.string().optional(),
+  conversationId: z.string().min(1),
   visitorId: z.string().min(1),
 });
 
@@ -65,11 +65,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   const { agentId } = await params;
 
   const parsed = chatRequestSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return textError("Invalid request.", 400);
-  }
-  const { message, visitorId } = parsed.data;
-  let { conversationId } = parsed.data;
+  if (!parsed.success) return textError("Invalid request.", 400);
+  const { message, visitorId, conversationId } = parsed.data;
 
   const supabase = createServiceRoleSupabaseClient();
 
@@ -79,55 +76,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     .eq("id", agentId)
     .single();
 
-  if (!agent) {
-    return textError("Agent not found.", 404);
-  }
+  if (!agent) return textError("Agent not found.", 404);
 
-  if (agent.allowed_origins && agent.allowed_origins.length > 0) {
-    const origin = request.headers.get("origin");
-    if (!origin || !agent.allowed_origins.includes(origin)) {
-      return textError("Origin not allowed for this agent.", 403);
-    }
+  const origin = request.headers.get("origin");
+  if (agent.allowed_origins.length > 0 && !agent.allowed_origins.includes(origin ?? "")) {
+    return textError("Origin not allowed for this agent.", 403);
   }
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const { success: allowed, retryAt } = await checkChatRateLimit(ip, agent.id);
-  if (!allowed) {
-    return textError(encodeRateLimitMessage(retryAt), 429);
-  }
+  if (!(await checkChatRateLimit(ip, agent.id))) return textError(RATE_LIMIT_MESSAGE, 429);
 
-  if (conversationId) {
-    const { data: existing } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("id", conversationId)
-      .eq("agent_id", agent.id)
-      .eq("visitor_id", visitorId)
-      .single();
-
-    if (!existing) {
-      const { error: conversationError } = await supabase.from("conversations").insert({
-        id: conversationId,
-        org_id: agent.org_id,
-        agent_id: agent.id,
-        visitor_id: visitorId,
-      });
-      if (conversationError) {
-        return textError("Failed to start conversation.", 500);
-      }
-    }
-  } else {
-    const { data: conversation, error: conversationError } = await supabase
-      .from("conversations")
-      .insert({ org_id: agent.org_id, agent_id: agent.id, visitor_id: visitorId })
-      .select("id")
-      .single();
-
-    if (conversationError || !conversation) {
-      return textError("Failed to start conversation.", 500);
-    }
-    conversationId = conversation.id;
-  }
+  const { error: conversationError } = await supabase.from("conversations").upsert({
+    id: conversationId,
+    org_id: agent.org_id,
+    agent_id: agent.id,
+    visitor_id: visitorId,
+  });
+  if (conversationError) return textError("Failed to start conversation.", 500);
 
   let context = "";
   try {
@@ -150,8 +115,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     context,
   });
 
-  const conversationIdForClosure = conversationId;
-
   const resolveErrorMessage = (err: unknown) =>
     isRateLimitError(err) ? RATE_LIMIT_MESSAGE : fallbackMessage;
 
@@ -168,14 +131,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
             {
               org_id: agent.org_id,
               agent_id: agent.id,
-              conversation_id: conversationIdForClosure,
+              conversation_id: conversationId,
               role: "user",
               content: message,
             },
             {
               org_id: agent.org_id,
               agent_id: agent.id,
-              conversation_id: conversationIdForClosure,
+              conversation_id: conversationId,
               role: "assistant",
               content: text,
             },
@@ -188,8 +151,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     onError: resolveErrorMessage,
   });
 
-  return createUIMessageStreamResponse({
-    stream,
-    headers: { "X-Conversation-Id": conversationId },
-  });
+  return createUIMessageStreamResponse({ stream });
 }

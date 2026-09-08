@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  CircleCheckIcon,
-  CircleXIcon,
-  ClockIcon,
-  DatabaseIcon,
-  Loader2Icon,
-  Trash2Icon,
-} from "lucide-react";
+import { DatabaseIcon, Trash2Icon } from "lucide-react";
 
 import {
   AlertDialog,
@@ -20,10 +13,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DashboardEmpty } from "@/components/dashboard/dashboard-empty";
 import { LiveSourceStatus } from "@/components/dashboard/agents/live-source-status";
+import {
+  SourceStatusBadge,
+  type SourceStatus,
+} from "@/components/dashboard/agents/source-status-badge";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -33,7 +29,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Tables } from "@/types/supabase";
 
 export type SourceRow = Pick<
@@ -42,45 +37,6 @@ export type SourceRow = Pick<
 >;
 
 export type ActiveRun = { accessToken: string };
-
-const statusConfig: Record<
-  SourceRow["status"],
-  { label: string; variant: "secondary" | "outline" | "destructive"; icon: React.ReactNode }
-> = {
-  queued: { label: "Queued", variant: "secondary", icon: <ClockIcon /> },
-  processing: {
-    label: "Processing",
-    variant: "outline",
-    icon: <Loader2Icon className="animate-spin" />,
-  },
-  ready: {
-    label: "Ready",
-    variant: "secondary",
-    icon: <CircleCheckIcon className="text-emerald-600 dark:text-emerald-500" />,
-  },
-  failed: { label: "Failed", variant: "destructive", icon: <CircleXIcon /> },
-};
-
-function StatusBadge({ source }: { source: SourceRow }) {
-  const config = statusConfig[source.status];
-  const badge = (
-    <Badge variant={config.variant} className="gap-1">
-      {config.icon}
-      {config.label}
-    </Badge>
-  );
-
-  if (source.status !== "failed" || !source.error_message) return badge;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger render={<span className="inline-flex cursor-default" />}>
-        {badge}
-      </TooltipTrigger>
-      <TooltipContent>{source.error_message}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 export function SourcesTable({
   sources,
@@ -138,7 +94,10 @@ export function SourcesTable({
                     onSettled={() => onRunSettled(source.id)}
                   />
                 ) : (
-                  <StatusBadge source={source} />
+                  <SourceStatusBadge
+                    error={source.error_message}
+                    status={source.status as SourceStatus}
+                  />
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">

@@ -45,18 +45,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: agent } = await supabase.from("agents").select("id").eq("id", agentId).single();
   if (!agent) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
 
-  const url = parsed.data.type === "url" ? parsed.data.url : null;
-  const storage_path = parsed.data.type === "file" ? parsed.data.storagePath : null;
-  const raw_content =
-    parsed.data.type === "text"
-      ? parsed.data.content
-      : parsed.data.type === "qa"
-        ? JSON.stringify(parsed.data.pairs)
-        : null;
-
   const { data: source, error: insertError } = await supabase
     .from("sources")
-    .insert({ org_id: orgId, agent_id: agentId, type, label, url, storage_path, raw_content })
+    .insert({
+      org_id: orgId,
+      agent_id: agentId,
+      type,
+      label,
+      url: parsed.data.type === "url" ? parsed.data.url : null,
+      storage_path: parsed.data.type === "file" ? parsed.data.storagePath : null,
+      raw_content:
+        parsed.data.type === "text"
+          ? parsed.data.content
+          : parsed.data.type === "qa"
+            ? JSON.stringify(parsed.data.pairs)
+            : null,
+    })
     .select("id, label, type, status, created_at")
     .single();
 
@@ -67,29 +71,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  const run = await triggerIngestion(
-    parsed.data.type === "url"
-      ? { id: source.id, orgId, agentId, type: "url", url: parsed.data.url, label }
-      : parsed.data.type === "file"
-        ? {
-            id: source.id,
-            orgId,
-            agentId,
-            type: "file",
-            storagePath: parsed.data.storagePath,
-            label,
-          }
-        : parsed.data.type === "text"
-          ? { id: source.id, orgId, agentId, type: "text", rawContent: parsed.data.content, label }
-          : {
-              id: source.id,
-              orgId,
-              agentId,
-              type: "qa",
-              rawContent: JSON.stringify(parsed.data.pairs),
-              label,
-            },
-  );
+  const run = await triggerIngestion({ id: source.id, orgId, agentId });
 
   return NextResponse.json({ source, run }, { status: 201 });
 }

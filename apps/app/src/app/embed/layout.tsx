@@ -9,7 +9,9 @@ export const metadata: Metadata = {
 export default function EmbedLayout({ children }: LayoutProps<"/embed">) {
   return (
     <html lang="en">
-      <body className="h-screen bg-background text-foreground antialiased">{children}</body>
+      <body className="h-dvh overflow-hidden bg-background text-foreground antialiased">
+        {children}
+      </body>
     </html>
   );
 }

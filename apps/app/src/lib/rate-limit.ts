@@ -12,6 +12,6 @@ const chatRatelimit = new Ratelimit({
 });
 
 export async function checkChatRateLimit(ip: string, agentId: string) {
-  const { success, reset } = await chatRatelimit.limit(`${ip}:${agentId}`);
-  return { success, retryAt: success ? undefined : reset };
+  const { success } = await chatRatelimit.limit(`${ip}:${agentId}`);
+  return success;
 }

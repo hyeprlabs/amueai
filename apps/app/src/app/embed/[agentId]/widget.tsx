@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowUpIcon } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
@@ -15,92 +15,34 @@ function useWidgetSession(agentId: string) {
   const [ids, setIds] = useState<{ conversationId: string; visitorId: string } | null>(null);
 
   useEffect(() => {
-    const visitorKey = "amueai_visitor_id";
-    const conversationKey = `amueai_conversation_${agentId}`;
+    const read = (key: string) => {
+      const existing = localStorage.getItem(key);
+      if (existing) return existing;
+      const created = crypto.randomUUID();
+      localStorage.setItem(key, created);
+      return created;
+    };
 
-    let visitorId = localStorage.getItem(visitorKey);
-    if (!visitorId) {
-      visitorId = crypto.randomUUID();
-      localStorage.setItem(visitorKey, visitorId);
-    }
-
-    let conversationId = localStorage.getItem(conversationKey);
-    if (!conversationId) {
-      conversationId = crypto.randomUUID();
-      localStorage.setItem(conversationKey, conversationId);
-    }
-
-    setIds({ conversationId, visitorId });
+    setIds({
+      visitorId: read("amueai_visitor_id"),
+      conversationId: read(`amueai_conversation_${agentId}`),
+    });
   }, [agentId]);
 
   return ids;
 }
 
-const FULLSCREEN_BREAKPOINT_PX = 480;
-
-function useParentBridge(rootRef: React.RefObject<HTMLElement | null>) {
+function useCloseOnEscape() {
   useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-
-    let rafId: number;
-    const resizeObserver = new ResizeObserver(([entry]) => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        window.parent.postMessage({ type: "amueai:resize", height: entry.contentRect.height }, "*");
-      });
-    });
-    resizeObserver.observe(root);
-
-    let wasFullscreen: boolean | null = null;
-    const mediaQuery = window.matchMedia(`(max-width: ${FULLSCREEN_BREAKPOINT_PX}px)`);
-    const reportFullscreen = () => {
-      if (mediaQuery.matches === wasFullscreen) return;
-      wasFullscreen = mediaQuery.matches;
-      window.parent.postMessage({ type: "amueai:fullscreen", value: mediaQuery.matches }, "*");
+    const onKeydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") window.parent.postMessage({ type: "amueai:close" }, "*");
     };
-    reportFullscreen();
-    mediaQuery.addEventListener("change", reportFullscreen);
-
-    const focusableSelector =
-      'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-    const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        window.parent.postMessage({ type: "amueai:close" }, "*");
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = Array.from(root.querySelectorAll<HTMLElement>(focusableSelector));
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", handleKeydown);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      resizeObserver.disconnect();
-      mediaQuery.removeEventListener("change", reportFullscreen);
-      document.removeEventListener("keydown", handleKeydown);
-    };
-  }, [rootRef]);
+    document.addEventListener("keydown", onKeydown);
+    return () => document.removeEventListener("keydown", onKeydown);
+  }, []);
 }
 
-function MessageList({
-  messages,
-  busy,
-}: {
-  messages: ReturnType<typeof useChat>["messages"];
-  busy: boolean;
-}) {
+function MessageList({ messages, thinking }: { messages: UIMessages; thinking: boolean }) {
   return (
     <Conversation className="min-h-0">
       <ConversationContent className="gap-3 p-3">
@@ -115,7 +57,7 @@ function MessageList({
             </MessageContent>
           </Message>
         ))}
-        {busy && (
+        {thinking && (
           <Message from="assistant">
             <Shimmer className="px-1 text-xs">Thinking…</Shimmer>
           </Message>
@@ -126,12 +68,12 @@ function MessageList({
 }
 
 function Composer({
-  input,
+  value,
   onChange,
   onSubmit,
   busy,
 }: {
-  input: string;
+  value: string;
   onChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   busy: boolean;
@@ -143,12 +85,12 @@ function Composer({
         disabled={busy}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Ask a question…"
-        value={input}
+        value={value}
       />
       <Button
         aria-label="Send message"
         className="absolute inset-y-0 end-4 my-auto size-8 rounded-full"
-        disabled={!input.trim() || busy}
+        disabled={!value.trim() || busy}
         size="icon-sm"
         type="submit"
       >
@@ -158,7 +100,9 @@ function Composer({
   );
 }
 
-function WidgetChat({
+type UIMessages = ReturnType<typeof useChat>["messages"];
+
+function Chat({
   agentId,
   conversationId,
   visitorId,
@@ -191,35 +135,24 @@ function WidgetChat({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const text = input.trim();
-    if (!text || busy) return;
+    if (!input.trim() || busy) return;
+    sendMessage({ text: input.trim() });
     setInput("");
-    sendMessage({ text });
   };
 
   return (
     <div className="flex h-full flex-col">
-      <MessageList busy={status === "submitted"} messages={messages} />
-      <Composer busy={busy} input={input} onChange={setInput} onSubmit={handleSubmit} />
+      <MessageList messages={messages} thinking={status === "submitted"} />
+      <Composer busy={busy} onChange={setInput} onSubmit={handleSubmit} value={input} />
     </div>
   );
 }
 
 export function Widget({ agentId, welcomeMessage }: { agentId: string; welcomeMessage: string }) {
   const session = useWidgetSession(agentId);
-  const rootRef = useRef<HTMLDivElement>(null);
-  useParentBridge(rootRef);
+  useCloseOnEscape();
 
-  return (
-    <div className="h-full w-full" id="chat-root" ref={rootRef}>
-      {session && (
-        <WidgetChat
-          agentId={agentId}
-          conversationId={session.conversationId}
-          visitorId={session.visitorId}
-          welcomeMessage={welcomeMessage}
-        />
-      )}
-    </div>
-  );
+  if (!session) return null;
+
+  return <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />;
 }
