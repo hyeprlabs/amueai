@@ -1,7 +1,6 @@
 "use client";
 
 import { MessageCircleIcon, XIcon } from "lucide-react";
-import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { useEffect, useState, type CSSProperties } from "react";
 
@@ -59,7 +58,7 @@ function useWidgetSession(agentId: string) {
 
 function PanelHeader({ agentName, onClose }: { agentName: string; onClose: () => void }) {
   return (
-    <div className="flex items-center gap-2 border-b bg-popover px-4 py-3">
+    <div className="flex items-center gap-2 border-b px-4 py-3">
       <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
       <Button aria-label="Close chat" onClick={onClose} size="icon-sm" variant="ghost">
         <XIcon />
@@ -67,8 +66,6 @@ function PanelHeader({ agentName, onClose }: { agentName: string; onClose: () =>
     </div>
   );
 }
-
-const MotionButton = motion.create(Button);
 
 export function Widget({
   agentId,
@@ -98,23 +95,18 @@ export function Widget({
   };
 
   const trigger = (
-    <MotionButton
-      animate={{ scale: 1, opacity: open ? 0 : 1 }}
+    <Button
       aria-hidden={open}
       aria-label="Open chat"
       className={cn(
-        "dark fixed bottom-0 size-14 rounded-full bg-popover text-popover-foreground shadow-[0_8px_24px_rgba(0,0,0,.28)] [&_svg]:size-6",
+        "dark fixed bottom-0 size-14 rounded-full bg-popover text-popover-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 [&_svg]:size-6",
         side === "left" ? "left-0" : "right-0",
-        open && "pointer-events-none",
+        open && "pointer-events-none opacity-0",
       )}
-      initial={{ scale: 0.6, opacity: 0 }}
       onFocus={preloadChat}
       onPointerEnter={preloadChat}
       size="icon-lg"
       tabIndex={open ? -1 : 0}
-      transition={{ type: "spring", stiffness: 400, damping: 22 }}
-      whileHover={open ? undefined : { scale: 1.06 }}
-      whileTap={open ? undefined : { scale: 0.94 }}
     />
   );
 
@@ -135,7 +127,7 @@ export function Widget({
           }
         >
           <PanelHeader agentName={agentName} onClose={() => toggle(false)} />
-          <div className="min-h-0 flex-1 bg-background">
+          <div className="min-h-0 flex-1">
             {session && <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />}
           </div>
         </DrawerContent>
@@ -154,14 +146,14 @@ export function Widget({
           "dark flex flex-col gap-0 overflow-hidden p-0",
           framed
             ? "!fixed !inset-0 !size-full !max-w-none !rounded-none !border-0 !shadow-none !ring-0 !duration-0"
-            : "h-[560px] max-h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)] shadow-2xl",
+            : "h-[560px] max-h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)]",
         )}
         positionerClassName={framed ? "!fixed !inset-0 !transform-none" : undefined}
         side={framed ? undefined : "top"}
         sideOffset={framed ? undefined : 12}
       >
         <PanelHeader agentName={agentName} onClose={() => toggle(false)} />
-        <div className="min-h-0 flex-1 bg-background">
+        <div className="min-h-0 flex-1">
           {session && <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />}
         </div>
       </PopoverContent>

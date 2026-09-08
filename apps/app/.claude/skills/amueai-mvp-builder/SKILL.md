@@ -612,12 +612,23 @@ box size on the host page, toggled by two discrete `postMessage`s the iframe sen
   its own file, `src/components/widget-chat.tsx`, loaded via `next/dynamic(..., { ssr: false })`
   from `widget.tsx`.** This is the one deliberate exception to "the widget is one file" — splitting
   it out is what makes the AI SDK code a separate chunk the browser never fetches for a visitor who
-  loads the page but never opens the chat (verified: 8 additional chunks load only after the first
-  click, zero before). `widget.tsx` calls `import("@/components/widget-chat")` speculatively on the
-  trigger's `pointerenter`/`focus` too, so the chunk is usually already warm by the time a visitor
-  actually clicks. Message rows animate in with `motion/react` (fade + slight rise, skipped under
-  `prefers-reduced-motion` via `useReducedMotion()`) and are wrapped in `memo` so a streaming
-  reply's re-renders don't re-diff every prior message.
+  loads the page but never opens the chat (verified: several additional chunks load only after the
+  first click, zero before). `widget.tsx` calls `import("@/components/widget-chat")` speculatively
+  on the trigger's `pointerenter`/`focus` too, so the chunk is usually already warm by the time a
+  visitor actually clicks. Message rows are wrapped in `memo` so a streaming reply's re-renders
+  don't re-diff every prior message.
+- **Never animate the trigger `Button` itself with `initial`/`animate` (`motion/react` or
+  otherwise).** It was tried once, for a mount "pop-in": `motion` renders its `initial` state
+  straight into the server-rendered HTML as an inline `style` (verified directly —
+  `style="opacity:0;transform:scale(0.6)"` was present in the raw SSR output), so the button is
+  genuinely invisible until React hydrates and motion's JS runs. On any real-world connection
+  that's a real gap where the launcher — the _only_ thing rendered on page load, since the panel
+  doesn't mount until first open — is either invisible or missing entirely. The trigger's
+  hover/tap feedback is plain Tailwind (`transition-transform hover:scale-105 active:scale-95`);
+  it must be visible, unanimated, and fully itself in the raw HTML, before any JS runs at all.
+  Micro-animation is fine deeper in the tree (e.g. inside `widget-chat.tsx`, which only ever mounts
+  client-side after the lazy import resolves, so it never appears in SSR output) — never on
+  anything that's part of the widget's very first paint.
 - The agent's `name`/`welcome_message` lookup in `page.tsx` is wrapped in `unstable_cache` (not the
   `"use cache"` directive — this project hasn't opted into Cache Components, and enabling
   `cacheComponents` project-wide is a far bigger change than this one lookup warrants), keyed and
@@ -813,17 +824,19 @@ both `--drawer-height` and `--drawer-content-max-height` together via an inline 
 alone loses to the component's own more-specific `data-[swipe-axis=y]` rule) — see "Widget" above
 for the exact mechanism and why `100vh` was required over `100dvh`.
 
-**Phase 22 — Polish, motion, and a lazily-loaded chat (current milestone)**
-Three changes, none touching the geometry-critical code (the framed/unframed branch, the fixed
+**Phase 22 — A lazily-loaded chat and cached agent lookups (current milestone)**
+Two changes, neither touching the geometry-critical code (the framed/unframed branch, the fixed
 trigger size, the `positionerClassName`/inline-style overrides) — every regression from Phases
-19–21 was re-verified in Chromium after each of these: (1) message bubbles are now two-tone
-(`bg-primary` for the visitor, `bg-card` + border for the assistant) instead of border-only, the
-panel body is `bg-background` against the header/composer's `bg-popover` for depth, and the
-trigger gets a one-time spring-in on mount plus `whileHover`/`whileTap` scale via `motion/react`;
-(2) the chat itself (`useChat` and everything it pulls in) split into its own lazily-loaded file,
-`widget-chat.tsx` — see "Widget" above for why and how it's verified; (3) the embed page's agent
-lookup is cached per-agent via `unstable_cache` with tag-based invalidation on write, rather than
-hitting Supabase on every widget load.
+19–21 was re-verified in Chromium after each of these: (1) the chat itself (`useChat` and
+everything it pulls in) split into its own lazily-loaded file, `widget-chat.tsx` — see "Widget"
+above for why and how it's verified; (2) the embed page's agent lookup is cached per-agent via
+`unstable_cache` with tag-based invalidation on write, rather than hitting Supabase on every widget
+load. A first pass at this phase also added `bg-primary`/`bg-card` bubble colors and a
+`motion/react` mount animation on the trigger — both reverted the same day: the bubble colors were
+unnecessary custom styling over ai-elements' own `Message`/`MessageContent` defaults, and the
+trigger animation broke the widget's very first paint (see "Widget" above, "Never animate the
+trigger"). The lesson generalizes: verify a change against the actual server-rendered HTML output,
+not just a post-hydration screenshot, before trusting anything that touches what renders first.
 
 ## Guardrails while building
 
@@ -845,7 +858,13 @@ hitting Supabase on every widget load.
   surface, and don't wrap it in a bordered/background container - it renders only its `Popover`,
   and it carries its own `dark` scope. Verify widget changes in a browser against a
   strongly-coloured host page, not by reading the code: every real bug in it so far (clipped
-  bubble, collision-clipped panel, opaque box) was invisible in the diff.
+  bubble, collision-clipped panel, opaque box, an invisible-until-hydrated trigger) was invisible
+  in the diff — the trigger bug specifically was only caught by diffing the raw SSR HTML output,
+  not a post-load screenshot.
+- **Prefer ai-elements'/shadcn's own default styling over a custom override on the widget.**
+  `Message`/`MessageContent` already distinguish user from assistant (`group-[.is-user]:bg-muted`,
+  `group-[.is-assistant]:border`) - a `bg-primary`/`bg-card` override on top of that is unnecessary
+  surface area for a component this fragile, not an improvement.
 - **Don't add any billing/payment code** — no Stripe, no Clerk Billing, no pricing page, no
   upgrade flow — until the user explicitly asks for it post-MVP.
 - Never call `supabase.storage.*` directly for a source's original file or canonical markdown —

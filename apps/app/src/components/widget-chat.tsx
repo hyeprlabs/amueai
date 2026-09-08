@@ -3,7 +3,6 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowUpIcon } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { memo, useState, type FormEvent } from "react";
 
 import {
@@ -15,18 +14,15 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 
 type UIMessages = ReturnType<typeof useChat>["messages"];
 
 const MessageRow = memo(function MessageRow({
   message,
   failed,
-  reduceMotion,
 }: {
   message: UIMessages[number];
   failed: boolean;
-  reduceMotion: boolean;
 }) {
   const text = message.parts
     .filter((part) => part.type === "text")
@@ -35,24 +31,11 @@ const MessageRow = memo(function MessageRow({
   if (message.role === "assistant" && (!text || failed)) return null;
 
   return (
-    <motion.div
-      animate={{ opacity: 1, y: 0 }}
-      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
-    >
-      <Message className="gap-0.5" from={message.role}>
-        <MessageContent
-          className={cn(
-            "text-xs leading-relaxed",
-            message.role === "user"
-              ? "bg-primary text-primary-foreground"
-              : "border bg-card text-card-foreground",
-          )}
-        >
-          <MessageResponse>{text}</MessageResponse>
-        </MessageContent>
-      </Message>
-    </motion.div>
+    <Message className="gap-0.5" from={message.role}>
+      <MessageContent className="text-xs leading-relaxed">
+        <MessageResponse>{text}</MessageResponse>
+      </MessageContent>
+    </Message>
   );
 });
 
@@ -65,22 +48,18 @@ function MessageList({
   thinking: boolean;
   error?: Error;
 }) {
-  const reduceMotion = useReducedMotion();
   const lastMessageId = messages.at(-1)?.id;
 
   return (
     <Conversation className="min-h-0">
       <ConversationContent className="gap-3 p-3">
-        <AnimatePresence initial={false}>
-          {messages.map((message) => (
-            <MessageRow
-              failed={Boolean(error) && message.id === lastMessageId}
-              key={message.id}
-              message={message}
-              reduceMotion={Boolean(reduceMotion)}
-            />
-          ))}
-        </AnimatePresence>
+        {messages.map((message) => (
+          <MessageRow
+            failed={Boolean(error) && message.id === lastMessageId}
+            key={message.id}
+            message={message}
+          />
+        ))}
         {thinking && (
           <Message from="assistant">
             <Shimmer className="px-1 text-xs">Thinking…</Shimmer>
@@ -88,9 +67,7 @@ function MessageList({
         )}
         {error && (
           <Message from="assistant">
-            <MessageContent className="border bg-card text-xs leading-relaxed text-card-foreground">
-              {error.message}
-            </MessageContent>
+            <MessageContent className="text-xs leading-relaxed">{error.message}</MessageContent>
           </Message>
         )}
       </ConversationContent>
@@ -113,27 +90,21 @@ function Composer({
   return (
     <form className="relative border-t p-3" onSubmit={onSubmit}>
       <Input
-        className="h-11 rounded-full bg-card pe-11 shadow-sm"
+        className="h-11 rounded-full pe-11 shadow-sm"
         disabled={busy}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Ask a question…"
         value={value}
       />
-      <motion.div
-        className="absolute inset-y-0 end-4 my-auto"
-        whileHover={value.trim() && !busy ? { scale: 1.08 } : undefined}
-        whileTap={value.trim() && !busy ? { scale: 0.92 } : undefined}
+      <Button
+        aria-label="Send message"
+        className="absolute inset-y-0 end-4 my-auto size-8 rounded-full"
+        disabled={!value.trim() || busy}
+        size="icon-sm"
+        type="submit"
       >
-        <Button
-          aria-label="Send message"
-          className="size-8 rounded-full"
-          disabled={!value.trim() || busy}
-          size="icon-sm"
-          type="submit"
-        >
-          <ArrowUpIcon />
-        </Button>
-      </motion.div>
+        <ArrowUpIcon />
+      </Button>
     </form>
   );
 }
