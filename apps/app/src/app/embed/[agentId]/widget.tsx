@@ -2,7 +2,8 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { ArrowUpIcon } from "lucide-react";
+import { ArrowUpIcon, MessageCircleIcon, XIcon } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
@@ -10,6 +11,8 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 function useWidgetSession(agentId: string) {
   const [ids, setIds] = useState<{ conversationId: string; visitorId: string } | null>(null);
@@ -32,15 +35,7 @@ function useWidgetSession(agentId: string) {
   return ids;
 }
 
-function useCloseOnEscape() {
-  useEffect(() => {
-    const onKeydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") window.parent.postMessage({ type: "amueai:close" }, "*");
-    };
-    document.addEventListener("keydown", onKeydown);
-    return () => document.removeEventListener("keydown", onKeydown);
-  }, []);
-}
+type UIMessages = ReturnType<typeof useChat>["messages"];
 
 function MessageList({ messages, thinking }: { messages: UIMessages; thinking: boolean }) {
   return (
@@ -100,8 +95,6 @@ function Composer({
   );
 }
 
-type UIMessages = ReturnType<typeof useChat>["messages"];
-
 function Chat({
   agentId,
   conversationId,
@@ -148,11 +141,63 @@ function Chat({
   );
 }
 
-export function Widget({ agentId, welcomeMessage }: { agentId: string; welcomeMessage: string }) {
+export function Widget({
+  agentId,
+  agentName,
+  welcomeMessage,
+}: {
+  agentId: string;
+  agentName: string;
+  welcomeMessage: string;
+}) {
   const session = useWidgetSession(agentId);
-  useCloseOnEscape();
+  const side = useSearchParams().get("side") === "left" ? "left" : "right";
+  const [open, setOpen] = useState(false);
 
-  if (!session) return null;
+  useEffect(() => {
+    window.parent.postMessage({ type: open ? "amueai:open" : "amueai:close" }, "*");
+  }, [open]);
 
-  return <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />;
+  return (
+    <div className="dark">
+      <Popover onOpenChange={setOpen} open={open}>
+        <PopoverTrigger
+          render={
+            <Button
+              aria-label={open ? "Close chat" : "Open chat"}
+              className={cn(
+                "fixed bottom-4 size-14 rounded-full shadow-lg transition-transform",
+                side === "left" ? "left-4" : "right-4",
+                open && "scale-0",
+              )}
+              size="icon-lg"
+            />
+          }
+        >
+          <MessageCircleIcon className="size-6" />
+        </PopoverTrigger>
+        <PopoverContent
+          align={side === "left" ? "start" : "end"}
+          className="flex h-[560px] w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0"
+          side="top"
+          sideOffset={12}
+        >
+          <div className="flex items-center gap-2 border-b px-4 py-3">
+            <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
+            <Button
+              aria-label="Close chat"
+              onClick={() => setOpen(false)}
+              size="icon-sm"
+              variant="ghost"
+            >
+              <XIcon />
+            </Button>
+          </div>
+          <div className="min-h-0 flex-1">
+            {session && <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 }

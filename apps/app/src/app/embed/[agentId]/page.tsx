@@ -9,11 +9,11 @@ export default async function EmbedPage({ params }: PageProps<"/embed/[agentId]"
   const supabase = createServiceRoleSupabaseClient();
   const { data: agent } = await supabase
     .from("agents")
-    .select("welcome_message")
+    .select("name, welcome_message")
     .eq("id", agentId)
     .single();
 
   if (!agent) notFound();
 
-  return <Widget agentId={agentId} welcomeMessage={agent.welcome_message} />;
+  return <Widget agentId={agentId} agentName={agent.name} welcomeMessage={agent.welcome_message} />;
 }

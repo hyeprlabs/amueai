@@ -7,8 +7,8 @@ description: Use this skill when building, extending, or debugging AmueAI — a 
 
 You are building **AmueAI**, a from-scratch clone of Chatbase's original (2023) MVP: a no-code
 tool that lets a user feed in their own content and get back an embeddable Q&A agent that only
-answers from that content. The *product scope* is intentionally small and fixed — see below.
-The *tech stack* is intentionally modern and Supabase-native: lean on what Supabase itself
+answers from that content. The _product scope_ is intentionally small and fixed — see below.
+The _tech stack_ is intentionally modern and Supabase-native: lean on what Supabase itself
 provides (Postgres + pgvector, RLS, Storage, Realtime, CLI migrations) rather than layering a
 separate ORM or query engine on top where Supabase's own tooling already does the job.
 
@@ -47,29 +47,37 @@ boundary**. Verify it, build on it — don't re-set it up from scratch.
   returns the Clerk session token, not the `anon`/`service_role` key:
   ```ts
   // lib/supabase/server.ts
-  import { auth } from '@clerk/nextjs/server'
-  import { createClient } from '@supabase/supabase-js'
+  import { auth } from "@clerk/nextjs/server";
+  import { createClient } from "@supabase/supabase-js";
 
   export function createServerSupabaseClient() {
     return createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { async accessToken() { return (await auth()).getToken() } },
-    )
+      {
+        async accessToken() {
+          return (await auth()).getToken();
+        },
+      },
+    );
   }
   ```
   ```ts
   // hooks/use-supabase-client.ts (client components)
-  import { useSession } from '@clerk/nextjs'
-  import { createClient } from '@supabase/supabase-js'
+  import { useSession } from "@clerk/nextjs";
+  import { createClient } from "@supabase/supabase-js";
 
   export function useSupabaseClient() {
-    const { session } = useSession()
+    const { session } = useSession();
     return createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { async accessToken() { return session?.getToken() ?? null } },
-    )
+      {
+        async accessToken() {
+          return session?.getToken() ?? null;
+        },
+      },
+    );
   }
   ```
 - **Row Level Security is the real tenant boundary, not application code.** Every table checks
@@ -130,27 +138,27 @@ MVP. Revisit billing entirely as a post-MVP milestone.
 
 ## Tech stack (Supabase-native where possible, modern Vercel/AI stack everywhere else)
 
-| Layer | Choice | Why |
-|---|---|---|
-| Framework | **Next.js (App Router)**, deployed on **Vercel** | Route handlers, streaming, one codebase for dashboard + public chat API + widget host |
-| Language | TypeScript everywhere | non-negotiable for a project this shape |
-| Auth | **Clerk**, with **Organizations** as the "Workspace" concept | org = workspace, org membership = team access |
-| Database + tenant isolation | **Supabase Postgres** with `pgvector`, Clerk as a native third-party auth provider (already configured) | RLS keyed on `public.clerk_org_id()` is the actual tenant boundary |
-| Schema & migrations | Applied via the **Supabase MCP** (`apply_migration`), plain SQL files mirrored under `supabase/migrations/` — **no separate ORM** | avoids running a second query layer (Drizzle/Prisma over a raw connection string) that wouldn't carry the Clerk JWT the way `accessToken()` does, which would silently bypass RLS if misconfigured |
-| Typed client access | Regenerated via the **Supabase MCP** (`generate_typescript_types`) after every migration, hand-pasted into `src/types/supabase.ts` (see that file's own header comment — never edit it any other way), passed as the generic to `createClient<Database>(...)` | fully typed `.from()`/`.rpc()` calls without hand-written types drifting from the schema |
-| Data access pattern | **`supabase-js` directly** (`.from()`, `.rpc()`) for all reads/writes on authenticated routes, via the Clerk-token-scoped client; **service-role `supabase-js` client** for the documented exceptions (public chat route, every Trigger.dev task) | matches how Supabase intends RLS + Clerk integration to be consumed — no raw `pg`/connection-string layer in the app |
-| Vector similarity search | A Postgres **RPC function** (`match_chunks`, `security invoker`) called via `supabase.rpc('match_chunks', {...})` | `security invoker` means the function runs under the caller's RLS on authenticated routes automatically — no need to duplicate org-scoping logic in application code |
-| Object storage | **files-sdk** (`trigger/ingest-source/shared/storage.ts`, the only place that touches storage), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS) | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — see "Ingestion pipeline" below for what adding it later requires |
-| Live status updates | **Trigger.dev Realtime** (`useRealtimeRunsWithTag`, tag `source:{id}`) as the primary mechanism — exact run-lifecycle status with no dependency on a Postgres change event; **Supabase Realtime** (Postgres Changes on `sources`) as a cross-tab/teammate baseline | drives the queued/crawling/processing/ready/failed UI live, no polling, no reload |
-| AI orchestration | **Vercel AI SDK** (`ai` package, `@ai-sdk/react` for hooks) | `streamText`, `generateText`, `embed`/`embedMany`, `useChat` |
-| Model access | **Vercel AI Gateway** | Never call a provider SDK directly. `provider/model` strings route through the Gateway automatically when `AI_GATEWAY_API_KEY` is set. The chat model list is a **hardcoded** array of three cheap models in `lib/models.ts` (`CHAT_MODELS`, `DEFAULT_CHAT_MODEL`) — no live Gateway catalog fetch, no "Auto" sentinel that resolves to a model at request time. Widening the list means editing that one array, not adding pricing-threshold logic |
-| Chat UI | **AI Elements** (`npx ai-elements@latest`, from `elements.ai-sdk.dev`) | Prebuilt chat primitives built on shadcn/ui, wired for `useChat` streaming. Use for both the dashboard test-chat panel and the widget iframe |
-| General UI | **shadcn/ui** + Tailwind CSS | dashboard shell, forms, tables, dialogs |
-| Web + document extraction | **Firecrawl** (`@mendable/firecrawl-js`) exclusively — `.crawl()` for URLs, `.parse()` for uploaded files, each client instantiated directly in the one task file that uses it (`ingest-source/index.ts`, `ingest-source/crawl-website/index.ts`) — no shared `getFirecrawlClient()` wrapper | no hand-rolled fetch/cheerio crawler, no `pdf-parse`/`mammoth`; Firecrawl owns SSRF protection, JS rendering, anti-bot handling, and every document format (PDF/Word/Excel/PowerPoint/CSV/EPUB) |
-| Background jobs | **Trigger.dev** (`@trigger.dev/sdk`, `@trigger.dev/react-hooks`) — `ingest-source`, `crawl-website`, `process-markdown-source`, `embed-chunk-batch` | durable, retryable background tasks off the request path; each app env (dev/staging/prod) needs its own env vars set directly on the Trigger.dev project — they do NOT inherit from Vercel |
-| Rate limiting | **Upstash Redis** + `@upstash/ratelimit` on the public `/api/chat/[agentId]` route | serverless-friendly |
-| Billing | **None** | see "Usage limits without billing" |
-| Validation | **Zod** | validate all route handler inputs |
+| Layer                       | Choice                                                                                                                                                                                                                                                                                       | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework                   | **Next.js (App Router)**, deployed on **Vercel**                                                                                                                                                                                                                                             | Route handlers, streaming, one codebase for dashboard + public chat API + widget host                                                                                                                                                                                                                                                                                                                                                               |
+| Language                    | TypeScript everywhere                                                                                                                                                                                                                                                                        | non-negotiable for a project this shape                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Auth                        | **Clerk**, with **Organizations** as the "Workspace" concept                                                                                                                                                                                                                                 | org = workspace, org membership = team access                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Database + tenant isolation | **Supabase Postgres** with `pgvector`, Clerk as a native third-party auth provider (already configured)                                                                                                                                                                                      | RLS keyed on `public.clerk_org_id()` is the actual tenant boundary                                                                                                                                                                                                                                                                                                                                                                                  |
+| Schema & migrations         | Applied via the **Supabase MCP** (`apply_migration`), plain SQL files mirrored under `supabase/migrations/` — **no separate ORM**                                                                                                                                                            | avoids running a second query layer (Drizzle/Prisma over a raw connection string) that wouldn't carry the Clerk JWT the way `accessToken()` does, which would silently bypass RLS if misconfigured                                                                                                                                                                                                                                                  |
+| Typed client access         | Regenerated via the **Supabase MCP** (`generate_typescript_types`) after every migration, hand-pasted into `src/types/supabase.ts` (see that file's own header comment — never edit it any other way), passed as the generic to `createClient<Database>(...)`                                | fully typed `.from()`/`.rpc()` calls without hand-written types drifting from the schema                                                                                                                                                                                                                                                                                                                                                            |
+| Data access pattern         | **`supabase-js` directly** (`.from()`, `.rpc()`) for all reads/writes on authenticated routes, via the Clerk-token-scoped client; **service-role `supabase-js` client** for the documented exceptions (public chat route, every Trigger.dev task)                                            | matches how Supabase intends RLS + Clerk integration to be consumed — no raw `pg`/connection-string layer in the app                                                                                                                                                                                                                                                                                                                                |
+| Vector similarity search    | A Postgres **RPC function** (`match_chunks`, `security invoker`) called via `supabase.rpc('match_chunks', {...})`                                                                                                                                                                            | `security invoker` means the function runs under the caller's RLS on authenticated routes automatically — no need to duplicate org-scoping logic in application code                                                                                                                                                                                                                                                                                |
+| Object storage              | **files-sdk** (`trigger/ingest-source/shared/storage.ts`, the only place that touches storage), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS)                                                                 | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — see "Ingestion pipeline" below for what adding it later requires                                                                                                                           |
+| Live status updates         | **Trigger.dev Realtime** (`useRealtimeRunsWithTag`, tag `source:{id}`) as the primary mechanism — exact run-lifecycle status with no dependency on a Postgres change event; **Supabase Realtime** (Postgres Changes on `sources`) as a cross-tab/teammate baseline                           | drives the queued/crawling/processing/ready/failed UI live, no polling, no reload                                                                                                                                                                                                                                                                                                                                                                   |
+| AI orchestration            | **Vercel AI SDK** (`ai` package, `@ai-sdk/react` for hooks)                                                                                                                                                                                                                                  | `streamText`, `generateText`, `embed`/`embedMany`, `useChat`                                                                                                                                                                                                                                                                                                                                                                                        |
+| Model access                | **Vercel AI Gateway**                                                                                                                                                                                                                                                                        | Never call a provider SDK directly. `provider/model` strings route through the Gateway automatically when `AI_GATEWAY_API_KEY` is set. The chat model list is a **hardcoded** array of three cheap models in `lib/models.ts` (`CHAT_MODELS`, `DEFAULT_CHAT_MODEL`) — no live Gateway catalog fetch, no "Auto" sentinel that resolves to a model at request time. Widening the list means editing that one array, not adding pricing-threshold logic |
+| Chat UI                     | **AI Elements** (`npx ai-elements@latest`, from `elements.ai-sdk.dev`)                                                                                                                                                                                                                       | Prebuilt chat primitives built on shadcn/ui, wired for `useChat` streaming. Use for both the dashboard test-chat panel and the widget iframe                                                                                                                                                                                                                                                                                                        |
+| General UI                  | **shadcn/ui** + Tailwind CSS                                                                                                                                                                                                                                                                 | dashboard shell, forms, tables, dialogs                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Web + document extraction   | **Firecrawl** (`@mendable/firecrawl-js`) exclusively — `.crawl()` for URLs, `.parse()` for uploaded files, each client instantiated directly in the one task file that uses it (`ingest-source/index.ts`, `ingest-source/crawl-website/index.ts`) — no shared `getFirecrawlClient()` wrapper | no hand-rolled fetch/cheerio crawler, no `pdf-parse`/`mammoth`; Firecrawl owns SSRF protection, JS rendering, anti-bot handling, and every document format (PDF/Word/Excel/PowerPoint/CSV/EPUB)                                                                                                                                                                                                                                                     |
+| Background jobs             | **Trigger.dev** (`@trigger.dev/sdk`, `@trigger.dev/react-hooks`) — `ingest-source`, `crawl-website`, `process-markdown-source`, `embed-chunk-batch`                                                                                                                                          | durable, retryable background tasks off the request path; each app env (dev/staging/prod) needs its own env vars set directly on the Trigger.dev project — they do NOT inherit from Vercel                                                                                                                                                                                                                                                          |
+| Rate limiting               | **Upstash Redis** + `@upstash/ratelimit` on the public `/api/chat/[agentId]` route                                                                                                                                                                                                           | serverless-friendly                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Billing                     | **None**                                                                                                                                                                                                                                                                                     | see "Usage limits without billing"                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Validation                  | **Zod**                                                                                                                                                                                                                                                                                      | validate all route handler inputs                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ### Trigger.dev environment vars are separate from Vercel's
 
@@ -474,7 +482,7 @@ Two mechanisms, both without a page reload:
    (`lib/trigger.ts`), pass it to the client, subscribe. Immediate, exact run-lifecycle status,
    independent of any Postgres change event reaching the client — this is what makes a full-site
    crawl's "N/M pages processed" progress possible (every child page's `processMarkdownSource` run
-   carries the *root* source's tag).
+   carries the _root_ source's tag).
 2. **Supabase Realtime** (Postgres Changes on `sources`) — a baseline so a second tab or a
    teammate viewing the same agent also sees status live, even without a run token for it.
 
@@ -499,32 +507,45 @@ up the DB write — the badge should never fall back to a stale pre-run status.
 
 ## Widget
 
-Architecture: a closed **Shadow DOM** launcher + a **lazy cross-origin iframe**, communicating
-only via origin-checked `postMessage`. This is the performance/isolation foundation — not a style
-choice — because `widget.js` is fetched by every visitor of every customer site that embeds an
-agent, whether or not they ever open the chat.
+Architecture: a closed **Shadow DOM** host holding a single **cross-origin iframe**
+(`/embed/:agentId`), which renders its own shadcn `Popover` — trigger button and chat panel both
+live inside the iframe, not split across the frame boundary. `widget.js` only owns the iframe's
+box size on the host page, toggled by two discrete `postMessage`s the iframe sends itself.
 
 - `src/widget/widget.js` is the source of truth: hand-written, zero-dependency vanilla JS (no
   bundler runtime), budgeted at **under 5kb gzipped**, enforced by `scripts/build-widget.mjs`
   (runs as part of `pnpm build`, exits non-zero over budget — this repo has no separate CI, so the
   build itself is the gate). Never import a shared util/framework into this file.
-- It creates a `div` with a **closed** `attachShadow`, holding only the launcher `<button>` —
-  immune to the host page's own CSS (resets, `* { all: unset }`, global button/iframe selectors).
-  Deferred via `requestIdleCallback` (`setTimeout` fallback for Safari) so it never competes with
-  the host page's own critical rendering path.
-- The `<iframe src="/embed/:agentId">` is created **only on first click**, never on page load,
-  with `sandbox="allow-scripts allow-same-origin allow-forms allow-popups"`.
-- **The panel is sized entirely in CSS, never measured.** The shadow stylesheet gives the iframe a
-  fixed `min(400px, 100vw - 40px)` x `min(620px, 100vh - 128px)` box, a `@media (max-width:480px)`
-  rule for the mobile fullscreen case, and an `iframe[data-open]` opacity/transform transition;
-  opening is a single `toggleAttribute("data-open")`. **Never reintroduce a content-height
-  bridge.** The earlier version had the iframe start at `height:0` and grow from a `ResizeObserver`
-  on `#chat-root` posting its height to the parent — but `#chat-root` is `h-full`, so it measured
-  the very height the parent was setting from it. That self-referential loop can't resolve: it
-  settles at a 0-height panel, and every streamed token re-triggers the observer, a `postMessage`,
-  an inline style write and a restarted CSS height transition on the host page. Measured in a
-  browser: old = a 380x0 panel, new = a stable 400x620 with 0.0000 cumulative layout shift on the
-  host page across a full streamed reply.
+- It creates a `div` with a **closed** `attachShadow`, holding only the `<iframe>` — immune to the
+  host page's own CSS (resets, `* { all: unset }`, global `iframe` selectors). Deferred via
+  `requestIdleCallback` (`setTimeout` fallback for Safari) so it never competes with the host
+  page's own critical rendering path. The iframe mounts on page load (not lazily on first click)
+  because the launcher button itself is rendered inside it — this is a deliberate trade against
+  the earlier lazy-mount optimization, made so the whole widget (trigger + panel) could be one
+  self-contained shadcn/AI-SDK React component instead of a vanilla-JS button paired with a
+  separate iframe UI.
+- **The box is sized entirely in CSS, never measured, and toggles between exactly two fixed
+  sizes.** Closed: a 64x64 circle at `bottom:20px` / `<side>:20px`. Open (`iframe[data-open]`):
+  `min(400px, 100vw - 40px)` x `min(620px, 100vh - 128px)`, same corner anchor, growing up and
+  in — plus a `@media (max-width:480px)` rule for the mobile fullscreen case. Which size applies
+  is driven by two messages the iframe's own content posts on open/close
+  (`{type:"amueai:open"}` / `{type:"amueai:close"}`) — a discrete boolean toggle, not a measurement.
+  **Never reintroduce a content-height bridge** (continuously measuring rendered content and
+  feeding that back as a size) — that's a different, incompatible thing from this open/close
+  toggle. The earlier flicker bug came from a `ResizeObserver` on an `h-full` element posting its
+  _own_ measured height back to the parent that had just set that height on it: a self-referential
+  loop that can't resolve, settling at a 0-height panel and re-triggering on every streamed token.
+  Measured in a browser at the time: old = a 380x0 panel, new = a stable 400x620 with 0.0000
+  cumulative layout shift across a full streamed reply. The current open/close toggle carries no
+  measurement at all — it's the same _kind_ of discrete, parent-owned CSS transition, just
+  triggered by a click event living inside the iframe instead of a button living outside it.
+- Why the iframe box has to actually resize (not just fade/hide) between these two states: an
+  `<iframe>` element's own `pointer-events` in the _parent_ document is one on/off switch for its
+  entire rectangle — content inside the iframe setting its own `pointer-events: none` on unused
+  areas does **not** let clicks fall through to the host page underneath. So the invisible
+  hit-testable area must always match what's actually visible: a small circle when closed, the
+  full panel when open. A single large iframe that's merely faded out when "closed" would silently
+  block clicks on whatever's underneath it on the host page.
 - `/widget.js` is a **route handler** (`src/app/widget.js/route.ts`), not a static file: in
   production it 302-redirects (short-cached, `max-age=300`) to whatever content-hashed
   `widget.<hash>.js` the last build produced (immutably cached, `max-age=31536000`) — existing
@@ -535,24 +556,27 @@ agent, whether or not they ever open the chat.
   hand-edited.
 - The embed route (`app/embed/[agentId]/widget.tsx`) is its own self-contained UI, completely
   detached from the dashboard's `ChatPanel` (used only by the Playground's `ChatWidget` preview) —
-  one file, a handful of small components declared in it (`Widget` the export, `WidgetChat`,
-  `MessageList`, `Composer`, plus the `useWidgetSession`/`useCloseOnEscape` hooks), still built on
-  **AI Elements** (`Conversation`, `Message`, `Shimmer`) and `useChat` against
-  `/api/chat/[agentId]` like every other chat surface in the app — just without the dashboard's
-  extras (no sources panel, no rate-limit countdown, no per-message timestamps): a visitor-facing
-  widget doesn't need them, and every one of those was more code to keep both surfaces in sync for
-  no benefit once they diverged in UI anyway. No custom font (`next/font` or otherwise) — inherits
-  the system font stack on purpose, a chat bubble doesn't need brand typography badly enough to
-  justify a font request. It ships the app's shared `globals.css` rather than a separately-purged
-  stylesheet — a known trade-off, not yet worth a second Tailwind build pipeline for one route.
-- **One postMessage in the whole protocol**: `Escape` inside the iframe posts
-  `{type: "amueai:close"}` (target origin `"*"`, since the iframe never knows the host page's
-  origin in advance and a close signal carries nothing sensitive); `widget.js` validates
-  `event.origin` before acting on it and returns focus to the launcher, which focus can't cross
-  the iframe boundary to do by itself. Nothing else crosses the boundary.
+  one file, a handful of small components declared in it (`Widget` the export, `Chat`,
+  `MessageList`, `Composer`, plus the `useWidgetSession` hook), built on shadcn/ui's `Popover`
+  (rounded-full `Button` with a `MessageCircleIcon` as `PopoverTrigger`, exactly the pattern
+  already used by the dashboard's `ChatPreview`/`ChatWidget`) and **AI Elements**
+  (`Conversation`, `Message`, `Shimmer`) with `useChat` against `/api/chat/[agentId]` like every
+  other chat surface in the app — just without the dashboard's extras (no sources panel, no
+  rate-limit countdown, no per-message timestamps). Forced into dark mode (`className="dark"`)
+  regardless of the host page's own theme — a widget shouldn't inherit a stranger's color scheme.
+  `?side=left` in the iframe's own URL (set by `widget.js` from `data-position`) flips which
+  corner the trigger/panel anchor to, mirroring `widget.js`'s own `<side>` variable. No custom
+  font (`next/font` or otherwise) — inherits the system font stack on purpose. It ships the app's
+  shared `globals.css` rather than a separately-purged stylesheet — a known trade-off, not yet
+  worth a second Tailwind build pipeline for one route.
+- **Two postMessages in the whole protocol**, both origin-checked by `widget.js` on receipt:
+  `{type:"amueai:open"}` and `{type:"amueai:close"}`, posted from an `useEffect` keyed on the
+  `Popover`'s own `open` state (`onOpenChange`) — covers the trigger click, `Escape`, and
+  outside-click, since all three already flow through base-ui's `Popover` state, not
+  hand-rolled listeners. Nothing else crosses the frame boundary.
 - Accessibility: `Conversation` carries `aria-live="polite"` (on top of its existing `role="log"`)
-  so screen readers announce streamed replies without interrupting; launcher/close targets are
-  ≥44×44px.
+  so screen readers announce streamed replies without interrupting; the trigger and close buttons
+  are real `Button`s with `aria-label`s.
 - `Content-Security-Policy: frame-ancestors *` on `/embed/:path*` (`next.config.ts` `headers()`) —
   documents that arbitrary cross-origin framing is intentional here, the whole point of the
   widget. Revisit with a per-agent domain allowlist if that becomes a paid-plan feature.
@@ -647,7 +671,7 @@ dashboard or the embed route itself, which would nest the widget inside its own 
 a real agent already trained on amueai.com's own pages (id `9417dbb0-6ad3-473c-a568-ff3ac42acf56`
 in the `agents` table) — visit any marketing page to test the real, deployed widget end to end.
 
-**Phase 18 — Readable tasks, a widget that doesn't flicker, dead weight gone (current milestone)**
+**Phase 18 — Readable tasks, a widget that doesn't flicker, dead weight gone**
 Four changes: (1) the trigger tree became **sub-tasks nested under their main task**
 (`ingest-source/` owning `crawl-website/`, `process-markdown-source/`, `embed-chunk-batch/`,
 `shared/`), `ingest-source` became the single entry point, and every task now takes the same
@@ -662,6 +686,17 @@ protocol (only the removed countdown UI read it), the chat route's 32-line
 find-or-create-conversation branch (now one `upsert`), and the duplicate status-badge rendering in
 `sources-table.tsx` / `live-source-status.tsx` (now one `SourceStatusBadge`).
 
+**Phase 19 — The widget's trigger and panel moved inside the iframe (current milestone)**
+The embeddable widget's launcher button and chat panel are now both rendered by
+`app/embed/[agentId]/widget.tsx` itself, as a single shadcn `Popover` (rounded-full `Button` +
+`MessageCircleIcon` trigger, a panel with an agent-name header and an `XIcon` close button,
+forced dark theme) instead of a vanilla-JS button living outside the iframe in `widget.js`'s
+Shadow DOM. `widget.js` shrank to just mounting the iframe and toggling its CSS box between a
+64x64 closed circle and the full open panel size, driven by two `postMessage`s
+(`amueai:open`/`amueai:close`) the `Popover`'s own `onOpenChange` sends — see "Widget" above for
+why this needed the iframe to mount on page load rather than lazily on first click, and why that
+trade-off doesn't reintroduce the earlier content-height-bridge flicker bug. `page.tsx` now also
+fetches the agent's `name` for the header.
 
 ## Guardrails while building
 
