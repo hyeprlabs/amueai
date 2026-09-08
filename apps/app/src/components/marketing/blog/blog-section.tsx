@@ -123,8 +123,6 @@ function PostCard({ post, className, ...props }: React.ComponentProps<"a"> & { p
           {author && <span>{author.name}</span>}
           {author && date && <span aria-hidden>·</span>}
           {date && <time dateTime={post.publishedAt ?? undefined}>{date}</time>}
-          {(author || date) && post.readingTime && <span aria-hidden>·</span>}
-          {post.readingTime && <span>{post.readingTime} min read</span>}
         </div>
       </div>
     </Link>
