@@ -159,45 +159,43 @@ export function Widget({
   }, [open]);
 
   return (
-    <div className="dark">
-      <Popover onOpenChange={setOpen} open={open}>
-        <PopoverTrigger
-          render={
-            <Button
-              aria-label={open ? "Close chat" : "Open chat"}
-              className={cn(
-                "fixed bottom-4 size-14 rounded-full shadow-lg transition-transform",
-                side === "left" ? "left-4" : "right-4",
-                open && "scale-0",
-              )}
-              size="icon-lg"
-            />
-          }
-        >
-          <MessageCircleIcon className="size-6" />
-        </PopoverTrigger>
-        <PopoverContent
-          align={side === "left" ? "start" : "end"}
-          className="flex h-[560px] w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0"
-          side="top"
-          sideOffset={12}
-        >
-          <div className="flex items-center gap-2 border-b px-4 py-3">
-            <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
-            <Button
-              aria-label="Close chat"
-              onClick={() => setOpen(false)}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <XIcon />
-            </Button>
-          </div>
-          <div className="min-h-0 flex-1">
-            {session && <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger
+        render={
+          <Button
+            aria-label={open ? "Close chat" : "Open chat"}
+            className={cn(
+              "fixed bottom-4 size-14 rounded-full shadow-lg transition-transform",
+              side === "left" ? "left-4" : "right-4",
+              open && "scale-0",
+            )}
+            size="icon-lg"
+          />
+        }
+      >
+        <MessageCircleIcon className="size-6" />
+      </PopoverTrigger>
+      <PopoverContent
+        align={side === "left" ? "start" : "end"}
+        className="flex h-[560px] w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0"
+        side="top"
+        sideOffset={12}
+      >
+        <div className="flex items-center gap-2 border-b px-4 py-3">
+          <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
+          <Button
+            aria-label="Close chat"
+            onClick={() => setOpen(false)}
+            size="icon-sm"
+            variant="ghost"
+          >
+            <XIcon />
+          </Button>
+        </div>
+        <div className="min-h-0 flex-1">
+          {session && <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
