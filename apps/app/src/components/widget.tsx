@@ -101,7 +101,7 @@ export function Widget({
       aria-hidden={hideTrigger}
       aria-label={open ? "Close chat" : "Open chat"}
       className={cn(
-        "dark fixed bottom-0 z-10 size-14 rounded-full bg-popover text-popover-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 [&_svg]:size-6",
+        "dark fixed bottom-0 z-10 size-14 rounded-full bg-popover text-popover-foreground [&_svg]:size-6",
         side === "left" ? "left-0" : "right-0",
         hideTrigger && "pointer-events-none opacity-0",
       )}
