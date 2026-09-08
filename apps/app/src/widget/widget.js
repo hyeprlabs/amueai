@@ -27,9 +27,16 @@
     shadow.innerHTML = "<style>" + CSS + "</style>";
     document.body.appendChild(host);
 
+    var params = [];
+    if (side === "left") params.push("side=left");
+    if (window.matchMedia("(max-width: 480px)").matches) params.push("mobile=1");
+
     var iframe = document.createElement("iframe");
     iframe.src =
-      origin + "/embed/" + encodeURIComponent(agentId) + (side === "left" ? "?side=left" : "");
+      origin +
+      "/embed/" +
+      encodeURIComponent(agentId) +
+      (params.length ? "?" + params.join("&") : "");
     iframe.title = "Chat";
     iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups");
     shadow.appendChild(iframe);

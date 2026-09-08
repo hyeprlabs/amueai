@@ -583,6 +583,31 @@ box size on the host page, toggled by two discrete `postMessage`s the iframe sen
   hit-testable area must always match what's actually visible: a small circle when closed, the
   full panel when open. A single large iframe that's merely faded out when "closed" would silently
   block clicks on whatever's underneath it on the host page.
+- **On a narrow viewport, the panel is a shadcn `Drawer` (full-screen bottom-sheet primitive)
+  instead of a `Popover`** — same trigger `Button`, same `PanelHeader`/`Chat` body, just a
+  different wrapper chosen by an `isMobile` boolean: `framed ? mobile : useIsMobile()`. The
+  `mobile` half only exists because a cross-origin iframe can't read the host page's own viewport
+  width — `widget.js` computes `window.matchMedia("(max-width: 480px)").matches` once (matching
+  the same breakpoint as its own CSS fullscreen rule) and appends `mobile=1` to the iframe's `src`
+  query string, mirrored by `page.tsx` into a `mobile` prop, the same static-snapshot-at-creation
+  pattern already used for `side`. Unframed (the dashboard Playground), there's no cross-origin
+  boundary in the way, so it just reads `useIsMobile()` (the existing 768px-breakpoint hook)
+  directly — a deliberately different breakpoint from the embed's 480px, since they answer
+  different questions (is this a mobile device vs. does the visitor's browser cross the width where
+  `widget.js` already makes the iframe fullscreen).
+- **A shadcn `Drawer` is not full-screen by default, even with `--drawer-height` set.** For a
+  swipe-axis-y drawer (the default, `swipeDirection="down"`) the component's own base classes bake
+  in `--drawer-content-max-height: calc(100dvh - 6rem)` — a deliberate peek gap at the top for a
+  normal bottom sheet. Setting `--drawer-height` alone (even via an `!important`-flagged class)
+  loses to that more specific `data-[swipe-axis=y]:[...]` rule. Making it genuinely full-screen
+  needs **both** `--drawer-height` and `--drawer-content-max-height` overridden together, and
+  reliably winning that specificity fight means setting them via an inline `style` prop
+  (`DrawerContent` forwards arbitrary props to the underlying `Popup`), not a class — inline style
+  beats a plain class regardless of selector specificity. Also use `100vh`, not `100dvh`, for both:
+  `position: fixed; inset: 0` (used elsewhere, e.g. the framed `Popover`'s `positionerClassName`)
+  resolves against the large/static viewport, and a `dvh`-sized sibling can end up measurably
+  shorter than that when the browser's dynamic-viewport-height adjustment doesn't apply the same
+  way to both — measured directly (not assumed) via the rendered heights.
 - `/widget.js` is a **route handler** (`src/app/widget.js/route.ts`), not a static file: in
   production it 302-redirects (short-cached, `max-age=300`) to whatever content-hashed
   `widget.<hash>.js` the last build produced (immutably cached, `max-age=31536000`) — existing
@@ -758,6 +783,17 @@ on the popup alone measured `(0,0) 0x0` instead of the intended full frame; and 
 the parent to shrink the iframe back down — a bare `setOpen(false)` on the `X` button left the
 panel stuck open-sized. Verified geometry by sampling the iframe's bounding box at 20ms intervals
 across the open and close transitions in Chromium, not by reading the JSX.
+
+**Phase 21 — A full-screen shadcn Drawer on mobile (current milestone)**
+Below the mobile breakpoint the panel is a shadcn `Drawer` instead of a `Popover` — same trigger,
+same header/body, chosen by an `isMobile` boolean the same way `framed` already branches the
+component (`framed ? mobile : useIsMobile()`), with `mobile` threaded from `widget.js`'s own
+`matchMedia("(max-width: 480px)")` check through the iframe's `src` query string exactly like
+`side` already was, since a cross-origin iframe can't read the host page's viewport directly. Making
+the Drawer genuinely full-screen (not the default bottom-sheet-with-a-peek-gap) needed overriding
+both `--drawer-height` and `--drawer-content-max-height` together via an inline `style` (a class
+alone loses to the component's own more-specific `data-[swipe-axis=y]` rule) — see "Widget" above
+for the exact mechanism and why `100vh` was required over `100dvh`.
 
 ## Guardrails while building
 

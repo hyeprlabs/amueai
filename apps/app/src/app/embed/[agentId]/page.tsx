@@ -4,7 +4,7 @@ import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
 import { Widget } from "@/components/widget";
 
 export default async function EmbedPage({ params, searchParams }: PageProps<"/embed/[agentId]">) {
-  const [{ agentId }, { side }] = await Promise.all([params, searchParams]);
+  const [{ agentId }, { side, mobile }] = await Promise.all([params, searchParams]);
 
   const supabase = createServiceRoleSupabaseClient();
   const { data: agent } = await supabase
@@ -19,6 +19,7 @@ export default async function EmbedPage({ params, searchParams }: PageProps<"/em
     <Widget
       agentId={agentId}
       agentName={agent.name}
+      mobile={mobile === "1"}
       side={side === "left" ? "left" : "right"}
       welcomeMessage={agent.welcome_message}
     />

@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowUpIcon, MessageCircleIcon, XIcon } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 
 import {
   Conversation,
@@ -13,8 +13,10 @@ import {
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 function useWidgetSession(agentId: string) {
@@ -165,45 +167,86 @@ function Chat({
   );
 }
 
+function PanelHeader({ agentName, onClose }: { agentName: string; onClose: () => void }) {
+  return (
+    <div className="flex items-center gap-2 border-b px-4 py-3">
+      <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
+      <Button aria-label="Close chat" onClick={onClose} size="icon-sm" variant="ghost">
+        <XIcon />
+      </Button>
+    </div>
+  );
+}
+
 export function Widget({
   agentId,
   agentName,
   welcomeMessage,
   side = "right",
+  mobile = false,
 }: {
   agentId: string;
   agentName: string;
   welcomeMessage: string;
   side?: "left" | "right";
+  mobile?: boolean;
 }) {
   const session = useWidgetSession(agentId);
   const [open, setOpen] = useState(false);
   const [framed, setFramed] = useState(false);
+  const dashboardIsMobile = useIsMobile();
 
   useEffect(() => setFramed(window.parent !== window), []);
+
+  const isMobile = framed ? mobile : dashboardIsMobile;
 
   const toggle = (next: boolean) => {
     if (framed) window.parent.postMessage({ type: next ? "amueai:open" : "amueai:close" }, "*");
     setOpen(next);
   };
 
+  const trigger = (
+    <Button
+      aria-hidden={open}
+      aria-label="Open chat"
+      className={cn(
+        "dark fixed bottom-0 size-14 rounded-full bg-popover text-popover-foreground transition-opacity hover:bg-popover/90 [&_svg]:size-6",
+        side === "left" ? "left-0" : "right-0",
+        open && "pointer-events-none opacity-0",
+      )}
+      size="icon-lg"
+      tabIndex={open ? -1 : 0}
+    />
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer onOpenChange={toggle} open={open}>
+        <DrawerTrigger render={trigger}>
+          <MessageCircleIcon />
+        </DrawerTrigger>
+        <DrawerContent
+          aria-label="Chat"
+          className="dark flex flex-col gap-0 overflow-hidden !rounded-none !border-t-0 bg-popover p-0"
+          style={
+            {
+              "--drawer-height": "100vh",
+              "--drawer-content-max-height": "100vh",
+            } as CSSProperties
+          }
+        >
+          <PanelHeader agentName={agentName} onClose={() => toggle(false)} />
+          <div className="min-h-0 flex-1">
+            {session && <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Popover onOpenChange={toggle} open={open}>
-      <PopoverTrigger
-        render={
-          <Button
-            aria-hidden={open}
-            aria-label="Open chat"
-            className={cn(
-              "dark fixed bottom-0 size-14 rounded-full bg-popover text-popover-foreground transition-opacity hover:bg-popover/90 [&_svg]:size-6",
-              side === "left" ? "left-0" : "right-0",
-              open && "pointer-events-none opacity-0",
-            )}
-            size="icon-lg"
-            tabIndex={open ? -1 : 0}
-          />
-        }
-      >
+      <PopoverTrigger render={trigger}>
         <MessageCircleIcon />
       </PopoverTrigger>
       <PopoverContent
@@ -218,17 +261,7 @@ export function Widget({
         side={framed ? undefined : "top"}
         sideOffset={framed ? undefined : 12}
       >
-        <div className="flex items-center gap-2 border-b px-4 py-3">
-          <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
-          <Button
-            aria-label="Close chat"
-            onClick={() => toggle(false)}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <XIcon />
-          </Button>
-        </div>
+        <PanelHeader agentName={agentName} onClose={() => toggle(false)} />
         <div className="min-h-0 flex-1">
           {session && <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />}
         </div>
