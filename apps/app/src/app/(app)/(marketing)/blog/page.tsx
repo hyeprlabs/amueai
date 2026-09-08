@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import { BreadcrumbJsonLd, JsonLdScript, OrganizationJsonLd } from "next-seo";
 
 import { MarketingPagination } from "@/components/marketing/marketing-pagination";
-import { BlogSectionA } from "@/components/marketing/blog/blog-section-a";
-import { BlogSectionB } from "@/components/marketing/blog/blog-section-b";
+import { BlogSection } from "@/components/marketing/blog/blog-section";
 import { siteConfig } from "@/config/site";
 import { getCategories, getPosts, parsePageParam } from "@/lib/blog";
-import { blogSectionFlag } from "@/lib/flags";
 import {
   breadcrumbItems,
   organizationJsonLdProps,
@@ -17,6 +15,7 @@ import { createMetadata, listPathname } from "@/lib/seo";
 
 const title = "Blog";
 const description = `Product updates, guides and stories from the ${siteConfig.name} team.`;
+export const revalidate = 300;
 
 type BlogSearchParams = { category?: string; page?: string };
 
@@ -57,13 +56,10 @@ export default async function BlogIndexPage({
 
   const pathname = listPathname("/blog", page, { category });
 
-  const [{ docs: posts, totalPages }, categories, showVariantB] = await Promise.all([
+  const [{ docs: posts, totalPages }, categories] = await Promise.all([
     getPosts({ page, category }),
     getCategories(),
-    blogSectionFlag(),
   ]);
-
-  const BlogSection = showVariantB ? BlogSectionB : BlogSectionA;
 
   return (
     <>
