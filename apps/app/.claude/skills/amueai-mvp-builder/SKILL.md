@@ -140,13 +140,13 @@ MVP. Revisit billing entirely as a post-MVP milestone.
 | Typed client access | Regenerated via the **Supabase MCP** (`generate_typescript_types`) after every migration, hand-pasted into `src/types/supabase.ts` (see that file's own header comment — never edit it any other way), passed as the generic to `createClient<Database>(...)` | fully typed `.from()`/`.rpc()` calls without hand-written types drifting from the schema |
 | Data access pattern | **`supabase-js` directly** (`.from()`, `.rpc()`) for all reads/writes on authenticated routes, via the Clerk-token-scoped client; **service-role `supabase-js` client** for the documented exceptions (public chat route, every Trigger.dev task) | matches how Supabase intends RLS + Clerk integration to be consumed — no raw `pg`/connection-string layer in the app |
 | Vector similarity search | A Postgres **RPC function** (`match_chunks`, `security invoker`) called via `supabase.rpc('match_chunks', {...})` | `security invoker` means the function runs under the caller's RLS on authenticated routes automatically — no need to duplicate org-scoping logic in application code |
-| Object storage | **files-sdk** (`trigger/storage.ts`, the only place that touches storage), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS) | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — see "Ingestion pipeline" below for what adding it later requires |
+| Object storage | **files-sdk** (`trigger/shared/storage.ts`, the only place that touches storage), Supabase Storage adapter today. RLS policies on `storage.objects` scoped by org (same `clerk_org_id()` pattern as table RLS) | uploaded originals and every source's canonical extracted markdown live here, path convention `{org_id}/{agent_id}/{source_id}/original.{ext}` and `{org_id}/{agent_id}/{source_id}.md`. A Cloudflare R2 adapter ships in files-sdk but isn't wired up — see "Ingestion pipeline" below for what adding it later requires |
 | Live status updates | **Trigger.dev Realtime** (`useRealtimeRunsWithTag`, tag `source:{id}`) as the primary mechanism — exact run-lifecycle status with no dependency on a Postgres change event; **Supabase Realtime** (Postgres Changes on `sources`) as a cross-tab/teammate baseline | drives the queued/crawling/processing/ready/failed UI live, no polling, no reload |
 | AI orchestration | **Vercel AI SDK** (`ai` package, `@ai-sdk/react` for hooks) | `streamText`, `generateText`, `embed`/`embedMany`, `useChat` |
 | Model access | **Vercel AI Gateway** | Never call a provider SDK directly. `provider/model` strings route through the Gateway automatically when `AI_GATEWAY_API_KEY` is set. The chat model list is a **hardcoded** array of three cheap models in `lib/models.ts` (`CHAT_MODELS`, `DEFAULT_CHAT_MODEL`) — no live Gateway catalog fetch, no "Auto" sentinel that resolves to a model at request time. Widening the list means editing that one array, not adding pricing-threshold logic |
 | Chat UI | **AI Elements** (`npx ai-elements@latest`, from `elements.ai-sdk.dev`) | Prebuilt chat primitives built on shadcn/ui, wired for `useChat` streaming. Use for both the dashboard test-chat panel and the widget iframe |
 | General UI | **shadcn/ui** + Tailwind CSS | dashboard shell, forms, tables, dialogs |
-| Web + document extraction | **Firecrawl** (`@mendable/firecrawl-js`) exclusively — `.crawl()` for URLs, `.parse()` for uploaded files, each client instantiated directly in the one task file that uses it (`trigger/crawl-website.ts`, `trigger/ingest-source.ts`) — no shared `getFirecrawlClient()` wrapper | no hand-rolled fetch/cheerio crawler, no `pdf-parse`/`mammoth`; Firecrawl owns SSRF protection, JS rendering, anti-bot handling, and every document format (PDF/Word/Excel/PowerPoint/CSV/EPUB) |
+| Web + document extraction | **Firecrawl** (`@mendable/firecrawl-js`) exclusively — `.crawl()` for URLs, `.parse()` for uploaded files, each client instantiated directly in the one task file that uses it (`trigger/crawl-website/index.ts`, `trigger/ingest-source/index.ts`) — no shared `getFirecrawlClient()` wrapper | no hand-rolled fetch/cheerio crawler, no `pdf-parse`/`mammoth`; Firecrawl owns SSRF protection, JS rendering, anti-bot handling, and every document format (PDF/Word/Excel/PowerPoint/CSV/EPUB) |
 | Background jobs | **Trigger.dev** (`@trigger.dev/sdk`, `@trigger.dev/react-hooks`) — `ingest-source`, `crawl-website`, `process-markdown-source`, `embed-chunk-batch` | durable, retryable background tasks off the request path; each app env (dev/staging/prod) needs its own env vars set directly on the Trigger.dev project — they do NOT inherit from Vercel |
 | Rate limiting | **Upstash Redis** + `@upstash/ratelimit` on the public `/api/chat/[agentId]` route | serverless-friendly |
 | Billing | **None** | see "Usage limits without billing" |
@@ -381,16 +381,34 @@ file   → markdown = Firecrawl .parse() output
 url    → markdown = Firecrawl .crawl() output, one markdown doc PER discovered page
 ```
 
-Everything for the ingestion pipeline lives under `src/trigger/` — one file per task
-(`ingest-source.ts`, `crawl-website.ts`, `process-markdown-source.ts`, `embed-chunk-batch.ts`),
-plus the small helpers only they use, also in that folder rather than `src/lib/`: `chunk.ts`
-(`chunkText`/`chunkArray`), `storage.ts` (the `files` instance), and `shared.ts` (`claim()` —
-atomically flips a source's status only if it isn't already there, so a double-triggered run exits
-quietly instead of clobbering the winning run — and `markFailed()`, which every `onFailure` hook is
-a one-liner calling). Each Firecrawl-using task (`ingest-source.ts`, `crawl-website.ts`)
-constructs its own `new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! })` directly at module
-scope — no shared `getFirecrawlClient()` wrapper, since a two-line client constructor duplicated
-across two files is cheaper than a whole extra module for it.
+Everything for the ingestion pipeline lives under `src/trigger/`, **one folder per task**:
+
+```
+src/trigger/
+  ingest-source/index.ts
+  crawl-website/index.ts
+  process-markdown-source/index.ts
+  embed-chunk-batch/index.ts
+  shared/
+    chunk.ts     (chunkText/chunkArray)
+    storage.ts   (the files-sdk `files` instance)
+    status.ts    (claim(), markFailed())
+```
+
+Adding a new task later means one new `src/trigger/<task-name>/index.ts` exporting a `task({...})`
+— `trigger.config.ts`'s `dirs: ["./src/trigger"]` picks it up regardless of nesting, no config
+change needed. Cross-task imports are relative (`../process-markdown-source`,
+`../shared/storage`); imports from outside `src/trigger/` (`lib/trigger.ts`'s type-only imports,
+for instance) use the same `@/trigger/<task-name>` alias whether the target is a bare file or a
+folder with an `index.ts` — module resolution doesn't care which.
+
+`shared/status.ts` holds `claim()` (atomically flips a source's status only if it isn't already
+there, so a double-triggered run exits quietly instead of clobbering the winning run) and
+`markFailed()`, which every `onFailure` hook is a one-liner calling. Each Firecrawl-using task
+(`ingest-source/index.ts`, `crawl-website/index.ts`) constructs its own
+`new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! })` directly at module scope — no shared
+`getFirecrawlClient()` wrapper, since a two-line client constructor duplicated across two files is
+cheaper than a whole extra module for it.
 
 ```
 POST /api/agents/:id/sources
@@ -409,18 +427,18 @@ crawl-website (url → many markdown docs, one per page)
     root sees every page's progress) → root source -> "ready", last_crawled_at = now()
 
 processMarkdownSource (shared by ALL source types — the one and only chunk/embed/store path)
-  chunkText/chunkArray (trigger/chunk.ts) → embedChunkBatch.batchTriggerAndWait (fanned out) →
-  insert new chunks → delete the source's prior chunks (only after the new set is stored) →
-  source -> "ready"
+  chunkText/chunkArray (trigger/shared/chunk.ts) → embedChunkBatch.batchTriggerAndWait (fanned
+  out) → insert new chunks → delete the source's prior chunks (only after the new set is stored)
+  → source -> "ready"
 ```
 
-Storage goes through **files-sdk** (the `files` instance exported from `trigger/storage.ts`),
+Storage goes through **files-sdk** (the `files` instance exported from `trigger/shared/storage.ts`),
 never `supabase.storage.*` directly. `files.download(key)` returns a `StoredFile` (`.blob()`,
 `.text()`, `.arrayBuffer()`), not a raw Blob — get the blob out before handing it to Firecrawl's
 `.parse()`. A future Cloudflare R2 migration means installing `files-sdk/r2`'s AWS SDK peer deps
 (`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `@aws-sdk/s3-request-presigner` — not
-installed today) and branching on `process.env.STORAGE_PROVIDER` in `trigger/storage.ts` the same
-way it already branches on nothing else today (Supabase is the only adapter wired up);
+installed today) and branching on `process.env.STORAGE_PROVIDER` in `trigger/shared/storage.ts`
+the same way it already branches on nothing else today (Supabase is the only adapter wired up);
 Trigger.dev's bundler resolves every static import regardless of which branch runs, so
 `files-sdk/r2` can't be imported unconditionally until those deps exist.
 
@@ -610,6 +628,20 @@ now-dead `sources.tsx` AI Elements component and the chat route's source-citatio
 (`source-url` message parts) that only that removed UI ever rendered. `vitest`, `vitest.config.ts`,
 and the `test` script are untouched — there's simply nothing under `src/**/*.test.ts` right now.
 
+**Phase 17 — Trigger tasks in their own folders, an explicit default model, dogfooding the widget (current milestone)**
+Three changes: (1) `src/trigger/` moved from one file per task to one **folder** per task
+(`ingest-source/index.ts`, `crawl-website/index.ts`, `process-markdown-source/index.ts`,
+`embed-chunk-batch/index.ts`), with the cross-task helpers under `trigger/shared/` — see
+"Ingestion pipeline" above for the exact layout and the convention for adding a new task; (2)
+`POST /api/agents` now inserts `model: DEFAULT_CHAT_MODEL` explicitly instead of relying solely
+on the `agents.model` column's SQL default — both already agreed (`openai/gpt-4o-mini`), but the
+app-code path is now the source of truth rather than a DB default that could silently drift from
+`lib/models.ts`; (3) the marketing site embeds its own widget for live dogfooding
+(`components/marketing/widget-embed.tsx`, rendered from the `(marketing)` layout only — never the
+dashboard or the embed route itself, which would nest the widget inside its own iframe) pointed at
+a real agent already trained on amueai.com's own pages (id `9417dbb0-6ad3-473c-a568-ff3ac42acf56`
+in the `agents` table) — visit any marketing page to test the real, deployed widget end to end.
+
 ## Guardrails while building
 
 - Never let the LLM answer outside the retrieved context by default — the system prompt must
@@ -629,7 +661,10 @@ and the `test` script are untouched — there's simply nothing under `src/**/*.t
 - **Don't add any billing/payment code** — no Stripe, no Clerk Billing, no pricing page, no
   upgrade flow — until the user explicitly asks for it post-MVP.
 - Never call `supabase.storage.*` directly for a source's original file or canonical markdown —
-  always through the `files` instance in `trigger/storage.ts`.
+  always through the `files` instance in `trigger/shared/storage.ts`.
+- New Trigger.dev tasks get their own folder, `src/trigger/<task-name>/index.ts` — never add a
+  new bare file directly under `src/trigger/`, and never grow `src/trigger/shared/` beyond the
+  three genuinely cross-task helpers (`chunk.ts`, `storage.ts`, `status.ts`).
 - Never write a new agent CRUD path as a Server Action — `POST /api/agents` and
   `GET`/`PATCH`/`DELETE /api/agents/:id` are the only ones, called via `apiFetch`
   (`lib/api-client.ts`). There are no Server Actions left in the agent surface at all.

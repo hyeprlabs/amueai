@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { DEFAULT_CHAT_MODEL } from "@/lib/models";
 
 const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -22,7 +23,12 @@ export async function POST(request: Request) {
   const supabase = createServerSupabaseClient();
   const { data: agent, error } = await supabase
     .from("agents")
-    .insert({ org_id: orgId, name, ...(system_prompt ? { system_prompt } : {}) })
+    .insert({
+      org_id: orgId,
+      name,
+      model: DEFAULT_CHAT_MODEL,
+      ...(system_prompt ? { system_prompt } : {}),
+    })
     .select("id")
     .single();
   if (error)

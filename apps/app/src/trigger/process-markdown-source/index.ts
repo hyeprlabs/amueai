@@ -1,10 +1,10 @@
 import { metadata, task } from "@trigger.dev/sdk";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
-import { chunkArray, chunkText } from "./chunk";
-import { embedChunkBatch } from "./embed-chunk-batch";
-import { markFailed } from "./shared";
-import { files } from "./storage";
+import { chunkArray, chunkText } from "../shared/chunk";
+import { embedChunkBatch } from "../embed-chunk-batch";
+import { markFailed } from "../shared/status";
+import { files } from "../shared/storage";
 
 const EMBED_BATCH_SIZE = 100;
 

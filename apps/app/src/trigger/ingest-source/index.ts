@@ -2,9 +2,9 @@ import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk";
 import Firecrawl from "@mendable/firecrawl-js";
 
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
-import { processMarkdownSource } from "./process-markdown-source";
-import { claim, markFailed } from "./shared";
-import { files } from "./storage";
+import { processMarkdownSource } from "../process-markdown-source";
+import { claim, markFailed } from "../shared/status";
+import { files } from "../shared/storage";
 
 const firecrawl = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! });
 
