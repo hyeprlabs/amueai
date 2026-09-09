@@ -68,7 +68,7 @@ export const siteConfig = {
   /** Open Graph locale, which uses underscores instead of hyphens. */
   locale: "en_US",
   publisher: "Hyepr Labs",
-  email: "amueai@hyeprlabs.com",
+  email: "contact@amueai.com",
   twitterHandle: "@hyeprlabs",
   keywords: [
     "AI agent",
