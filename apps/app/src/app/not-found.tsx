@@ -26,7 +26,7 @@ import "./(app)/globals.css";
  * renders correctly on this one boundary.
  */
 export const metadata: Metadata = {
-  title: `Page not found | ${siteConfig.name}`,
+  title: `Page not found · ${siteConfig.name}`,
   description: "The page you are looking for does not exist or has been moved.",
   robots: { index: false, follow: true },
 };

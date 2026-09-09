@@ -95,4 +95,4 @@ export const siteConfig = {
 } as const;
 
 /** Full title used on the home page and as the default across the site. */
-export const siteTitle = `${siteConfig.name} — ${siteConfig.tagline}`;
+export const siteTitle = `${siteConfig.name} · ${siteConfig.tagline}`;

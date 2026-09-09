@@ -26,6 +26,6 @@ export function ogImageDescriptor(title?: string) {
     url: ogImageUrl(title),
     width: OG_IMAGE_SIZE.width,
     height: OG_IMAGE_SIZE.height,
-    alt: title ? `${title} — ${siteConfig.name}` : `${siteConfig.name} — ${siteConfig.tagline}`,
+    alt: title ? `${title} · ${siteConfig.name}` : `${siteConfig.name} · ${siteConfig.tagline}`,
   };
 }

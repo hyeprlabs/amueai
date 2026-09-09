@@ -81,7 +81,7 @@ export default buildConfig({
       collections: Object.keys(seoCollections),
       uploadsCollection: "media",
       // Just the document title: the app's root metadata template appends
-      // "| AmueAI" at render time, so adding a suffix here would double it.
+      // "· AmueAI" at render time, so adding a suffix here would double it.
       // Competitors has no `title` field of its own. The page title is
       // always computed from its name, never freeform.
       generateTitle: ({ collectionSlug, doc }) =>
