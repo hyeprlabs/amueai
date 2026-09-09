@@ -68,7 +68,7 @@ export const siteConfig = {
   /** Open Graph locale, which uses underscores instead of hyphens. */
   locale: "en_US",
   publisher: "Hyepr Labs",
-  email: "amueai@hyeprlabs.com",
+  email: "contact@amueai.com",
   twitterHandle: "@hyeprlabs",
   keywords: [
     "AI agent",
@@ -95,4 +95,4 @@ export const siteConfig = {
 } as const;
 
 /** Full title used on the home page and as the default across the site. */
-export const siteTitle = `${siteConfig.name} — ${siteConfig.tagline}`;
+export const siteTitle = `${siteConfig.name} · ${siteConfig.tagline}`;

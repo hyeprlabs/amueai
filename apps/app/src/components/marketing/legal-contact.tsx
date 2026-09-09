@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DecorIcon } from "@/components/decor-icon";
 import { Mail, Users } from "lucide-react";
 
-const APP_EMAIL = "amueai@hyeprlabs.com";
+const APP_EMAIL = "contact@amueai.com";
 const X_HANDLE = "@hyeprlabs";
 const X_URL = `https://x.com/${X_HANDLE.slice(1)}`;
 const DISCORD_URL = "https://discord.gg/TODO";

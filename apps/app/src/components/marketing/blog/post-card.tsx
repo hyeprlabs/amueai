@@ -5,7 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Category, Post } from "@/payload-types";
 
-export function PostCard({ post, className, ...props }: React.ComponentProps<"a"> & { post: Post }) {
+export function PostCard({
+  post,
+  className,
+  ...props
+}: React.ComponentProps<"a"> & { post: Post }) {
   const author = typeof post.author === "object" ? post.author : undefined;
   const categories = (post.categories ?? []).filter(
     (category): category is Category => typeof category === "object",
@@ -43,7 +47,9 @@ export function PostCard({ post, className, ...props }: React.ComponentProps<"a"
             ))}
           </div>
         )}
-        <h2 className="line-clamp-2 font-medium text-foreground text-lg md:text-xl">{post.title}</h2>
+        <h2 className="line-clamp-2 font-medium text-foreground text-lg md:text-xl">
+          {post.title}
+        </h2>
         <p className="line-clamp-2 text-muted-foreground text-sm group-hover:text-foreground md:text-base">
           {post.excerpt}
         </p>
