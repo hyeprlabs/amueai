@@ -44,7 +44,8 @@
       ".panel{position:fixed;bottom:84px;" +
       sideProp +
       ":16px;width:min(400px,calc(100vw - 32px));height:min(640px,calc(100vh - 120px));" +
-      "border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.24);" +
+      "border-radius:16px;overflow:hidden;overscroll-behavior:contain;" +
+      "box-shadow:0 8px 24px rgba(0,0,0,.24);" +
       "background:oklch(0.145 0 0);opacity:0;transform:translateY(12px) scale(.97);" +
       "pointer-events:none;transition:opacity .18s ease,transform .18s ease;" +
       "z-index:2147483647;display:flex;align-items:center;justify-content:center}" +
@@ -62,7 +63,8 @@
       "font:13px/1 inherit;font-weight:500;cursor:pointer}" +
       "@keyframes amspin{to{transform:rotate(360deg)}}" +
       "@media(max-width:480px){.panel{inset:0;bottom:0;width:100%;height:100%;" +
-      "border-radius:0;box-shadow:none}.btn[data-open]{display:none}}";
+      "border-radius:0;box-shadow:none;transition:transform .22s cubic-bezier(.32,.72,0,1);" +
+      "transform:translateY(100%)}.btn[data-open]{display:none}}";
 
     function isMobile() {
       return window.matchMedia("(max-width: 480px)").matches;
@@ -89,6 +91,8 @@
       var iframe = null;
       var open = false;
       var loadTimer = null;
+      var vvFrame = null;
+      var lock = null;
 
       var link = document.createElement("link");
       link.rel = "preconnect";
@@ -135,9 +139,55 @@
         panel.style.height = vv.height + "px";
       }
 
+      function schedulePosition() {
+        if (vvFrame) return;
+        vvFrame = window.requestAnimationFrame(function () {
+          vvFrame = null;
+          positionForKeyboard();
+        });
+      }
+
       function resetPosition() {
         panel.style.top = "";
         panel.style.height = "";
+      }
+
+      function lockScroll() {
+        if (lock) return;
+        var body = document.body;
+        var html = document.documentElement;
+        lock = {
+          y: window.scrollY || window.pageYOffset || 0,
+          position: body.style.position,
+          top: body.style.top,
+          left: body.style.left,
+          right: body.style.right,
+          width: body.style.width,
+          overflow: body.style.overflow,
+          htmlOverflow: html.style.overflow,
+        };
+        body.style.position = "fixed";
+        body.style.top = -lock.y + "px";
+        body.style.left = "0";
+        body.style.right = "0";
+        body.style.width = "100%";
+        body.style.overflow = "hidden";
+        html.style.overflow = "hidden";
+      }
+
+      function unlockScroll() {
+        if (!lock) return;
+        var body = document.body;
+        var html = document.documentElement;
+        body.style.position = lock.position;
+        body.style.top = lock.top;
+        body.style.left = lock.left;
+        body.style.right = lock.right;
+        body.style.width = lock.width;
+        body.style.overflow = lock.overflow;
+        html.style.overflow = lock.htmlOverflow;
+        window.scrollTo(0, lock.y);
+        lock = null;
       }
 
       function setOpen(next) {
@@ -148,6 +198,7 @@
         panel.toggleAttribute("data-open", next);
         panel.setAttribute("aria-hidden", String(!next));
         if (next) {
+          if (isMobile()) lockScroll();
           createIframe();
           armTimer();
           positionForKeyboard();
@@ -155,6 +206,7 @@
             if (iframe) iframe.focus();
           }, 200);
         } else {
+          unlockScroll();
           resetPosition();
         }
       }
@@ -189,8 +241,8 @@
       });
 
       if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", positionForKeyboard);
-        window.visualViewport.addEventListener("scroll", positionForKeyboard);
+        window.visualViewport.addEventListener("resize", schedulePosition);
+        window.visualViewport.addEventListener("scroll", schedulePosition);
       }
 
       window.addEventListener("message", function (event) {
