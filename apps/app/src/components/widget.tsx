@@ -1,6 +1,6 @@
 "use client";
 
-import { XIcon } from "lucide-react";
+import { LifeBuoyIcon, XIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
@@ -71,7 +71,22 @@ export function Widget({
   return (
     <div className="dark flex h-dvh flex-col bg-popover text-popover-foreground">
       <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
-        <p className="flex-1 truncate text-sm font-medium">{agentName}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{agentName}</p>
+          {/* EU AI Act Art. 50(1) disclosure - must stay persistently visible, not one-time */}
+          <p className="truncate text-xs text-muted-foreground">
+            AI Assistant · responses are automated
+          </p>
+        </div>
+        <Button
+          aria-label="Get human support"
+          nativeButton={false}
+          render={<a href="/support" rel="noopener noreferrer" target="_blank" />}
+          size="icon-sm"
+          variant="ghost"
+        >
+          <LifeBuoyIcon />
+        </Button>
         <Button aria-label="Close chat" onClick={close} size="icon-sm" variant="ghost">
           <XIcon />
         </Button>
