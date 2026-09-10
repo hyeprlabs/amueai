@@ -1,11 +1,23 @@
 "use client";
 
-import { LifeBuoyIcon, XIcon } from "lucide-react";
+import { BotIcon, EllipsisIcon, XIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
+
+const MORE_LINKS = [
+  { label: "Support", href: "/support" },
+  { label: "Terms of Service", href: "/legal/terms-of-service" },
+  { label: "Privacy Policy", href: "/legal/privacy-policy" },
+];
 
 /**
  * This is the PUBLIC widget - the only thing that ends up on a customer's
@@ -71,22 +83,34 @@ export function Widget({
   return (
     <div className="dark flex h-dvh flex-col bg-popover text-popover-foreground">
       <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
+        {/* Placeholder for the agent's future brand image/logo tile. */}
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border-[3px] border-double border-border bg-muted text-muted-foreground">
+          <BotIcon className="size-4" />
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{agentName}</p>
           {/* EU AI Act Art. 50(1) disclosure - must stay persistently visible, not one-time */}
-          <p className="truncate text-xs text-muted-foreground">
-            AI Assistant · responses are automated
-          </p>
+          <p className="truncate text-xs text-muted-foreground">AI Agent</p>
         </div>
-        <Button
-          aria-label="Get human support"
-          nativeButton={false}
-          render={<a href="/support" rel="noopener noreferrer" target="_blank" />}
-          size="icon-sm"
-          variant="ghost"
-        >
-          <LifeBuoyIcon />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button aria-label="More options" size="icon-sm" variant="outline">
+                <EllipsisIcon />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            {MORE_LINKS.map((link) => (
+              <DropdownMenuItem
+                key={link.href}
+                render={<a href={link.href} rel="noopener noreferrer" target="_blank" />}
+              >
+                {link.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button aria-label="Close chat" onClick={close} size="icon-sm" variant="ghost">
           <XIcon />
         </Button>

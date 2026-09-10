@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { ArrowUpIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import { memo, useState, type FormEvent } from "react";
 
 import {
@@ -88,9 +88,9 @@ function Composer({
   busy: boolean;
 }) {
   return (
-    <form className="relative border-t p-3" onSubmit={onSubmit}>
+    <form className="flex items-center gap-2 border-t p-3" onSubmit={onSubmit}>
       <Input
-        className="h-11 rounded-full pe-11 shadow-sm"
+        className="h-11 flex-1 rounded-full shadow-sm"
         disabled={busy}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Ask a question…"
@@ -98,12 +98,12 @@ function Composer({
       />
       <Button
         aria-label="Send message"
-        className="absolute inset-y-0 end-4 my-auto size-8 rounded-full"
+        className="size-11 shrink-0 rounded-full"
         disabled={!value.trim() || busy}
-        size="icon-sm"
+        size="icon"
         type="submit"
       >
-        <ArrowUpIcon />
+        <ArrowRightIcon />
       </Button>
     </form>
   );
