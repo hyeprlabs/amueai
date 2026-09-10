@@ -1,0 +1,86 @@
+import type { Metadata } from "next";
+import { LinkIcon } from "lucide-react";
+
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireAgent } from "@/lib/agents";
+import { createMetadata } from "@/lib/seo";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AgentInstructionsForm } from "@/components/dashboard/agents/agent-instructions-form";
+import { AgentTestChat } from "@/components/dashboard/agents/agent-test-chat";
+import { ModelSwitcher } from "@/components/dashboard/agents/model-switcher";
+
+export const metadata: Metadata = createMetadata({
+  title: "Playground",
+  description: "Test this agent and tune its model and instructions.",
+  pathname: "/agents",
+  noIndex: true,
+});
+
+export default async function AgentPlaygroundPage({
+  params,
+}: PageProps<"/agents/[id]/playground">) {
+  const { id } = await params;
+
+  const supabase = createServerSupabaseClient();
+  const [{ data }, { count: sourceCount }] = await Promise.all([
+    supabase
+      .from("agents")
+      .select("id, name, system_prompt, model, welcome_message")
+      .eq("id", id)
+      .single(),
+    supabase.from("sources").select("id", { count: "exact", head: true }).eq("agent_id", id),
+  ]);
+
+  const agent = requireAgent(data);
+
+  return (
+    <div className="flex max-w-lg flex-col gap-4">
+      <div>
+        <h1 className="text-lg font-medium">Playground</h1>
+        <p className="text-sm text-muted-foreground">A live preview of what visitors see.</p>
+      </div>
+
+      <Card className="gap-3 py-4">
+        <CardHeader className="px-4">
+          <CardTitle className="text-sm">Data sources</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4">
+          <div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2 text-sm">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <LinkIcon className="size-4" />
+              Links
+            </span>
+            <span className="font-medium">{sourceCount ?? 0}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="gap-3 py-4">
+        <CardHeader className="px-4">
+          <CardTitle className="text-sm">Model</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4">
+          <ModelSwitcher agentId={agent.id} defaultModel={agent.model} />
+        </CardContent>
+      </Card>
+
+      <Card className="gap-3 py-4">
+        <CardHeader className="px-4">
+          <CardTitle className="text-sm">Instructions</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4">
+          <AgentInstructionsForm
+            agentId={agent.id}
+            defaultValues={{ system_prompt: agent.system_prompt }}
+          />
+        </CardContent>
+      </Card>
+
+      <AgentTestChat
+        agentId={id}
+        agentName={agent.name}
+        welcomeMessage={agent.welcome_message}
+      />
+    </div>
+  );
+}

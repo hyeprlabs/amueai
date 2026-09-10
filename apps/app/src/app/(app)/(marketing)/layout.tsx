@@ -3,6 +3,7 @@ import { waitlistFlag } from "@/lib/flags";
 import { Header } from "@/components/marketing/header"; // @efferd/header-2
 import { Footer } from "@/components/footer";
 import { Background } from "@/components/ui/bg";
+import { WidgetEmbed } from "@/components/marketing/widget-embed";
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
   const waitlistEnabled = await waitlistFlag();
@@ -24,6 +25,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
         <main className="grow">{children}</main>
         <Footer />
       </div>
+      <WidgetEmbed />
     </div>
   );
 }

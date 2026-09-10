@@ -27,6 +27,12 @@ out/
 build
 dist
 
+# Not a build output - the agents/[id]/build/* dashboard route (Sources +
+# Embed live under it), which the bare "build" rule above would otherwise
+# swallow.
+!apps/app/src/app/(app)/(dashboard)/agents/\[id\]/build/
+!apps/app/src/app/(app)/(dashboard)/agents/\[id\]/build/**
+
 
 # Debug
 npm-debug.log*

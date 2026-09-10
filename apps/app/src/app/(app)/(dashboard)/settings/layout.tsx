@@ -1,4 +1,4 @@
-import { SettingsTabs } from "@/components/dashboard/settings-tabs";
+import { SettingsTabs } from "@/components/dashboard/settings/settings-tabs";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

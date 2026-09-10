@@ -4,6 +4,8 @@
 @import "@clerk/ui/themes/shadcn.css";
 @import "@c15t/nextjs/styles.css";
 
+@source "../../../node_modules/streamdown/dist/*.js";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
