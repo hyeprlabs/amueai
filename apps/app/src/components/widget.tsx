@@ -8,8 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+
+/**
+ * This is the PUBLIC widget - the only thing that ends up on a customer's
+ * website, loaded through `/widget.js` -> `/embed/[agentId]` in a sandboxed
+ * iframe. It is intentionally its own component tree, decoupled from the
+ * dashboard's live-preview chat (`AgentTestChat`): nothing dashboard-only
+ * can leak into what ships here, and this can stay minimal and fast without
+ * worrying about the dashboard's needs.
+ */
 
 const Chat = dynamic(() => import("@/components/widget-chat").then((m) => m.Chat), {
   ssr: false,
@@ -82,19 +90,13 @@ export function Widget({
 }) {
   const session = useWidgetSession(agentId);
   const [open, setOpen] = useState(false);
-  const [framed, setFramed] = useState(false);
-  const dashboardIsMobile = useIsMobile();
-
-  useEffect(() => setFramed(window.parent !== window), []);
-
-  const isMobile = framed ? mobile : dashboardIsMobile;
 
   const toggle = (next: boolean) => {
-    if (framed) window.parent.postMessage({ type: next ? "amueai:open" : "amueai:close" }, "*");
+    window.parent.postMessage({ type: next ? "amueai:open" : "amueai:close" }, "*");
     setOpen(next);
   };
 
-  const hideTrigger = isMobile && open;
+  const hideTrigger = mobile && open;
 
   const trigger = (
     <Button
@@ -112,7 +114,7 @@ export function Widget({
     />
   );
 
-  if (isMobile) {
+  if (mobile) {
     return (
       <Drawer onOpenChange={toggle} open={open}>
         <DrawerTrigger render={trigger}>
