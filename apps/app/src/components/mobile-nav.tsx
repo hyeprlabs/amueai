@@ -110,7 +110,7 @@ export function MobileNav({ waitlistEnabled }: { waitlistEnabled: boolean }) {
                         className="w-full"
                         nativeButton={false}
                         onClick={() => setOpen(false)}
-                        render={<Link href="/overview" />}
+                        render={<Link href="/agents" />}
                         variant="outline"
                       >
                         Dashboard
