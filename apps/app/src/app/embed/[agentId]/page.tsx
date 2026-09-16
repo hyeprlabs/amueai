@@ -20,19 +20,13 @@ function getCachedAgent(agentId: string) {
   )();
 }
 
-export default async function EmbedPage({ params, searchParams }: PageProps<"/embed/[agentId]">) {
-  const [{ agentId }, { side, mobile }] = await Promise.all([params, searchParams]);
+export default async function EmbedPage({ params }: PageProps<"/embed/[agentId]">) {
+  const { agentId } = await params;
 
   const agent = await getCachedAgent(agentId);
   if (!agent) notFound();
 
   return (
-    <Widget
-      agentId={agentId}
-      agentName={agent.name}
-      mobile={mobile === "1"}
-      side={side === "left" ? "left" : "right"}
-      welcomeMessage={agent.welcome_message}
-    />
+    <Widget agentId={agentId} agentName={agent.name} welcomeMessage={agent.welcome_message} />
   );
 }

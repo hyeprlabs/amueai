@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { createMetadata } from "@/lib/seo";
 import { siteConfig } from "@/config/site";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CopySnippet } from "@/components/dashboard/agents/copy-snippet";
 
 export const metadata: Metadata = createMetadata({
   title: "Embed",
@@ -23,9 +24,9 @@ export default async function AgentEmbedPage({ params }: PageProps<"/agents/[id]
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <pre className="overflow-x-auto rounded-lg border bg-muted p-4 text-xs">
-          {`<script src="${siteConfig.url}/widget.js" data-agent-id="${id}" async></script>`}
-        </pre>
+        <CopySnippet
+          snippet={`<script src="${siteConfig.url}/widget.js" data-agent-id="${id}" async></script>`}
+        />
       </CardContent>
     </Card>
   );

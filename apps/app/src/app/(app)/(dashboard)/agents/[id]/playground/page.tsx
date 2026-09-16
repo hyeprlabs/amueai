@@ -6,8 +6,8 @@ import { requireAgent } from "@/lib/agents";
 import { createMetadata } from "@/lib/seo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgentInstructionsForm } from "@/components/dashboard/agents/agent-instructions-form";
+import { AgentTestChat } from "@/components/dashboard/agents/agent-test-chat";
 import { ModelSwitcher } from "@/components/dashboard/agents/model-switcher";
-import { Widget } from "@/components/widget";
 
 export const metadata: Metadata = createMetadata({
   title: "Playground",
@@ -76,7 +76,11 @@ export default async function AgentPlaygroundPage({
         </CardContent>
       </Card>
 
-      <Widget agentId={id} agentName={agent.name} welcomeMessage={agent.welcome_message} />
+      <AgentTestChat
+        agentId={id}
+        agentName={agent.name}
+        welcomeMessage={agent.welcome_message}
+      />
     </div>
   );
 }
