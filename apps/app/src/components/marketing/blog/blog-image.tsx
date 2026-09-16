@@ -26,7 +26,10 @@ export function BlogImage({
   const image = resolveMedia(media, size);
 
   return (
-    <AspectRatio className={cn("w-full shrink-0 overflow-hidden", IMAGE_FRAME, className)} ratio={16 / 9}>
+    <AspectRatio
+      className={cn("w-full shrink-0 overflow-hidden", IMAGE_FRAME, className)}
+      ratio={16 / 9}
+    >
       {image ? (
         <Image
           alt={image.alt}
