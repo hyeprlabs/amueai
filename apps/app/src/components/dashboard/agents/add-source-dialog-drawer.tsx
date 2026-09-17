@@ -7,7 +7,7 @@ import { PlusIcon } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useSupabaseClient } from "@/hooks/use-supabase-client";
 import type { ActiveRun, SourceRow } from "@/components/dashboard/agents/sources-table";
 import { Button } from "@/components/ui/button";
@@ -272,7 +272,7 @@ export function AddSourceDialog({
   agentId: string;
   onQueued: (result: QueuedSource) => void;
 }) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
 
   const handleQueued = (result: QueuedSource) => {
@@ -280,7 +280,7 @@ export function AddSourceDialog({
     onQueued(result);
   };
 
-  if (isDesktop) {
+  if (!isMobile) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger render={<Button />}>
