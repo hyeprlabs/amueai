@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import {
   BarChart3Icon,
-  BotIcon,
-  GaugeIcon,
   HammerIcon,
   HelpCircleIcon,
   BookOpenIcon,
@@ -22,15 +20,6 @@ export type SidebarNavGroup = {
   label?: string;
   items: SidebarNavItem[];
 };
-
-export const primaryNavGroups: SidebarNavGroup[] = [
-  {
-    items: [
-      { title: "Agents", path: "/agents", icon: <BotIcon /> },
-      { title: "Usage", path: "/usage", icon: <GaugeIcon /> },
-    ],
-  },
-];
 
 export function getActiveAgentId(pathname: string): string | undefined {
   return pathname.match(/^\/agents\/([^/]+)(?:\/|$)/)?.[1];
@@ -79,28 +68,7 @@ export const footerNavLinks: SidebarNavItem[] = [
   { title: "Documentation", path: "#/documentation", icon: <BookOpenIcon /> },
 ];
 
-const navLinks: SidebarNavItem[] = [
-  ...primaryNavGroups.flatMap((group) => group.items),
-  ...footerNavLinks,
-];
-
 export function isNavItemActive(itemPath: string | undefined, pathname: string): boolean {
   if (!itemPath || itemPath.startsWith("#")) return false;
   return pathname === itemPath || pathname.startsWith(`${itemPath}/`);
-}
-
-export function findActiveNavItem(pathname: string): SidebarNavItem | undefined {
-  return navLinks
-    .filter((item) => isNavItemActive(item.path, pathname))
-    .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))[0];
-}
-
-export function headerPageTitle(pathname: string): SidebarNavItem | undefined {
-  const activeItem = findActiveNavItem(pathname);
-  if (activeItem) return activeItem;
-
-  const firstSegment = pathname.split("/").find(Boolean);
-  if (!firstSegment) return undefined;
-
-  return { title: firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1) };
 }

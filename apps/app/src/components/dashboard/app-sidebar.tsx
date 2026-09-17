@@ -15,15 +15,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  footerNavLinks,
-  getActiveAgentId,
-  getAgentNavGroups,
-  primaryNavGroups,
-} from "@/components/dashboard/app-shared";
+import { footerNavLinks, getActiveAgentId } from "@/components/dashboard/app-shared";
 import { AgentSwitcher, type AgentSwitcherAgent } from "@/components/dashboard/agent-switcher";
 import { ChangelogBanner } from "@/components/dashboard/changelog-banner";
-import { NavGroup } from "@/components/dashboard/nav-group";
+import { NavAgent, NavOverview } from "@/components/dashboard/nav-groups";
 import { ProductUsage } from "@/components/dashboard/product-usage";
 import type { Change } from "@/payload-types";
 
@@ -41,7 +36,6 @@ export function AppSidebar({
   useEffect(() => setMounted(true), []);
 
   const activeAgentId = getActiveAgentId(pathname);
-  const navGroups = activeAgentId ? getAgentNavGroups(activeAgentId) : primaryNavGroups;
 
   return (
     <Sidebar
@@ -66,9 +60,8 @@ export function AppSidebar({
             <AgentSwitcher agents={agents} currentAgentId={activeAgentId} />
           </div>
         )}
-        {navGroups.map((group, index) => (
-          <NavGroup key={`sidebar-group-${index}`} {...group} />
-        ))}
+        <NavOverview />
+        <NavAgent />
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0">
         <ChangelogBanner change={latestChange} />
