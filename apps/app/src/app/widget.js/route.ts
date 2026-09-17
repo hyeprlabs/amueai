@@ -2,14 +2,17 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
 
-const manifestPath = join(process.cwd(), "public", "widget-manifest.json");
-const devSourcePath = join(process.cwd(), "src", "widget", "widget.js");
+async function readManifest(): Promise<{ file: string } | null> {
+  try {
+    const path = join(process.cwd(), "public", "widget-manifest.json");
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: Request) {
-  // Missing before the first `build-widget` run (e.g. dev) - fall through to raw source.
-  const manifest: { file: string } | null = await readFile(manifestPath, "utf8")
-    .then(JSON.parse)
-    .catch(() => null);
+  const manifest = await readManifest();
 
   if (manifest) {
     return NextResponse.redirect(new URL(`/${manifest.file}`, request.url), {
@@ -18,7 +21,7 @@ export async function GET(request: Request) {
     });
   }
 
-  const source = await readFile(devSourcePath, "utf8");
+  const source = await readFile(join(process.cwd(), "src", "widget", "widget.js"), "utf8");
   return new NextResponse(source, {
     headers: {
       "Content-Type": "application/javascript; charset=utf-8",
