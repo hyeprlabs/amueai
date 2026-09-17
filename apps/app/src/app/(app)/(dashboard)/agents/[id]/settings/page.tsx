@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { requireAgent } from "@/lib/agents";
+import { redirectAgents } from "@/lib/redirect-agents";
 import { createMetadata } from "@/lib/seo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgentSettingsForm } from "@/components/dashboard/agents/agent-settings-form";
@@ -24,7 +24,7 @@ export default async function AgentSettingsPage({ params }: PageProps<"/agents/[
     .eq("id", id)
     .single();
 
-  const agent = requireAgent(data);
+  const agent = redirectAgents(data);
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">

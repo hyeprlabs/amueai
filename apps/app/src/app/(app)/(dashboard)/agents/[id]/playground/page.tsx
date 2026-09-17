@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LinkIcon } from "lucide-react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { requireAgent } from "@/lib/agents";
+import { redirectAgents } from "@/lib/redirect-agents";
 import { createMetadata } from "@/lib/seo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgentInstructionsForm } from "@/components/dashboard/agents/agent-instructions-form";
@@ -31,7 +31,7 @@ export default async function AgentPlaygroundPage({
     supabase.from("sources").select("id", { count: "exact", head: true }).eq("agent_id", id),
   ]);
 
-  const agent = requireAgent(data);
+  const agent = redirectAgents(data);
 
   return (
     <div className="flex max-w-lg flex-col gap-4">

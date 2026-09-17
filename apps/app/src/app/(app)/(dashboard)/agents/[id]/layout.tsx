@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { requireAgent } from "@/lib/agents";
+import { redirectAgents } from "@/lib/redirect-agents";
 
 export default async function AgentLayout({ children, params }: LayoutProps<"/agents/[id]">) {
   const { id } = await params;
@@ -7,7 +7,7 @@ export default async function AgentLayout({ children, params }: LayoutProps<"/ag
   const supabase = createServerSupabaseClient();
   const { data } = await supabase.from("agents").select("id").eq("id", id).single();
 
-  requireAgent(data);
+  redirectAgents(data);
 
   return <div className="flex max-w-5xl flex-col gap-4">{children}</div>;
 }
