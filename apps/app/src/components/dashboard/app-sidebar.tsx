@@ -9,17 +9,22 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  footerNavLinks,
   getActiveAgentId,
   getAgentNavGroups,
   primaryNavGroups,
-} from "@/components/dashboard/nav-config";
+} from "@/components/dashboard/app-shared";
 import { AgentSwitcher, type AgentSwitcherAgent } from "@/components/dashboard/agent-switcher";
 import { ChangelogBanner } from "@/components/dashboard/changelog-banner";
 import { NavGroup } from "@/components/dashboard/nav-group";
+import { ProductUsage } from "@/components/dashboard/product-usage";
 import type { Change } from "@/payload-types";
 
 export function AppSidebar({
@@ -67,6 +72,22 @@ export function AppSidebar({
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0">
         <ChangelogBanner change={latestChange} />
+        <ProductUsage />
+        <SidebarMenu className="border-t p-2">
+          {footerNavLinks.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                className="text-muted-foreground"
+                render={<a href={item.path} />}
+                size="sm"
+                tooltip={item.title}
+              >
+                {item.icon}
+                <span>{item.title}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
         <div className="px-4 pt-4 pb-2 transition-opacity group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0">
           <p className="text-nowrap text-[9px] text-muted-foreground">
             © {new Date().getFullYear()} AmueAI

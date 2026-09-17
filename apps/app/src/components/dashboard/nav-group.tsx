@@ -18,7 +18,7 @@ import {
   SidebarMenuSubItem,
   sidebarMenuButtonVariants,
 } from "@/components/ui/sidebar";
-import { isNavItemActive, type SidebarNavGroup } from "@/components/dashboard/nav-config";
+import { isNavItemActive, type SidebarNavGroup } from "@/components/dashboard/app-shared";
 
 const NavLink = forwardRef<HTMLAnchorElement, ComponentProps<"a">>(function NavLink(
   { href, ...props },

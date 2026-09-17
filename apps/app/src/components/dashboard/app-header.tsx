@@ -7,7 +7,7 @@ import { useAgentName } from "@/hooks/use-agent-name";
 import { Separator } from "@/components/ui/separator";
 import { DecorIcon } from "@/components/decor-icon";
 import { AppBreadcrumbs, type BreadcrumbTrailItem } from "@/components/dashboard/app-breadcrumbs";
-import { getActiveAgentId, headerPageTitle } from "@/components/dashboard/nav-config";
+import { getActiveAgentId, headerPageTitle } from "@/components/dashboard/app-shared";
 import { SidebarToggle } from "@/components/dashboard/sidebar-toggle";
 import { UserDropdown } from "@/components/dashboard/user-dropdown";
 

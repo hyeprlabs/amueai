@@ -28,12 +28,10 @@ import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c08
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from "@payloadcms/plugin-seo/client";
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from "@payloadcms/plugin-search/client";
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from "@payloadcms/plugin-search/client";
+import { AdminLogoIcon as AdminLogoIcon_e8781eb7cea7d9f18f4c948c72679c24 } from "../../../components/admin/admin-logo-icon";
+import { AdminLogo as AdminLogo_e8781eb7cea7d9f18f4c948c72679c24 } from "../../../components/admin/admin-logo-icon";
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from "@payloadcms/storage-vercel-blob/client";
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from "@payloadcms/next/rsc";
-import {
-  AdminLogo as AdminLogo_admin_logo_icon,
-  AdminLogoIcon as AdminLogoIcon_admin_logo_icon,
-} from "../../../components/admin/admin-logo-icon";
 
 /** @type import('payload').ImportMap */
 export const importMap = {
@@ -95,9 +93,9 @@ export const importMap = {
     PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
+  "/components/admin/admin-logo-icon#AdminLogoIcon": AdminLogoIcon_e8781eb7cea7d9f18f4c948c72679c24,
+  "/components/admin/admin-logo-icon#AdminLogo": AdminLogo_e8781eb7cea7d9f18f4c948c72679c24,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler":
     VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "/components/admin/admin-logo-icon#AdminLogo": AdminLogo_admin_logo_icon,
-  "/components/admin/admin-logo-icon#AdminLogoIcon": AdminLogoIcon_admin_logo_icon,
 };
