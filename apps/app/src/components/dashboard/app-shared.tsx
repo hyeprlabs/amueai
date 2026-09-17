@@ -1,22 +1,18 @@
 import type { ReactNode } from "react";
 import {
-  LayoutGridIcon,
   BarChart3Icon,
-  BriefcaseIcon,
-  UsersIcon,
-  PlugIcon,
-  KeyRoundIcon,
-  SettingsIcon,
-  CreditCardIcon,
+  HammerIcon,
   HelpCircleIcon,
   BookOpenIcon,
+  MessageSquareTextIcon,
+  RadioTowerIcon,
+  SettingsIcon,
 } from "lucide-react";
 
 export type SidebarNavItem = {
   title: string;
   path?: string;
   icon?: ReactNode;
-  isActive?: boolean;
   subItems?: SidebarNavItem[];
 };
 
@@ -25,81 +21,54 @@ export type SidebarNavGroup = {
   items: SidebarNavItem[];
 };
 
-export const navGroups: SidebarNavGroup[] = [
-  {
-    label: "Product",
-    items: [
-      {
-        title: "Overview",
-        path: "#/overview",
-        icon: <LayoutGridIcon />,
-        isActive: true,
-      },
-      {
-        title: "Analytics",
-        path: "/analytics",
-        icon: <BarChart3Icon />,
-      },
-      {
-        title: "Projects",
-        path: "#/projects",
-        icon: <BriefcaseIcon />,
-      },
-    ],
-  },
-  {
-    label: "Workspace",
-    items: [
-      {
-        title: "Team",
-        path: "#/team",
-        icon: <UsersIcon />,
-      },
-      {
-        title: "Integrations",
-        path: "#/integrations",
-        icon: <PlugIcon />,
-      },
-      {
-        title: "API Keys",
-        path: "#/api-keys",
-        icon: <KeyRoundIcon />,
-      },
-    ],
-  },
-  {
-    label: "Administration",
-    items: [
-      {
-        title: "Settings",
-        path: "#/settings",
-        icon: <SettingsIcon />,
-      },
-      {
-        title: "Billing",
-        path: "#/billing",
-        icon: <CreditCardIcon />,
-      },
-    ],
-  },
-];
+export function getActiveAgentId(pathname: string): string | undefined {
+  return pathname.match(/^\/agents\/([^/]+)(?:\/|$)/)?.[1];
+}
+
+export function getAgentNavGroups(agentId: string): SidebarNavGroup[] {
+  const base = `/agents/${agentId}`;
+
+  return [
+    {
+      items: [
+        { title: "Playground", path: `${base}/playground`, icon: <MessageSquareTextIcon /> },
+        {
+          title: "Build",
+          path: `${base}/build`,
+          icon: <HammerIcon />,
+          subItems: [
+            { title: "Sources", path: `${base}/build/sources` },
+            { title: "Embed", path: `${base}/build/embed` },
+          ],
+        },
+        { title: "Analytics", path: `${base}/analytics`, icon: <BarChart3Icon /> },
+        { title: "Channels", path: `${base}/channels`, icon: <RadioTowerIcon /> },
+        { title: "Settings", path: `${base}/settings`, icon: <SettingsIcon /> },
+      ],
+    },
+  ];
+}
+
+export function getAgentSubPath(pathname: string, agentId: string): string {
+  const base = `/agents/${agentId}`;
+  const tabs = getAgentNavGroups(agentId).flatMap((group) =>
+    group.items.flatMap((item) => [item, ...(item.subItems ?? [])]),
+  );
+  const knownPaths = tabs.map((item) => item.path).filter((path): path is string => Boolean(path));
+
+  const match = knownPaths
+    .filter((path) => pathname === path || pathname.startsWith(`${path}/`))
+    .sort((a, b) => b.length - a.length)[0];
+
+  return match ? match.slice(base.length) : "/playground";
+}
 
 export const footerNavLinks: SidebarNavItem[] = [
-  {
-    title: "Help Center",
-    path: "#/help",
-    icon: <HelpCircleIcon />,
-  },
-  {
-    title: "Documentation",
-    path: "#/documentation",
-    icon: <BookOpenIcon />,
-  },
+  { title: "Help Center", path: "#/help", icon: <HelpCircleIcon /> },
+  { title: "Documentation", path: "#/documentation", icon: <BookOpenIcon /> },
 ];
 
-export const navLinks: SidebarNavItem[] = [
-  ...navGroups.flatMap((group) =>
-    group.items.flatMap((item) => (item.subItems?.length ? [item, ...item.subItems] : [item])),
-  ),
-  ...footerNavLinks,
-];
+export function isNavItemActive(itemPath: string | undefined, pathname: string): boolean {
+  if (!itemPath || itemPath.startsWith("#")) return false;
+  return pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+}

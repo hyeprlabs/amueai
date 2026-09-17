@@ -1,31 +1,38 @@
-import type { ReactNode } from "react";
+import { Fragment } from "react";
+import Link from "next/link";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-/** Current page segment shown in the header — pass a nav item or `{ title, icon? }`. */
-export type AppBreadcrumbPage = {
+export type BreadcrumbTrailItem = {
   title: string;
-  icon?: ReactNode;
+  href?: string;
 };
 
-export function AppBreadcrumbs({ page }: { page?: AppBreadcrumbPage | null }) {
-  if (!page?.title) {
-    return null;
-  }
+export function AppBreadcrumbs({ trail }: { trail: BreadcrumbTrailItem[] }) {
+  if (trail.length === 0) return null;
 
   return (
     <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbPage className="flex items-center gap-2 [&>svg]:size-3.5">
-            {page.icon}
-            {page.title}
-          </BreadcrumbPage>
-        </BreadcrumbItem>
+      <BreadcrumbList className="flex-nowrap">
+        {trail.map((item, index) => (
+          <Fragment key={`${item.title}-${index}`}>
+            {index > 0 && <BreadcrumbSeparator />}
+            <BreadcrumbItem>
+              {item.href ? (
+                <BreadcrumbLink render={<Link href={item.href} />}>{item.title}</BreadcrumbLink>
+              ) : (
+                <BreadcrumbPage>{item.title}</BreadcrumbPage>
+              )}
+            </BreadcrumbItem>
+          </Fragment>
+        ))}
       </BreadcrumbList>
     </Breadcrumb>
   );

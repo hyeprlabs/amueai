@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Check, CreditCard, HelpCircle, LockKeyhole, RefreshCw } from "lucide-react";
 
-import { BillingPlans } from "@/components/dashboard/billing-plans";
+import { BillingPlans } from "@/components/dashboard/settings/billing-plans";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createMetadata } from "@/lib/seo";
 

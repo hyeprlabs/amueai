@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { OrganizationSwitcher } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Sidebar,
@@ -14,17 +15,27 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { footerNavLinks, navGroups } from "@/components/dashboard/app-shared";
-import { LatestChange } from "@/components/dashboard/latest-change";
+import { footerNavLinks, getActiveAgentId } from "@/components/dashboard/app-shared";
+import { AgentSwitcher, type AgentSwitcherAgent } from "@/components/dashboard/agent-switcher";
+import { ChangelogBanner } from "@/components/dashboard/changelog-banner";
+import { NavAgent, NavOverview } from "@/components/dashboard/nav-groups";
 import { ProductUsage } from "@/components/dashboard/product-usage";
-import { NavGroup } from "@/components/dashboard/nav-group";
 import type { Change } from "@/payload-types";
 
-export function AppSidebar({ latestChange }: { latestChange?: Change }) {
+export function AppSidebar({
+  latestChange,
+  agents,
+}: {
+  latestChange?: Change;
+  agents: AgentSwitcherAgent[];
+}) {
   const { state } = useSidebar();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  const activeAgentId = getActiveAgentId(pathname);
 
   return (
     <Sidebar
@@ -44,19 +55,22 @@ export function AppSidebar({ latestChange }: { latestChange?: Change }) {
         )}
       </SidebarHeader>
       <SidebarContent>
-        {navGroups.map((group, index) => (
-          <NavGroup key={`sidebar-group-${index}`} {...group} />
-        ))}
+        {activeAgentId && (
+          <div className="px-2 pt-2">
+            <AgentSwitcher agents={agents} currentAgentId={activeAgentId} />
+          </div>
+        )}
+        <NavOverview />
+        <NavAgent />
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0">
-        <LatestChange change={latestChange} />
+        <ChangelogBanner change={latestChange} />
         <ProductUsage />
         <SidebarMenu className="border-t p-2">
           {footerNavLinks.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 className="text-muted-foreground"
-                isActive={item.isActive}
                 render={<a href={item.path} />}
                 size="sm"
                 tooltip={item.title}

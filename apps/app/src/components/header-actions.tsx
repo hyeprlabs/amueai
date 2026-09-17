@@ -54,7 +54,7 @@ export function HeaderActions({ waitlistEnabled }: { waitlistEnabled: boolean })
           <div className="fade-in flex animate-in items-center gap-2 duration-300 ease-out">
             <Button
               nativeButton={false}
-              render={<Link href="/overview" />}
+              render={<Link href="/agents" />}
               size="sm"
               variant="outline"
             >
