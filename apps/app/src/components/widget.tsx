@@ -1,6 +1,6 @@
 "use client";
 
-import { BotIcon, EllipsisIcon, XIcon } from "lucide-react";
+import { BotIcon, EllipsisIcon, RotateCwIcon, XIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
@@ -60,7 +60,7 @@ function useWidgetSession(agentId: string) {
     });
   }, [agentId]);
 
-  return ids;
+  return [ids, setIds] as const;
 }
 
 export function Widget({
@@ -72,13 +72,19 @@ export function Widget({
   agentName: string;
   welcomeMessage: string;
 }) {
-  const session = useWidgetSession(agentId);
+  const [session, setSession] = useWidgetSession(agentId);
 
   useEffect(() => {
     window.parent.postMessage({ type: "amueai:ready" }, "*");
   }, []);
 
   const close = () => window.parent.postMessage({ type: "amueai:close" }, "*");
+
+  const startNewChat = () => {
+    const conversationId = crypto.randomUUID();
+    localStorage.setItem(`amueai_conversation_${agentId}`, conversationId);
+    setSession((current) => (current ? { ...current, conversationId } : current));
+  };
 
   return (
     <div className="dark flex h-dvh flex-col bg-popover text-popover-foreground">
@@ -92,6 +98,9 @@ export function Widget({
           {/* EU AI Act Art. 50(1) disclosure - must stay persistently visible, not one-time */}
           <p className="truncate text-xs text-muted-foreground">AI Agent</p>
         </div>
+        <Button aria-label="New chat" onClick={startNewChat} size="icon-sm" variant="outline">
+          <RotateCwIcon />
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -100,7 +109,7 @@ export function Widget({
               </Button>
             }
           />
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="dark">
             {MORE_LINKS.map((link) => (
               <DropdownMenuItem
                 key={link.href}
@@ -116,7 +125,14 @@ export function Widget({
         </Button>
       </div>
       <div className="min-h-0 flex-1">
-        {session && <Chat agentId={agentId} welcomeMessage={welcomeMessage} {...session} />}
+        {session && (
+          <Chat
+            agentId={agentId}
+            key={session.conversationId}
+            welcomeMessage={welcomeMessage}
+            {...session}
+          />
+        )}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 
     try {
       run();
-    } catch (e) {}
+    } catch {}
 
   function run() {
     if (window.__amueai) return;
@@ -255,7 +255,7 @@
     function safeInit() {
       try {
         init();
-      } catch (e) {}
+      } catch {}
     }
 
     if (document.body) safeInit();
