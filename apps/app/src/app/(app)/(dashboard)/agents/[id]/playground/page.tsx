@@ -76,11 +76,7 @@ export default async function AgentPlaygroundPage({
         </CardContent>
       </Card>
 
-      <AgentTestChat
-        agentId={id}
-        agentName={agent.name}
-        welcomeMessage={agent.welcome_message}
-      />
+      <AgentTestChat agentId={id} agentName={agent.name} welcomeMessage={agent.welcome_message} />
     </div>
   );
 }

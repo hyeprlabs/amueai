@@ -26,7 +26,5 @@ export default async function EmbedPage({ params }: PageProps<"/embed/[agentId]"
   const agent = await getCachedAgent(agentId);
   if (!agent) notFound();
 
-  return (
-    <Widget agentId={agentId} agentName={agent.name} welcomeMessage={agent.welcome_message} />
-  );
+  return <Widget agentId={agentId} agentName={agent.name} welcomeMessage={agent.welcome_message} />;
 }

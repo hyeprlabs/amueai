@@ -1,9 +1,9 @@
 (function () {
-    "use strict";
+  "use strict";
 
-    try {
-      run();
-    } catch {}
+  try {
+    run();
+  } catch {}
 
   function run() {
     if (window.__amueai) return;

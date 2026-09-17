@@ -842,8 +842,8 @@ not just a post-hydration screenshot, before trusting anything that touches what
 floats over the trigger instead of covering it**
 Two misconceptions from Phase 20 got corrected. First: `color-scheme: dark` set on the parent's
 `<iframe>` element does nothing for the child document — `color-scheme` only affects the document
-it's declared *within*, so setting it on the embed page's own `<html>` only takes effect once that
-cross-origin document has loaded, which does nothing for the blank gap *before* it loads (DNS/TLS/
+it's declared _within_, so setting it on the embed page's own `<html>` only takes effect once that
+cross-origin document has loaded, which does nothing for the blank gap _before_ it loads (DNS/TLS/
 cold start for a genuinely cross-origin request). During that gap the browser paints the raw
 `<iframe>` replaced element using its own parent-side CSS `background`, which was `transparent` —
 i.e. white. The actual fix has zero network dependency: `widget.js` now paints the closed-state

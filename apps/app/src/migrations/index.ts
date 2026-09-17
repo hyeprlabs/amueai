@@ -9,6 +9,7 @@ import * as migration_20260826_185000_rename_comparison_feature_to_label from ".
 import * as migration_20260901_211004_add_mcp_api_keys from "./20260901_211004_add_mcp_api_keys";
 import * as migration_20260905_130000_add_mcp_api_key_create_columns from "./20260905_130000_add_mcp_api_key_create_columns";
 import * as migration_20260905_215424_add_legal_pages_mcp_permission from "./20260905_215424_add_legal_pages_mcp_permission";
+import * as migration_20260917_090000_drop_blog_v_autosave from "./20260917_090000_drop_blog_v_autosave";
 
 export const migrations = [
   {
@@ -65,5 +66,10 @@ export const migrations = [
     up: migration_20260905_215424_add_legal_pages_mcp_permission.up,
     down: migration_20260905_215424_add_legal_pages_mcp_permission.down,
     name: "20260905_215424_add_legal_pages_mcp_permission",
+  },
+  {
+    up: migration_20260917_090000_drop_blog_v_autosave.up,
+    down: migration_20260917_090000_drop_blog_v_autosave.down,
+    name: "20260917_090000_drop_blog_v_autosave",
   },
 ];
