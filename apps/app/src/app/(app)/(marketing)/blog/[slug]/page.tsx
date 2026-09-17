@@ -13,6 +13,7 @@ import {
 } from "next-seo";
 
 import { AuthorInfo } from "@/components/marketing/author-info";
+import { BlogImage } from "@/components/marketing/blog/blog-image";
 import { CategoryDropdown } from "@/components/marketing/blog/category-dropdown";
 import { MarketingFaq } from "@/components/marketing/marketing-faq";
 import { PostGrid } from "@/components/marketing/blog/post-grid";
@@ -140,6 +141,15 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
               readingTime={post.readingTime}
             />
           )}
+        </div>
+
+        <div className="border-t p-4">
+          <BlogImage
+            imageClassName="transition-transform duration-500"
+            media={post.featuredImage}
+            size="card"
+            sizes="100vw"
+          />
         </div>
 
         <RichText

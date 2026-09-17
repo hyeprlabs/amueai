@@ -7,6 +7,7 @@ import "./globals.css";
 // Providers
 import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
     default: siteTitle,
-    template: `%s | ${siteConfig.name}`,
+    template: `%s · ${siteConfig.name}`,
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
@@ -106,6 +107,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </TooltipProvider>
         </ThemeProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

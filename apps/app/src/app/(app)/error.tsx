@@ -51,7 +51,7 @@ export default function Error({
           <Button
             className="w-full"
             nativeButton={false}
-            render={<a href="mailto:amueai@hyeprlabs.com" />}
+            render={<a href="mailto:contact@amueai.com" />}
             variant="outline"
           >
             Support

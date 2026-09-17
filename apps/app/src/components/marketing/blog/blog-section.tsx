@@ -1,13 +1,11 @@
-import Link from "next/link";
-
 import { BlogEmpty } from "@/components/marketing/blog/blog-empty";
 import { CategoryDropdown } from "@/components/marketing/blog/category-dropdown";
+import { PostCard } from "@/components/marketing/blog/post-card";
 import { FullWidthDivider } from "@/components/full-width-divider";
-import { cn } from "@/lib/utils";
 import type { Category, Post } from "@/payload-types";
 
-/** `/blog` listing (variant A): header, category switcher, and the divided post list. */
-export function BlogSectionA({
+/** `/blog` listing: header + category switch and an image grid of posts. */
+export function BlogSection({
   title,
   description,
   posts,
@@ -35,9 +33,9 @@ export function BlogSectionA({
       <div className="relative">
         <FullWidthDivider />
         {posts.length > 0 ? (
-          <div className="divide-y">
+          <div className="grid grid-cols-1 items-start gap-4 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
             {posts.map((post) => (
-              <PostRow key={post.id} post={post} />
+              <PostCard key={post.id} post={post} />
             ))}
           </div>
         ) : (
@@ -55,41 +53,5 @@ export function BlogSectionA({
         <FullWidthDivider />
       </div>
     </div>
-  );
-}
-
-function PostRow({ post, className, ...props }: React.ComponentProps<"a"> & { post: Post }) {
-  const date = post.publishedAt
-    ? new Date(post.publishedAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
-    : undefined;
-
-  return (
-    <Link
-      className={cn(
-        "group flex min-h-24 w-full flex-col justify-center gap-y-1 p-4 hover:cursor-pointer hover:bg-accent/30 active:bg-accent dark:active:bg-accent/50",
-        className,
-      )}
-      href={`/blog/${post.slug}`}
-      {...props}
-    >
-      <div className="relative flex min-w-0 items-end justify-center gap-2">
-        <h3 className="min-w-0 shrink truncate font-medium text-foreground text-lg md:text-xl">
-          {post.title}
-        </h3>
-        <span className="mb-[6px] w-full shrink border-b-2 border-dashed" />
-        {date && (
-          <span className="shrink-0 whitespace-nowrap font-mono text-muted-foreground text-xs uppercase group-hover:text-foreground md:text-sm">
-            {date}
-          </span>
-        )}
-      </div>
-      <div className="line-clamp-2 max-w-sm text-muted-foreground text-sm group-hover:text-foreground md:max-w-full md:text-base">
-        {post.excerpt}
-      </div>
-    </Link>
   );
 }
